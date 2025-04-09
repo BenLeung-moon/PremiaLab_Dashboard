@@ -1,6 +1,7 @@
 # PremiaLab Dashboard
 
 [简体中文](#simplified_chinese)
+
 [English](#english)
 
 ## <span id="simplified_chinese">简体中文</span>
