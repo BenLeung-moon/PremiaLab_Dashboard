@@ -1,0 +1,43 @@
+{
+  "appTitle": "投资组合分析助手",
+  "chat": {
+    "welcome": "欢迎使用投资组合分析助手。我可以帮助您分析投资组合、提供市场洞察和解答投资相关问题。",
+    "inputPlaceholder": "输入您的投资相关问题...",
+    "examplesTitle": "您可以提问的示例：",
+    "examples": {
+      "tech": "分析科技股投资组合的表现",
+      "createPortfolio": "帮我创建一个投资组合：40% AAPL，30% MSFT，20% GOOGL，10% AMZN",
+      "techAllocation": "美国大型科技股票应该如何配置？",
+      "lowRisk": "给我推荐一个低风险的投资组合"
+    },
+    "sendButton": "发送",
+    "disclaimer": "投资助手可以提供分析和建议，但不构成投资建议。投资决策请咨询专业人士。",
+    "loading": "思考中...",
+    "apiKeyRequired": "请先设置Perplexity API密钥才能继续。点击右上角的设置图标进行设置。",
+    "apiCallFailed": "API调用失败，请检查您的API密钥是否正确，或稍后重试。",
+    "backendError": "发送到后端失败，请检查API连接是否正常，或稍后重试。",
+    "portfolioSent": "投资组合已成功发送到后端。",
+    "responseId": "响应ID",
+    "createdAt": "创建时间"
+  },
+  "portfolio": {
+    "title": "投资组合",
+    "sendToDashboard": "发送到仪表板"
+  },
+  "settings": {
+    "title": "Perplexity API设置",
+    "description": "输入您的Perplexity API密钥以启用AI助手功能。",
+    "apiLinkText": "Perplexity API设置",
+    "placeholder": "pplx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "cancel": "取消",
+    "save": "保存"
+  },
+  "navigation": {
+    "toDashboard": "切换到仪表板",
+    "toChat": "切换到聊天模式"
+  },
+  "language": {
+    "switchTo": "English",
+    "current": "中文"
+  }
+} 

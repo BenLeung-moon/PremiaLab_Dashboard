@@ -1,9 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useLanguage } from '../i18n/LanguageContext';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const Header = () => {
   const location = useLocation();
   const isOnDashboard = location.pathname === '/dashboard';
+  const { t } = useLanguage();
 
   return (
     <header className="bg-white border-b border-gray-200 p-4 flex justify-between items-center">
@@ -18,25 +21,26 @@ const Header = () => {
         </div>
       </div>
       <div className="flex items-center space-x-4">
+        <LanguageSwitcher />
         {isOnDashboard ? (
           <Link 
             to="/" 
             className="px-4 py-2 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
           >
-            切换到聊天模式
+            {t('navigation.toChat')}
           </Link>
         ) : (
           <Link 
             to="/dashboard" 
             className="px-4 py-2 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
           >
-            切换到仪表板
+            {t('navigation.toDashboard')}
           </Link>
         )}
         <div className="relative">
           <input
             type="text"
-            placeholder="搜索..."
+            placeholder={t('chat.inputPlaceholder')}
             className="bg-gray-100 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -47,7 +51,7 @@ const Header = () => {
               src="https://randomuser.me/api/portraits/women/44.jpg"
               alt="User profile"
             />
-            <span className="ml-2 text-sm font-medium hidden md:block">用户名</span>
+            <span className="ml-2 text-sm font-medium hidden md:block">{t('language.current')}</span>
           </button>
         </div>
       </div>
