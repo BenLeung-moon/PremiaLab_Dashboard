@@ -1,6 +1,10 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 const Header = () => {
+  const location = useLocation();
+  const isOnDashboard = location.pathname === '/dashboard';
+
   return (
     <header className="bg-white border-b border-gray-200 p-4 flex justify-between items-center">
       <div className="flex items-center">
@@ -13,7 +17,22 @@ const Header = () => {
           <h2 className="text-lg font-medium">Dashboard</h2>
         </div>
       </div>
-      <div className="flex items-center">
+      <div className="flex items-center space-x-4">
+        {isOnDashboard ? (
+          <Link 
+            to="/" 
+            className="px-4 py-2 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+          >
+            切换到聊天模式
+          </Link>
+        ) : (
+          <Link 
+            to="/dashboard" 
+            className="px-4 py-2 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+          >
+            切换到仪表板
+          </Link>
+        )}
         <div className="relative">
           <input
             type="text"
@@ -21,7 +40,7 @@ const Header = () => {
             className="bg-gray-100 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <div className="ml-4 relative">
+        <div className="relative">
           <button className="flex items-center focus:outline-none">
             <img
               className="h-8 w-8 rounded-full"
