@@ -1,6 +1,9 @@
 # PremiaLab Dashboard
 
-## 简体中文
+[简体中文](#simplified_chinese)
+[English](#english)
+
+## <span id="simplified_chinese">简体中文</span>
 
 投资组合分析仪表板，包含数据可视化和投资组合管理功能。
 
@@ -121,7 +124,7 @@ httpx==0.24.0
 
 ---
 
-## English
+## <span id="english">English</span>
 
 Portfolio analysis dashboard with data visualization and portfolio management features.
 
