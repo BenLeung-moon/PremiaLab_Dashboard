@@ -12,7 +12,7 @@ export type Translations = typeof enTranslations;
 interface LanguageContextType {
   language: Language;
   setLanguage: (language: Language) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, any>) => string;
 }
 
 // 创建上下文
@@ -43,7 +43,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   }, [language]);
 
   // 翻译函数
-  const t = (key: string): string => {
+  const t = (key: string, params?: Record<string, any>): string => {
     const keys = key.split('.');
     let value: any = translations[language];
     
@@ -52,7 +52,16 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       value = value[k];
     }
     
-    return value !== undefined ? value : key;
+    if (value === undefined) return key;
+    
+    // 如果传入了参数，进行字符串替换
+    if (params) {
+      return Object.entries(params).reduce((str, [paramKey, paramValue]) => {
+        return str.replace(new RegExp(`{${paramKey}}`, 'g'), String(paramValue));
+      }, value);
+    }
+    
+    return value;
   };
 
   return (

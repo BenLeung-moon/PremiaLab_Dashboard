@@ -1,319 +1,287 @@
 import axios from 'axios';
 
-const API_URL = '/api/portfolios';
-const TEST_MODE = true; // 与ChatHomePage保持一致
-
-interface Ticker {
+// 接口定义
+export interface Ticker {
   symbol: string;
   weight: number;
+  name?: string;
+  sector?: string;
+  price?: number;
+  change?: number;
 }
 
-interface Portfolio {
+export interface Portfolio {
+  id?: string;
   name: string;
   tickers: Ticker[];
+  created_at?: string;
 }
 
-interface PortfolioResponse {
-  id: string;
-  created_at: string;
-  portfolio: Portfolio;
+export interface PerformanceData {
+  totalReturn: number;
+  annualizedReturn: number;
+  volatility: number;
+  sharpeRatio: number;
+  maxDrawdown: number;
+  winRate: number;
+  monthlyReturns: Array<{month: string, return: number}>;
 }
 
-interface AllocationData {
-  行业分布: { [key: string]: number };
-  地区分布: { [key: string]: number };
-  市值分布: { [key: string]: number };
+export interface AllocationData {
+  sector: Array<{type: string, percentage: number}>;
+  geography: Array<{region: string, percentage: number}>;
 }
 
-interface ComparisonData {
-  总收益率: { 投资组合: number; 基准: number; 超额: number };
-  年化收益率: { 投资组合: number; 基准: number; 超额: number };
-  波动率: { 投资组合: number; 基准: number; 差异: number };
-  夏普比率: { 投资组合: number; 基准: number; 差异: number };
-  最大回撤: { 投资组合: number; 基准: number; 差异: number };
-  相关性: number;
-  跟踪误差: number;
-  信息比率: number;
-  胜率: number;
+export interface RiskData {
+  name: string;
+  value: string;
+  status: string;
+  percentage: number;
 }
 
-// 股票代码与公司名称对应表
-export const stockNameMapping: { [key: string]: string } = {
-  "AAPL": "Apple Inc.",
-  "MSFT": "Microsoft Corporation",
-  "AMZN": "Amazon.com Inc.",
-  "GOOGL": "Alphabet Inc. (Google) Class A",
-  "GOOG": "Alphabet Inc. (Google) Class C",
-  "META": "Meta Platforms Inc.",
-  "TSLA": "Tesla Inc.",
-  "NVDA": "NVIDIA Corporation",
-  "BRK-B": "Berkshire Hathaway Inc. Class B",
-  "JPM": "JPMorgan Chase & Co.",
-  "JNJ": "Johnson & Johnson",
-  "V": "Visa Inc.",
-  "PG": "Procter & Gamble Co.",
-  "UNH": "UnitedHealth Group Inc.",
-  "HD": "Home Depot Inc.",
-  "MA": "Mastercard Inc.",
-  "BAC": "Bank of America Corp.",
-  "DIS": "Walt Disney Co.",
-  "ADBE": "Adobe Inc.",
-  "CRM": "Salesforce Inc.",
-  "KO": "Coca-Cola Co.",
-  "NFLX": "Netflix Inc.",
-  "PFE": "Pfizer Inc.",
-  "CSCO": "Cisco Systems Inc.",
-  "AVGO": "Broadcom Inc.",
-  "TMO": "Thermo Fisher Scientific Inc.",
-  "ABT": "Abbott Laboratories",
-  "PEP": "PepsiCo Inc.",
-  "COST": "Costco Wholesale Corp.",
-  "CMCSA": "Comcast Corp.",
-  "ACN": "Accenture plc",
-  "WMT": "Walmart Inc.",
-  "MRK": "Merck & Co. Inc.",
-  "VZ": "Verizon Communications Inc.",
-  "NKE": "Nike Inc.",
-  "INTC": "Intel Corporation",
-  "AMD": "Advanced Micro Devices Inc.",
-  "IBM": "International Business Machines Corp.",
-  "QCOM": "Qualcomm Inc.",
-  "T": "AT&T Inc.",
-  "PYPL": "PayPal Holdings Inc.",
-  "SBUX": "Starbucks Corp.",
-  "MCD": "McDonald's Corp.",
-  "TXN": "Texas Instruments Inc.",
-  "BA": "Boeing Co.",
-  "C": "Citigroup Inc.",
-  "GS": "Goldman Sachs Group Inc.",
-  "MMM": "3M Co.",
-  "CVX": "Chevron Corp.",
-  "XOM": "Exxon Mobil Corp.",
-  "CAT": "Caterpillar Inc.",
-  "AMAT": "Applied Materials Inc.",
-  "INTU": "Intuit Inc.",
-  "GE": "General Electric Co.",
-  "ORCL": "Oracle Corp.",
-  "F": "Ford Motor Co.",
-  "GM": "General Motors Co.",
-  "AMGN": "Amgen Inc.",
-  "WFC": "Wells Fargo & Co.",
-  "AXP": "American Express Co.",
-  "BKNG": "Booking Holdings Inc.",
-  "LMT": "Lockheed Martin Corp.",
-  "RTX": "Raytheon Technologies Corp.",
-  "UNP": "Union Pacific Corp.",
-  "UPS": "United Parcel Service Inc.",
-  "PM": "Philip Morris International Inc.",
-  "LOW": "Lowe's Companies Inc.",
-  "DHR": "Danaher Corp.",
-  "LIN": "Linde plc",
-  "NEE": "NextEra Energy Inc.",
-  "AMT": "American Tower Corp.",
-  "ISRG": "Intuitive Surgical Inc.",
-  "SCHW": "Charles Schwab Corp.",
-  "MS": "Morgan Stanley",
-  "HON": "Honeywell International Inc.",
-  "MDT": "Medtronic plc",
-  "BMY": "Bristol-Myers Squibb Co."
+export interface ComparisonData {
+  metric: string;
+  portfolio: string;
+  benchmark: string;
+  difference: string;
+  positive: boolean;
+}
+
+export interface FactorData {
+  name: string;
+  exposure: number;
+  positive: boolean;
+}
+
+export interface FactorsData {
+  styleFactors: FactorData[];
+  macroFactors: FactorData[];
+}
+
+export interface PortfolioAnalysis {
+  performance: PerformanceData;
+  allocation: AllocationData;
+  risk: RiskData[];
+  comparison: ComparisonData[];
+  factors: FactorsData;
+}
+
+// API常量
+const API_URL = '/api';
+
+/**
+ * 提交投资组合到后端
+ */
+export const submitPortfolio = async (portfolio: Portfolio): Promise<Portfolio> => {
+  try {
+    const response = await axios.post(`${API_URL}/portfolios`, portfolio);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to submit portfolio:', error);
+    throw error;
+  }
 };
 
 /**
- * 提交投资组合到后端API
- * @param portfolio 投资组合数据
- * @returns Promise，包含API响应
+ * 获取聊天消息相关的投资组合分析
  */
-export const submitPortfolio = async (portfolio: Portfolio): Promise<PortfolioResponse> => {
+export const getChatPortfolioAnalysis = async (chatId: string): Promise<PortfolioAnalysis> => {
   try {
-    if (TEST_MODE) {
-      // 在测试模式下模拟成功响应
-      await new Promise(resolve => setTimeout(resolve, 500)); // 模拟网络延迟
-      return {
-        id: 'test-' + Date.now(),
-        created_at: new Date().toISOString(),
-        portfolio: portfolio
-      };
-    }
-
-    const response = await axios.post('/api/portfolio', portfolio);
+    const response = await axios.get(`${API_URL}/chat/${chatId}/portfolio-analysis`);
     return response.data;
   } catch (error) {
-    console.error('API调用失败:', error);
-    throw new Error('无法提交投资组合。请检查API连接是否正常，或稍后重试。');
+    console.error('获取聊天相关的投资组合分析失败:', error);
+    throw error;
   }
 };
 
 /**
  * 获取用户的投资组合列表
- * @returns Promise，包含投资组合数组
  */
-export const getPortfolios = async (): Promise<Portfolio[]> => {
+export const getPortfolioList = async (): Promise<Portfolio[]> => {
   try {
-    if (TEST_MODE) {
-      // 在测试模式下返回模拟数据
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return [
-        {
-          name: "测试投资组合 1",
-          tickers: [
-            { symbol: "AAPL", weight: 0.4 },
-            { symbol: "MSFT", weight: 0.3 },
-            { symbol: "GOOGL", weight: 0.2 },
-            { symbol: "AMZN", weight: 0.1 }
-          ]
-        }
-      ];
-    }
-
-    const response = await axios.get(API_URL);
-    return response.data;
-  } catch (error) {
-    console.error('获取投资组合失败:', error);
-    throw new Error('无法获取投资组合列表。请检查API连接是否正常，或稍后重试。');
-  }
-};
-
-// 获取可用的股票代码列表
-export const getAvailableStocks = async (): Promise<string[]> => {
-  try {
-    // 在实际环境中应该调用后端API获取列表
-    // 在测试模式下返回静态列表
+    // 模拟API调用
+    await new Promise(resolve => setTimeout(resolve, 500));
     return [
-      "A", "AAPL", "ABBV", "ABNB", "ABT", "ACGL", "ACN", "ADBE", "ADI", "ADM", 
-      "ADP", "ADSK", "AEE", "AEP", "AES", "AFL", "AIG", "AIZ", "AJG", "AKAM", 
-      "ALB", "ALGN", "ALL", "ALLE", "AMAT", "AMCR", "AMD", "AME", "AMGN", "AMP",
-      "AMT", "AMZN", "ANET", "ANSS", "AON", "AOS", "APD", "APH", "APTV", "ARE",
-      "ATO", "ATVI", "AVB", "AVGO", "AVY", "AWK", "AXP", "AZO", "BA", "BAC", 
-      "BAX", "BBWI", "BBY", "BDX", "BEN", "BF-B", "BIIB", "BIO", "BK", "BKNG",
-      "BKR", "BLK", "BMY", "BR", "BRK-B", "BRO", "BSX", "BWA", "BXP", "C", 
-      "CAG", "CAH", "CARR", "CAT", "CB", "CBOE", "CBRE", "CCI", "CCL", "CDNS",
-      "CDW", "CE", "CEG", "CF", "CFG", "CHD", "CHRW", "CHTR", "CI", "CINF", 
-      "CL", "CLX", "CMA", "CMCSA", "CME", "CMG", "CMI", "CMS", "CNC", "COF",
-      "COIN", "COO", "COP", "COST", "CPB", "CPRT", "CPT", "CRM", "CSCO", "CSX",
-      "CTAS", "CTLT", "CTRA", "CTSH", "CTVA", "CVS", "CVX", "CZR", "D", "DAL",
-      "DD", "DE", "DFS", "DG", "DGX", "DHI", "DHR", "DIS", "DLR", "DLTR",
-      "DOC", "DOV", "DOW", "DPZ", "DRI", "DTE", "DUK", "DVA", "DVN", "DXCM",
-      "EA", "EBAY", "ECL", "ED", "EFX", "EIX", "EL", "ELV", "EMN", "EMR",
-      "ENPH", "EOG", "EQIX", "EQR", "ES", "ESS", "ETN", "ETR", "ETSY", "EVRG",
-      "EW", "EXC", "EXPD", "EXPE", "EXR", "F", "FANG", "FAST", "FB", "FBHS",
-      "FCX", "FDS", "FDX", "FE", "FFIV", "FIS", "FISV", "FITB", "FLT", "FMC",
-      "FOX", "FOXA", "FRC", "FRT", "FTNT", "FTV", "GD", "GE", "GILD", "GIS",
-      "GL", "GLW", "GM", "GOOG", "GOOGL", "GPC", "GPN", "GRMN", "GS", "GWW",
-      "HAL", "HAS", "HBAN", "HCA", "HD", "HES", "HIG", "HII", "HLT", "HOLX",
-      "HON", "HPE", "HPQ", "HRL", "HSIC", "HST", "HSY", "HUM", "IBM", "ICE",
-      "IDXX", "IEX", "IFF", "ILMN", "INCY", "INTC", "INTU", "IP", "IPG", "IQV",
-      "IR", "IRM", "ISRG", "IT", "ITW", "IVZ", "J", "JBHT", "JCI", "JKHY",
-      "JNJ", "JNPR", "JPM", "K", "KEY", "KEYS", "KHC", "KIM", "KLAC", "KMB",
-      "KMI", "KMX", "KO", "KR", "L", "LDOS", "LEN", "LH", "LHX", "LIN",
-      "LKQ", "LLY", "LMT", "LNC", "LNT", "LOW", "LRCX", "LUMN", "LUV", "LVS",
-      "LW", "LYB", "LYV", "MA", "MAA", "MAR", "MAS", "MCD", "MCHP", "MCK",
-      "MCO", "MDLZ", "MDT", "MET", "META", "MGM", "MHK", "MKC", "MKTX", "MLM",
-      "MMC", "MMM", "MNST", "MO", "MOH", "MOS", "MPC", "MPWR", "MRK", "MRO",
-      "MS", "MSCI", "MSFT", "MSI", "MTB", "MTCH", "MTD", "MU", "NCLH", "NDAQ",
-      "NDSN", "NEE", "NEM", "NFLX", "NI", "NKE", "NOC", "NOV", "NOW", "NRG",
-      "NSC", "NTAP", "NTRS", "NUE", "NVDA", "NVR", "NWL", "NWS", "NWSA", "O",
-      "ODFL", "OGN", "OKE", "OMC", "ON", "ORCL", "ORLY", "OTIS", "OXY", "PARA",
-      "PAYC", "PAYX", "PCAR", "PCG", "PEAK", "PEG", "PENN", "PEP", "PFE", "PFG",
-      "PG", "PGR", "PH", "PHM", "PKG", "PKI", "PLD", "PM", "PNC", "PNR",
-      "PNW", "POOL", "PPG", "PPL", "PRU", "PSA", "PSX", "PTC", "PVH", "PWR",
-      "PXD", "PYPL", "QCOM", "QRVO", "RCL", "RE", "REG", "REGN", "RF", "RHI",
-      "RJF", "RL", "RMD", "ROK", "ROL", "ROP", "ROST", "RSG", "RTX", "SBAC",
-      "SBUX", "SCHW", "SEE", "SHW", "SIVB", "SJM", "SLB", "SNA", "SNPS", "SO",
-      "SPG", "SPGI", "SRE", "STE", "STT", "STX", "STZ", "SWK", "SWKS", "SYF",
-      "SYK", "SYY", "T", "TAP", "TDG", "TDY", "TECH", "TEL", "TER", "TFC",
-      "TFX", "TGT", "TJX", "TMO", "TMUS", "TPR", "TRGP", "TRMB", "TROW", "TRV",
-      "TSCO", "TSLA", "TSN", "TT", "TTWO", "TXN", "TXT", "TYL", "UA", "UAA",
-      "UAL", "UDR", "UHS", "ULTA", "UNH", "UNP", "UPS", "URI", "USB", "V",
-      "VFC", "VICI", "VLO", "VMC", "VNO", "VRSK", "VRSN", "VRTX", "VTR", "VTRS",
-      "VZ", "WAB", "WAT", "WBA", "WBD", "WDC", "WEC", "WELL", "WFC", "WHR",
-      "WM", "WMB", "WMT", "WRB", "WRK", "WST", "WTW", "WY", "WYNN", "XEL",
-      "XOM", "XRAY", "XYL", "YUM", "ZBH", "ZBRA", "ZION", "ZTS"
+      {
+        id: 'port-1',
+        name: '科技股组合',
+        created_at: '2023-07-15T12:30:00Z',
+        tickers: [
+          { symbol: 'AAPL', weight: 0.3 },
+          { symbol: 'MSFT', weight: 0.3 },
+          { symbol: 'GOOGL', weight: 0.2 },
+          { symbol: 'AMZN', weight: 0.2 }
+        ]
+      },
+      {
+        id: 'port-2',
+        name: '多元化投资',
+        created_at: '2023-07-10T09:45:00Z',
+        tickers: [
+          { symbol: 'SPY', weight: 0.4 },
+          { symbol: 'QQQ', weight: 0.3 },
+          { symbol: 'GLD', weight: 0.2 },
+          { symbol: 'VNQ', weight: 0.1 }
+        ]
+      }
     ];
   } catch (error) {
-    console.error('获取股票代码列表失败:', error);
+    console.error('获取投资组合列表失败:', error);
     throw error;
   }
 };
 
-// 获取可用的股票代码和公司名称列表
-export const getAvailableStocksWithNames = async (): Promise<{symbol: string, name: string}[]> => {
+// 创建投资组合
+export const createPortfolio = async (portfolio: Portfolio): Promise<Portfolio> => {
   try {
-    const stocks = await getAvailableStocks();
-    return stocks.map(symbol => ({
-      symbol,
-      name: stockNameMapping[symbol] || ''
-    }));
+    const response = await axios.post(`${API_URL}/portfolios`, portfolio);
+    return response.data;
   } catch (error) {
-    console.error('获取股票代码和名称列表失败:', error);
+    console.error('创建投资组合失败:', error);
     throw error;
   }
 };
 
-/**
- * 获取投资组合的资产配置数据
- * @param portfolioId 投资组合ID
- * @returns 资产配置数据
- */
-export const getPortfolioAllocation = async (portfolioId: string): Promise<AllocationData> => {
+// 获取所有投资组合
+export const getPortfolios = async (): Promise<Portfolio[]> => {
   try {
-    if (TEST_MODE) {
-      // 模拟响应
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return {
-        行业分布: {
-          '信息技术': 55.0,
-          '通信服务': 20.0,
-          '消费者非必需品': 15.0,
-          '其他': 10.0
-        },
-        地区分布: {
-          '美国': 90.0,
-          '欧洲': 5.0,
-          '亚洲': 5.0
-        },
-        市值分布: {
-          '大盘股': 80.0,
-          '中盘股': 15.0,
-          '小盘股': 5.0
-        }
-      };
-    }
-
-    const response = await axios.get(`/api/portfolio/${portfolioId}/allocation`);
-    return response.data.allocation;
+    const response = await axios.get(`${API_URL}/portfolios`);
+    return response.data;
   } catch (error) {
-    console.error('获取资产配置数据失败:', error);
-    throw new Error('无法获取资产配置数据。请稍后重试。');
+    console.error('获取投资组合列表失败:', error);
+    throw error;
   }
 };
 
-/**
- * 获取投资组合与基准的对比数据
- * @param portfolioId 投资组合ID
- * @returns 比较数据
- */
-export const getPortfolioComparison = async (portfolioId: string): Promise<ComparisonData> => {
+// 获取单个投资组合
+export const getPortfolio = async (portfolioId: string): Promise<Portfolio> => {
   try {
-    if (TEST_MODE) {
-      // 模拟响应
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return {
-        总收益率: { 投资组合: 15.2, 基准: 10.5, 超额: 4.7 },
-        年化收益率: { 投资组合: 12.4, 基准: 9.1, 超额: 3.3 },
-        波动率: { 投资组合: 14.2, 基准: 12.7, 差异: 1.5 },
-        夏普比率: { 投资组合: 1.36, 基准: 1.12, 差异: 0.24 },
-        最大回撤: { 投资组合: 8.6, 基准: 11.7, 差异: -3.1 },
-        相关性: 0.89,
-        跟踪误差: 5.2,
-        信息比率: 1.05,
-        胜率: 58.3
-      };
-    }
-
-    const response = await axios.get(`/api/portfolio/${portfolioId}/comparison`);
-    return response.data.comparison;
+    const response = await axios.get(`${API_URL}/portfolios/${portfolioId}`);
+    return response.data;
   } catch (error) {
-    console.error('获取比较数据失败:', error);
-    throw new Error('无法获取比较数据。请稍后重试。');
+    console.error(`获取投资组合 ${portfolioId} 失败:`, error);
+    throw error;
+  }
+};
+
+// 获取投资组合分析数据
+export const getPortfolioAnalysis = async (portfolioId: string): Promise<PortfolioAnalysis> => {
+  try {
+    const response = await axios.get(`${API_URL}/portfolios/${portfolioId}/analyze`);
+    return response.data;
+  } catch (error) {
+    console.error(`获取投资组合分析 ${portfolioId} 失败:`, error);
+    throw error;
+  }
+};
+
+// 生成模拟的投资组合分析数据（用于开发和测试）
+export const mockPortfolioAnalysis = (): PortfolioAnalysis => {
+  // 生成过去180天的模拟价格数据
+  const generateTimeseriesData = (startValue: number, volatility: number) => {
+    const result = [];
+    let currentValue = startValue;
+    const now = new Date();
+    
+    for (let i = 180; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      // 随机波动
+      const change = (Math.random() - 0.5) * volatility;
+      currentValue = currentValue * (1 + change);
+      
+      result.push({
+        date: dateStr,
+        value: parseFloat(currentValue.toFixed(2))
+      });
+    }
+    
+    return result;
+  };
+  
+  // 生成模拟数据
+  return {
+    performance: {
+      totalReturn: 15.7,
+      annualizedReturn: 12.3,
+      volatility: 12.5,
+      sharpeRatio: 1.42,
+      maxDrawdown: -8.5,
+      winRate: 58.2,
+      monthlyReturns: [
+        { month: '一月', return: 3.2 },
+        { month: '二月', return: -1.8 },
+        { month: '三月', return: 2.1 },
+        { month: '四月', return: 4.5 },
+        { month: '五月', return: -0.7 },
+        { month: '六月', return: 2.9 }
+      ]
+    },
+    allocation: {
+      sector: [
+        { type: '科技', percentage: 32.5 },
+        { type: '医疗健康', percentage: 15.8 },
+        { type: '金融', percentage: 12.3 },
+        { type: '消费品', percentage: 10.5 },
+        { type: '通信服务', percentage: 8.7 },
+        { type: '工业', percentage: 7.9 },
+        { type: '能源', percentage: 5.3 },
+        { type: '材料', percentage: 4.2 },
+        { type: '公用事业', percentage: 2.8 },
+      ],
+      geography: [
+        { region: '美国', percentage: 45.7 },
+        { region: '中国', percentage: 21.5 },
+        { region: '欧洲', percentage: 15.8 },
+        { region: '日本', percentage: 7.3 },
+        { region: '新兴市场', percentage: 9.7 }
+      ]
+    },
+    risk: [
+      { name: '波动率', value: '12.5%', status: 'medium', percentage: 60 },
+      { name: '最大回撤', value: '-8.5%', status: 'low', percentage: 40 },
+      { name: '下行风险', value: '12.3%', status: 'medium', percentage: 55 },
+      { name: '贝塔系数', value: '0.85', status: 'high', percentage: 75 },
+      { name: 'VaR (95%)', value: '-2.8%', status: 'low', percentage: 30 },
+      { name: '夏普比率', value: '1.42', status: 'medium', percentage: 65 }
+    ],
+    comparison: [
+      { metric: '年化收益率', portfolio: '12.3%', benchmark: '10.2%', difference: '+2.1%', positive: true },
+      { metric: '夏普比率', portfolio: '1.42', benchmark: '0.9', difference: '+0.52', positive: true },
+      { metric: '最大回撤', portfolio: '-8.5%', benchmark: '-18.2%', difference: '+9.7%', positive: true },
+      { metric: '波动率', portfolio: '12.5%', benchmark: '16.4%', difference: '+3.9%', positive: false },
+      { metric: '贝塔系数', portfolio: '0.85', benchmark: '1.00', difference: '+0.15', positive: false },
+      { metric: '年化α值', portfolio: '2.1%', benchmark: '0.0%', difference: '+2.1%', positive: true }
+    ],
+    factors: {
+      styleFactors: [
+        { name: '规模', exposure: 0.85, positive: true },
+        { name: '价值', exposure: -0.32, positive: false },
+        { name: '动量', exposure: 1.27, positive: true },
+        { name: '质量', exposure: 0.53, positive: true },
+        { name: '波动性', exposure: -0.21, positive: false }
+      ],
+      macroFactors: [
+        { name: '经济增长', exposure: 1.32, positive: true },
+        { name: '通货膨胀', exposure: -0.45, positive: false },
+        { name: '利率风险', exposure: 0.78, positive: true },
+        { name: '信用风险', exposure: 0.41, positive: true },
+        { name: '新兴市场', exposure: 0.66, positive: true }
+      ]
+    }
+  };
+};
+
+// 获取可用的股票数据
+export const getStocksData = async (): Promise<Record<string, any>> => {
+  try {
+    const response = await axios.get(`${API_URL}/stocks-data`);
+    return response.data;
+  } catch (error) {
+    console.error('获取股票数据失败:', error);
+    throw error;
   }
 }; 

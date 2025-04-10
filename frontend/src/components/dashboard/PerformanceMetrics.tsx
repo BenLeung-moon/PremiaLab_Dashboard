@@ -1,79 +1,104 @@
-// import React from 'react'
+import React from 'react';
+import { useLanguage } from '../../i18n/LanguageContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { format } from 'date-fns'
 
-// Mock data - replace with actual API data
-const performanceData = [
-  { date: '2024-01-01', return: 2.5, benchmark: 2.1 },
-  { date: '2024-01-02', return: 2.8, benchmark: 2.3 },
-  { date: '2024-01-03', return: 3.1, benchmark: 2.4 },
-  { date: '2024-01-04', return: 2.9, benchmark: 2.2 },
-  { date: '2024-01-05', return: 3.2, benchmark: 2.5 },
-]
-
-const PerformanceMetrics = () => {
-  const metrics = [
-    { name: '年化收益率', value: '12.8%', change: '+2.3%', status: 'up' },
-    { name: '夏普比率', value: '1.75', change: '+0.15', status: 'up' },
-    { name: '最大回撤', value: '-8.2%', change: '-1.4%', status: 'down' },
-    { name: '信息比率', value: '0.95', change: '+0.05', status: 'up' },
+const PerformanceMetrics: React.FC = () => {
+  const { t } = useLanguage();
+  
+  // 模拟数据：绩效指标
+  const performanceData = {
+    totalReturn: 28.4,
+    annualizedReturn: 12.4,
+    volatility: 18.6,
+    sharpeRatio: 1.2,
+    maxDrawdown: -15.4,
+    winRate: 58.2
+  };
+  
+  // 模拟数据：月度收益
+  const monthlyReturns = [
+    { month: '一月', return: 3.2 },
+    { month: '二月', return: -1.8 },
+    { month: '三月', return: 2.1 },
+    { month: '四月', return: 4.5 },
+    { month: '五月', return: -0.7 },
+    { month: '六月', return: 2.9 }
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-xl font-semibold mb-4">Performance Metrics</h2>
-      <div className="grid grid-cols-2 gap-4">
-        {metrics.map((metric, index) => (
-          <div key={index} className="bg-gray-50 p-4 rounded-md">
-            <div className="text-sm text-gray-500">{metric.name}</div>
-            <div className="flex items-end mt-1">
-              <div className="text-2xl font-bold">{metric.value}</div>
-              <div
-                className={`ml-2 text-sm ${
-                  metric.status === 'up' ? 'text-green-500' : 'text-red-500'
-                }`}
-              >
-                {metric.change}
+    <div className="space-y-6">
+      {/* 主要绩效指标 */}
+      <div className="bg-white rounded-lg shadow-md p-5">
+        <h2 className="text-lg font-medium mb-6">{t('dashboard.performance')}</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+          {/* 总收益 */}
+          <div className="space-y-2">
+            <div className="text-sm text-gray-500">总收益</div>
+            <div className="text-2xl font-bold text-gray-900">{performanceData.totalReturn}%</div>
+          </div>
+          
+          {/* 年化收益 */}
+          <div className="space-y-2">
+            <div className="text-sm text-gray-500">年化收益</div>
+            <div className="text-2xl font-bold text-gray-900">{performanceData.annualizedReturn}%</div>
+          </div>
+          
+          {/* 波动率 */}
+          <div className="space-y-2">
+            <div className="text-sm text-gray-500">波动率</div>
+            <div className="text-2xl font-bold text-gray-900">{performanceData.volatility}%</div>
+          </div>
+          
+          {/* 夏普比率 */}
+          <div className="space-y-2">
+            <div className="text-sm text-gray-500">夏普比率</div>
+            <div className="text-2xl font-bold text-gray-900">{performanceData.sharpeRatio}</div>
+          </div>
+          
+          {/* 最大回撤 */}
+          <div className="space-y-2">
+            <div className="text-sm text-gray-500">最大回撤</div>
+            <div className="text-2xl font-bold text-red-600">{performanceData.maxDrawdown}%</div>
+          </div>
+          
+          {/* 胜率 */}
+          <div className="space-y-2">
+            <div className="text-sm text-gray-500">胜率</div>
+            <div className="text-2xl font-bold text-gray-900">{performanceData.winRate}%</div>
+          </div>
+        </div>
+      </div>
+      
+      {/* 绩效图表 */}
+      <div className="bg-white rounded-lg shadow-md p-5">
+        <h2 className="text-lg font-medium mb-6">累计收益趋势</h2>
+        <div className="h-80 border border-gray-200 rounded-lg bg-gray-50 flex items-center justify-center">
+          <div className="text-center text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+            <p className="mt-4">图表：累计收益曲线</p>
+          </div>
+        </div>
+      </div>
+      
+      {/* 月度收益 */}
+      <div className="bg-white rounded-lg shadow-md p-5">
+        <h2 className="text-lg font-medium mb-6">月度收益(%)</h2>
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+          {monthlyReturns.map((item, index) => (
+            <div key={index} className="text-center">
+              <div className="text-sm text-gray-500 mb-2">{item.month}</div>
+              <div className={`text-lg font-medium ${item.return >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {item.return > 0 ? '+' : ''}{item.return}%
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="card">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Performance vs Benchmark</h3>
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={performanceData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="date"
-                tickFormatter={(date) => format(new Date(date), 'MMM d')}
-              />
-              <YAxis />
-              <Tooltip
-                labelFormatter={(date) => format(new Date(date), 'MMM d, yyyy')}
-                formatter={(value) => [`${value}%`, '']}
-              />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="return"
-                stroke="#2563eb"
-                name="Portfolio Return"
-              />
-              <Line
-                type="monotone"
-                dataKey="benchmark"
-                stroke="#9ca3af"
-                name="Benchmark"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          ))}
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default PerformanceMetrics 
+export default PerformanceMetrics; 
