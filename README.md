@@ -12,26 +12,39 @@
 
 ```
 premia-lab-dashboard/
-├── frontend/               # 前端代码 (React + TypeScript)
-│   ├── src/                # 源代码
-│   │   ├── components/     # UI组件
-│   │   ├── services/       # API服务
-│   │   ├── App.tsx         # 主应用组件
-│   │   └── main.tsx        # 入口文件
-│   ├── public/             # 静态资源
-│   ├── index.html          # HTML模板
-│   └── package.json        # 前端依赖
+├── frontend/                # 前端代码 (React + TypeScript)
+│   ├── src/                 # 源代码
+│   │   ├── features/        # 按功能模块组织的代码
+│   │   │   ├── chat/        # 聊天相关功能
+│   │   │   ├── dashboard/   # 仪表板相关功能
+│   │   │   └── portfolio/   # 投资组合相关功能
+│   │   │
+│   │   ├── shared/          # 共享模块
+│   │   │   ├── components/  # 共享UI组件
+│   │   │   ├── hooks/       # 自定义钩子
+│   │   │   ├── i18n/        # 国际化
+│   │   │   ├── layouts/     # 布局组件
+│   │   │   ├── services/    # API服务
+│   │   │   └── utils/       # 工具函数
+│   │   │
+│   │   ├── styles/          # 全局样式
+│   │   ├── App.tsx          # 主应用组件
+│   │   └── main.tsx         # 入口文件
+│   │
+│   ├── public/              # 静态资源
+│   ├── index.html           # HTML模板
+│   └── package.json         # 前端依赖
 │
-├── backend/                # 后端代码 (Python + FastAPI)
-│   ├── app/                # 应用代码
-│   │   ├── api/            # API路由
-│   │   ├── models/         # 数据模型
-│   │   ├── services/       # 业务逻辑
-│   │   └── main.py         # 入口文件
-│   ├── requirements.txt    # Python依赖
-│   └── README.md           # 后端说明
+├── backend/                 # 后端代码 (Python + FastAPI)
+│   ├── app/                 # 应用代码
+│   │   ├── api/             # API路由
+│   │   ├── models/          # 数据模型
+│   │   ├── services/        # 业务逻辑
+│   │   └── main.py          # 入口文件
+│   ├── requirements.txt     # Python依赖
+│   └── README.md            # 后端说明
 │
-└── README.md               # 项目说明
+└── README.md                # 项目说明
 ```
 
 ### 快速开始
@@ -60,11 +73,11 @@ uvicorn app.main:app --reload
 
 ### 前端 API 说明
 
-前端通过 `src/services` 目录下的服务模块与后端通信。主要API包括：
+前端通过 `src/shared/services` 目录下的服务模块与后端通信。主要API包括：
 
 #### 投资组合管理 API
 
-`frontend/src/services/portfolioService.ts` 提供以下功能：
+`frontend/src/shared/services/portfolioService.ts` 提供以下功能：
 
 ```typescript
 // 提交新的投资组合
@@ -72,6 +85,12 @@ submitPortfolio(portfolio: Portfolio): Promise<any>
 
 // 获取所有投资组合
 getPortfolios(): Promise<Portfolio[]>
+
+// 获取投资组合资产配置
+getPortfolioAllocation(portfolioId: string): Promise<AllocationData>
+
+// 获取投资组合对标比较数据
+getPortfolioComparison(portfolioId: string): Promise<ComparisonData>
 ```
 
 投资组合的数据结构：
@@ -97,6 +116,8 @@ interface Ticker {
 - `GET /api/portfolios` - 获取所有投资组合
 - `GET /api/portfolios/{id}` - 获取特定ID的投资组合
 - `POST /api/portfolios` - 创建新投资组合
+- `GET /api/portfolios/{id}/allocation` - 获取投资组合资产配置
+- `GET /api/portfolios/{id}/comparison` - 获取投资组合对标比较数据
 - `GET /api/health` - 健康检查
 
 #### 后端依赖
@@ -119,6 +140,8 @@ httpx==0.24.0
 - 投资组合创建与管理
 - 绩效分析与可视化
 - 风险评估
+- 资产配置分析
+- 对标比较
 - 因子暴露分析
 - 历史趋势查看
 - 分析助手聊天功能
@@ -133,26 +156,39 @@ Portfolio analysis dashboard with data visualization and portfolio management fe
 
 ```
 premia-lab-dashboard/
-├── frontend/               # Frontend code (React + TypeScript)
-│   ├── src/                # Source code
-│   │   ├── components/     # UI components
-│   │   ├── services/       # API services
-│   │   ├── App.tsx         # Main application component
-│   │   └── main.tsx        # Entry point
-│   ├── public/             # Static assets
-│   ├── index.html          # HTML template
-│   └── package.json        # Frontend dependencies
+├── frontend/                # Frontend code (React + TypeScript)
+│   ├── src/                 # Source code
+│   │   ├── features/        # Feature-based code organization
+│   │   │   ├── chat/        # Chat related features
+│   │   │   ├── dashboard/   # Dashboard related features
+│   │   │   └── portfolio/   # Portfolio related features
+│   │   │
+│   │   ├── shared/          # Shared modules
+│   │   │   ├── components/  # Shared UI components
+│   │   │   ├── hooks/       # Custom hooks
+│   │   │   ├── i18n/        # Internationalization
+│   │   │   ├── layouts/     # Layout components
+│   │   │   ├── services/    # API services
+│   │   │   └── utils/       # Utility functions
+│   │   │
+│   │   ├── styles/          # Global styles
+│   │   ├── App.tsx          # Main application component
+│   │   └── main.tsx         # Entry point
+│   │
+│   ├── public/              # Static assets
+│   ├── index.html           # HTML template
+│   └── package.json         # Frontend dependencies
 │
-├── backend/                # Backend code (Python + FastAPI)
-│   ├── app/                # Application code
-│   │   ├── api/            # API routes
-│   │   ├── models/         # Data models
-│   │   ├── services/       # Business logic
-│   │   └── main.py         # Entry point
-│   ├── requirements.txt    # Python dependencies
-│   └── README.md           # Backend documentation
+├── backend/                 # Backend code (Python + FastAPI)
+│   ├── app/                 # Application code
+│   │   ├── api/             # API routes
+│   │   ├── models/          # Data models
+│   │   ├── services/        # Business logic
+│   │   └── main.py          # Entry point
+│   ├── requirements.txt     # Python dependencies
+│   └── README.md            # Backend documentation
 │
-└── README.md               # Project documentation
+└── README.md                # Project documentation
 ```
 
 ### Quick Start
@@ -181,11 +217,11 @@ The backend will run at http://localhost:8000.
 
 ### Frontend API Documentation
 
-The frontend communicates with the backend through service modules in the `src/services` directory. Main APIs include:
+The frontend communicates with the backend through service modules in the `src/shared/services` directory. Main APIs include:
 
 #### Portfolio Management API
 
-`frontend/src/services/portfolioService.ts` provides the following functions:
+`frontend/src/shared/services/portfolioService.ts` provides the following functions:
 
 ```typescript
 // Submit a new portfolio
@@ -193,6 +229,12 @@ submitPortfolio(portfolio: Portfolio): Promise<any>
 
 // Get all portfolios
 getPortfolios(): Promise<Portfolio[]>
+
+// Get portfolio asset allocation
+getPortfolioAllocation(portfolioId: string): Promise<AllocationData>
+
+// Get portfolio benchmark comparison data
+getPortfolioComparison(portfolioId: string): Promise<ComparisonData>
 ```
 
 Portfolio data structure:
@@ -218,6 +260,8 @@ The backend provides RESTful APIs developed with the FastAPI framework.
 - `GET /api/portfolios` - Get all portfolios
 - `GET /api/portfolios/{id}` - Get a specific portfolio by ID
 - `POST /api/portfolios` - Create a new portfolio
+- `GET /api/portfolios/{id}/allocation` - Get portfolio asset allocation
+- `GET /api/portfolios/{id}/comparison` - Get portfolio benchmark comparison
 - `GET /api/health` - Health check
 
 #### Backend Dependencies
@@ -240,6 +284,8 @@ httpx==0.24.0
 - Portfolio creation and management
 - Performance analysis and visualization
 - Risk assessment
+- Asset allocation analysis
+- Benchmark comparison
 - Factor exposure analysis
 - Historical trends viewing
-- Analysis assistant chat functionality 
+- Analysis assistant chat functionality

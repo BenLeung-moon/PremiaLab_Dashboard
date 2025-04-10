@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { submitPortfolio, getAvailableStocksWithNames, stockNameMapping } from '../services/portfolioService';
-import { useLanguage } from '../i18n/LanguageContext';
-import LanguageSwitcher from './LanguageSwitcher';
-import Dashboard from './Dashboard';
+import { submitPortfolio, getAvailableStocksWithNames, stockNameMapping } from '../../shared/services/portfolioService';
+import { useLanguage } from '../../shared/i18n/LanguageContext';
+import LanguageSwitcher from '../../shared/components/LanguageSwitcher';
+import Dashboard from '../dashboard/Dashboard';
 
 // 添加测试模式的模拟响应
 const TEST_MODE = true; // 开启测试模式

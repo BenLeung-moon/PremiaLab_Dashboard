@@ -1,10 +1,9 @@
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import Dashboard from './components/Dashboard'
-import Sidebar from './components/Sidebar'
-import Header from './components/Header'
-import ChatHomePage from './components/ChatHomePage'
-import { LanguageProvider } from './i18n/LanguageContext'
+import { Dashboard } from './features/dashboard'
+import { Sidebar, Header } from './shared/layouts'
+import { ChatHomePage } from './features/chat'
+import { LanguageProvider } from './shared/i18n/LanguageContext'
 
 const queryClient = new QueryClient()
 

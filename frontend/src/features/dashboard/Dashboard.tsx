@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
-import PerformanceMetrics from './dashboard/PerformanceMetrics'
-import FactorExposure from './dashboard/FactorExposure'
-import RiskMetrics from './dashboard/RiskMetrics'
-import HistoricalTrends from './dashboard/HistoricalTrends'
-import AssetAllocation from './dashboard/AssetAllocation'
-import Comparison from './dashboard/Comparison'
-import ChatBar from './Chat/ChatBar'
-import PortfolioInput from './PortfolioInput'
+import PerformanceMetrics from './PerformanceMetrics'
+import FactorExposure from './FactorExposure'
+import RiskMetrics from './RiskMetrics'
+import HistoricalTrends from './HistoricalTrends'
+import AssetAllocation from './AssetAllocation'
+import Comparison from './Comparison'
+import ChatBar from '../chat/ChatBar'
+import PortfolioInput from '../portfolio/PortfolioInput'
 
 const Dashboard = ({ portfolioId = '' }) => {
   const [activeTab, setActiveTab] = useState('portfolio-input')

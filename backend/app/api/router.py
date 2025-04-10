@@ -1,8 +1,12 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
 from ..models.portfolio import Portfolio, PortfolioInDB
+from .portfolio import router as portfolio_router
 
 router = APIRouter()
+
+# 包含portfolio路由
+router.include_router(portfolio_router, tags=["portfolio"])
 
 # 模拟数据库 (在实际应用中应该从数据库中获取)
 from datetime import datetime

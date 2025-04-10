@@ -1,0 +1,43 @@
+{
+  "appTitle": "Portfolio Analysis Assistant",
+  "chat": {
+    "welcome": "Welcome to the Portfolio Analysis Assistant. I can help you analyze portfolios, provide market insights, and answer investment-related questions.",
+    "inputPlaceholder": "Enter your investment-related question...",
+    "examplesTitle": "Examples you can ask:",
+    "examples": {
+      "tech": "Analyze the performance of a tech stock portfolio",
+      "createPortfolio": "Help me create a portfolio: 40% AAPL, 30% MSFT, 20% GOOGL, 10% AMZN",
+      "techAllocation": "How should I allocate among US large-cap tech stocks?",
+      "lowRisk": "Recommend a low-risk portfolio"
+    },
+    "sendButton": "Send",
+    "disclaimer": "The investment assistant can provide analysis and suggestions, but does not constitute investment advice. Please consult a professional for investment decisions.",
+    "loading": "Thinking...",
+    "apiKeyRequired": "Please set your Perplexity API key first. Click the settings icon in the top right corner to set it up.",
+    "apiCallFailed": "API call failed. Please check your API key is correct, or try again later.",
+    "backendError": "Failed to send to backend. Please check if the API connection is working properly, or try again later.",
+    "portfolioSent": "Portfolio successfully sent to the backend.",
+    "responseId": "Response ID",
+    "createdAt": "Created at"
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "sendToDashboard": "Send to Dashboard"
+  },
+  "settings": {
+    "title": "Perplexity API Settings",
+    "description": "Enter your Perplexity API key to enable the AI assistant feature.",
+    "apiLinkText": "Perplexity API Settings",
+    "placeholder": "pplx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "navigation": {
+    "toDashboard": "Switch to Dashboard",
+    "toChat": "Switch to Chat Mode"
+  },
+  "language": {
+    "switchTo": "中文",
+    "current": "English"
+  }
+} 
