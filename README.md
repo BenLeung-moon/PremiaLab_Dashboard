@@ -47,13 +47,40 @@ premialab-portfolio-ai/
 │   │   └── main.py          # Entry point
 │   └── requirements.txt     # Python dependencies
 │
-└── README.md                # Project documentation
+├── README.md                # Project documentation
+├── start.sh                 # Unix/Linux/macOS startup script
+└── start.bat                # Windows startup script
 ```
 
 ### Quick Start
 
-#### Frontend
+#### One-click Startup
 
+We provide convenient scripts to start both frontend and backend services with a single command:
+
+**For Windows:**
+```
+start.bat
+```
+
+**For Unix/Linux/macOS:**
+```
+chmod +x start.sh
+./start.sh
+```
+
+These scripts will:
+1. Check for required software (Node.js and Python)
+2. Create necessary directory structures if they don't exist
+3. Install dependencies if needed
+4. Set up environment files if they don't exist
+5. Start both frontend and backend services
+
+#### Manual Startup
+
+If you prefer to start services manually:
+
+**Frontend:**
 ```bash
 cd frontend
 npm install
@@ -62,8 +89,7 @@ npm run dev
 
 The frontend will run at http://localhost:5173.
 
-#### Backend
-
+**Backend:**
 ```bash
 cd backend
 python -m venv venv
@@ -134,13 +160,40 @@ premialab-portfolio-ai/
 │   │   └── main.py          # 入口文件
 │   └── requirements.txt     # Python依赖
 │
-└── README.md                # 项目说明
+├── README.md                # 项目说明
+├── start.sh                 # Unix/Linux/macOS启动脚本 
+└── start.bat                # Windows启动脚本
 ```
 
 ### 快速开始
 
-#### 前端
+#### 一键启动
 
+我们提供了方便的脚本，可以用一个命令同时启动前端和后端服务：
+
+**Windows系统:**
+```
+start.bat
+```
+
+**Unix/Linux/macOS系统:**
+```
+chmod +x start.sh
+./start.sh
+```
+
+这些脚本将：
+1. 检查必需的软件（Node.js和Python）
+2. 如果不存在则创建必要的目录结构
+3. 如果需要则安装依赖
+4. 如果不存在则设置环境文件
+5. 启动前端和后端服务
+
+#### 手动启动
+
+如果您更喜欢手动启动服务：
+
+**前端:**
 ```bash
 cd frontend
 npm install
@@ -149,8 +202,7 @@ npm run dev
 
 前端将在 http://localhost:5173 运行。
 
-#### 后端
-
+**后端:**
 ```bash
 cd backend
 python -m venv venv
