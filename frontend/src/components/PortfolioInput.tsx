@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { submitPortfolio } from '../services/portfolioService';
 
 interface Ticker {

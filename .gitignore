@@ -8,6 +8,9 @@ dist/
 build/
 frontend/dist/
 
+# CSS generated files
+frontend/src/tailwind-output.css
+
 # Logs
 logs
 *.log

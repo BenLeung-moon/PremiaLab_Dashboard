@@ -1,5 +1,3 @@
-import React from 'react';
-
 const RiskMetrics = () => {
   const riskMetrics = [
     { name: '波动率', value: '8.5%', benchmark: '10.2%', status: 'good' },

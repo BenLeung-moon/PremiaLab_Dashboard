@@ -1,5 +1,3 @@
-import React from 'react';
-
 const FactorExposure = () => {
   const factors = [
     { name: '动量因子', exposure: 0.68, benchmark: 0.45 },

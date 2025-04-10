@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLanguage, Language } from '../i18n/LanguageContext';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const LanguageSwitcher: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();

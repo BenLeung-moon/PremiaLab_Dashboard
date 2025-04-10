@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_URL = '/api/portfolios';
+const TEST_MODE = true; // 与ChatHomePage保持一致
 
 interface Ticker {
   symbol: string;
@@ -12,18 +13,115 @@ interface Portfolio {
   tickers: Ticker[];
 }
 
+interface PortfolioResponse {
+  id: string;
+  created_at: string;
+  portfolio: Portfolio;
+}
+
+// 股票代码与公司名称对应表
+export const stockNameMapping: { [key: string]: string } = {
+  "AAPL": "Apple Inc.",
+  "MSFT": "Microsoft Corporation",
+  "AMZN": "Amazon.com Inc.",
+  "GOOGL": "Alphabet Inc. (Google) Class A",
+  "GOOG": "Alphabet Inc. (Google) Class C",
+  "META": "Meta Platforms Inc.",
+  "TSLA": "Tesla Inc.",
+  "NVDA": "NVIDIA Corporation",
+  "BRK-B": "Berkshire Hathaway Inc. Class B",
+  "JPM": "JPMorgan Chase & Co.",
+  "JNJ": "Johnson & Johnson",
+  "V": "Visa Inc.",
+  "PG": "Procter & Gamble Co.",
+  "UNH": "UnitedHealth Group Inc.",
+  "HD": "Home Depot Inc.",
+  "MA": "Mastercard Inc.",
+  "BAC": "Bank of America Corp.",
+  "DIS": "Walt Disney Co.",
+  "ADBE": "Adobe Inc.",
+  "CRM": "Salesforce Inc.",
+  "KO": "Coca-Cola Co.",
+  "NFLX": "Netflix Inc.",
+  "PFE": "Pfizer Inc.",
+  "CSCO": "Cisco Systems Inc.",
+  "AVGO": "Broadcom Inc.",
+  "TMO": "Thermo Fisher Scientific Inc.",
+  "ABT": "Abbott Laboratories",
+  "PEP": "PepsiCo Inc.",
+  "COST": "Costco Wholesale Corp.",
+  "CMCSA": "Comcast Corp.",
+  "ACN": "Accenture plc",
+  "WMT": "Walmart Inc.",
+  "MRK": "Merck & Co. Inc.",
+  "VZ": "Verizon Communications Inc.",
+  "NKE": "Nike Inc.",
+  "INTC": "Intel Corporation",
+  "AMD": "Advanced Micro Devices Inc.",
+  "IBM": "International Business Machines Corp.",
+  "QCOM": "Qualcomm Inc.",
+  "T": "AT&T Inc.",
+  "PYPL": "PayPal Holdings Inc.",
+  "SBUX": "Starbucks Corp.",
+  "MCD": "McDonald's Corp.",
+  "TXN": "Texas Instruments Inc.",
+  "BA": "Boeing Co.",
+  "C": "Citigroup Inc.",
+  "GS": "Goldman Sachs Group Inc.",
+  "MMM": "3M Co.",
+  "CVX": "Chevron Corp.",
+  "XOM": "Exxon Mobil Corp.",
+  "CAT": "Caterpillar Inc.",
+  "AMAT": "Applied Materials Inc.",
+  "INTU": "Intuit Inc.",
+  "GE": "General Electric Co.",
+  "ORCL": "Oracle Corp.",
+  "F": "Ford Motor Co.",
+  "GM": "General Motors Co.",
+  "AMGN": "Amgen Inc.",
+  "WFC": "Wells Fargo & Co.",
+  "AXP": "American Express Co.",
+  "BKNG": "Booking Holdings Inc.",
+  "LMT": "Lockheed Martin Corp.",
+  "RTX": "Raytheon Technologies Corp.",
+  "UNP": "Union Pacific Corp.",
+  "UPS": "United Parcel Service Inc.",
+  "PM": "Philip Morris International Inc.",
+  "LOW": "Lowe's Companies Inc.",
+  "DHR": "Danaher Corp.",
+  "LIN": "Linde plc",
+  "NEE": "NextEra Energy Inc.",
+  "AMT": "American Tower Corp.",
+  "ISRG": "Intuitive Surgical Inc.",
+  "SCHW": "Charles Schwab Corp.",
+  "MS": "Morgan Stanley",
+  "HON": "Honeywell International Inc.",
+  "MDT": "Medtronic plc",
+  "BMY": "Bristol-Myers Squibb Co."
+};
+
 /**
  * 提交投资组合到后端API
  * @param portfolio 投资组合数据
  * @returns Promise，包含API响应
  */
-export const submitPortfolio = async (portfolio: Portfolio): Promise<any> => {
+export const submitPortfolio = async (portfolio: Portfolio): Promise<PortfolioResponse> => {
   try {
+    if (TEST_MODE) {
+      // 在测试模式下模拟成功响应
+      await new Promise(resolve => setTimeout(resolve, 500)); // 模拟网络延迟
+      return {
+        id: 'test-' + Date.now(),
+        created_at: new Date().toISOString(),
+        portfolio: portfolio
+      };
+    }
+
     const response = await axios.post(API_URL, portfolio);
     return response.data;
   } catch (error) {
     console.error('API调用失败:', error);
-    throw new Error('无法提交投资组合');
+    throw new Error('无法提交投资组合。请检查API连接是否正常，或稍后重试。');
   }
 };
 
@@ -33,10 +131,102 @@ export const submitPortfolio = async (portfolio: Portfolio): Promise<any> => {
  */
 export const getPortfolios = async (): Promise<Portfolio[]> => {
   try {
+    if (TEST_MODE) {
+      // 在测试模式下返回模拟数据
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return [
+        {
+          name: "测试投资组合 1",
+          tickers: [
+            { symbol: "AAPL", weight: 0.4 },
+            { symbol: "MSFT", weight: 0.3 },
+            { symbol: "GOOGL", weight: 0.2 },
+            { symbol: "AMZN", weight: 0.1 }
+          ]
+        }
+      ];
+    }
+
     const response = await axios.get(API_URL);
     return response.data;
   } catch (error) {
     console.error('获取投资组合失败:', error);
-    throw new Error('无法获取投资组合列表');
+    throw new Error('无法获取投资组合列表。请检查API连接是否正常，或稍后重试。');
+  }
+};
+
+// 获取可用的股票代码列表
+export const getAvailableStocks = async (): Promise<string[]> => {
+  try {
+    // 在实际环境中应该调用后端API获取列表
+    // 在测试模式下返回静态列表
+    return [
+      "A", "AAPL", "ABBV", "ABNB", "ABT", "ACGL", "ACN", "ADBE", "ADI", "ADM", 
+      "ADP", "ADSK", "AEE", "AEP", "AES", "AFL", "AIG", "AIZ", "AJG", "AKAM", 
+      "ALB", "ALGN", "ALL", "ALLE", "AMAT", "AMCR", "AMD", "AME", "AMGN", "AMP",
+      "AMT", "AMZN", "ANET", "ANSS", "AON", "AOS", "APD", "APH", "APTV", "ARE",
+      "ATO", "ATVI", "AVB", "AVGO", "AVY", "AWK", "AXP", "AZO", "BA", "BAC", 
+      "BAX", "BBWI", "BBY", "BDX", "BEN", "BF-B", "BIIB", "BIO", "BK", "BKNG",
+      "BKR", "BLK", "BMY", "BR", "BRK-B", "BRO", "BSX", "BWA", "BXP", "C", 
+      "CAG", "CAH", "CARR", "CAT", "CB", "CBOE", "CBRE", "CCI", "CCL", "CDNS",
+      "CDW", "CE", "CEG", "CF", "CFG", "CHD", "CHRW", "CHTR", "CI", "CINF", 
+      "CL", "CLX", "CMA", "CMCSA", "CME", "CMG", "CMI", "CMS", "CNC", "COF",
+      "COIN", "COO", "COP", "COST", "CPB", "CPRT", "CPT", "CRM", "CSCO", "CSX",
+      "CTAS", "CTLT", "CTRA", "CTSH", "CTVA", "CVS", "CVX", "CZR", "D", "DAL",
+      "DD", "DE", "DFS", "DG", "DGX", "DHI", "DHR", "DIS", "DLR", "DLTR",
+      "DOC", "DOV", "DOW", "DPZ", "DRI", "DTE", "DUK", "DVA", "DVN", "DXCM",
+      "EA", "EBAY", "ECL", "ED", "EFX", "EIX", "EL", "ELV", "EMN", "EMR",
+      "ENPH", "EOG", "EQIX", "EQR", "ES", "ESS", "ETN", "ETR", "ETSY", "EVRG",
+      "EW", "EXC", "EXPD", "EXPE", "EXR", "F", "FANG", "FAST", "FB", "FBHS",
+      "FCX", "FDS", "FDX", "FE", "FFIV", "FIS", "FISV", "FITB", "FLT", "FMC",
+      "FOX", "FOXA", "FRC", "FRT", "FTNT", "FTV", "GD", "GE", "GILD", "GIS",
+      "GL", "GLW", "GM", "GOOG", "GOOGL", "GPC", "GPN", "GRMN", "GS", "GWW",
+      "HAL", "HAS", "HBAN", "HCA", "HD", "HES", "HIG", "HII", "HLT", "HOLX",
+      "HON", "HPE", "HPQ", "HRL", "HSIC", "HST", "HSY", "HUM", "IBM", "ICE",
+      "IDXX", "IEX", "IFF", "ILMN", "INCY", "INTC", "INTU", "IP", "IPG", "IQV",
+      "IR", "IRM", "ISRG", "IT", "ITW", "IVZ", "J", "JBHT", "JCI", "JKHY",
+      "JNJ", "JNPR", "JPM", "K", "KEY", "KEYS", "KHC", "KIM", "KLAC", "KMB",
+      "KMI", "KMX", "KO", "KR", "L", "LDOS", "LEN", "LH", "LHX", "LIN",
+      "LKQ", "LLY", "LMT", "LNC", "LNT", "LOW", "LRCX", "LUMN", "LUV", "LVS",
+      "LW", "LYB", "LYV", "MA", "MAA", "MAR", "MAS", "MCD", "MCHP", "MCK",
+      "MCO", "MDLZ", "MDT", "MET", "META", "MGM", "MHK", "MKC", "MKTX", "MLM",
+      "MMC", "MMM", "MNST", "MO", "MOH", "MOS", "MPC", "MPWR", "MRK", "MRO",
+      "MS", "MSCI", "MSFT", "MSI", "MTB", "MTCH", "MTD", "MU", "NCLH", "NDAQ",
+      "NDSN", "NEE", "NEM", "NFLX", "NI", "NKE", "NOC", "NOV", "NOW", "NRG",
+      "NSC", "NTAP", "NTRS", "NUE", "NVDA", "NVR", "NWL", "NWS", "NWSA", "O",
+      "ODFL", "OGN", "OKE", "OMC", "ON", "ORCL", "ORLY", "OTIS", "OXY", "PARA",
+      "PAYC", "PAYX", "PCAR", "PCG", "PEAK", "PEG", "PENN", "PEP", "PFE", "PFG",
+      "PG", "PGR", "PH", "PHM", "PKG", "PKI", "PLD", "PM", "PNC", "PNR",
+      "PNW", "POOL", "PPG", "PPL", "PRU", "PSA", "PSX", "PTC", "PVH", "PWR",
+      "PXD", "PYPL", "QCOM", "QRVO", "RCL", "RE", "REG", "REGN", "RF", "RHI",
+      "RJF", "RL", "RMD", "ROK", "ROL", "ROP", "ROST", "RSG", "RTX", "SBAC",
+      "SBUX", "SCHW", "SEE", "SHW", "SIVB", "SJM", "SLB", "SNA", "SNPS", "SO",
+      "SPG", "SPGI", "SRE", "STE", "STT", "STX", "STZ", "SWK", "SWKS", "SYF",
+      "SYK", "SYY", "T", "TAP", "TDG", "TDY", "TECH", "TEL", "TER", "TFC",
+      "TFX", "TGT", "TJX", "TMO", "TMUS", "TPR", "TRGP", "TRMB", "TROW", "TRV",
+      "TSCO", "TSLA", "TSN", "TT", "TTWO", "TXN", "TXT", "TYL", "UA", "UAA",
+      "UAL", "UDR", "UHS", "ULTA", "UNH", "UNP", "UPS", "URI", "USB", "V",
+      "VFC", "VICI", "VLO", "VMC", "VNO", "VRSK", "VRSN", "VRTX", "VTR", "VTRS",
+      "VZ", "WAB", "WAT", "WBA", "WBD", "WDC", "WEC", "WELL", "WFC", "WHR",
+      "WM", "WMB", "WMT", "WRB", "WRK", "WST", "WTW", "WY", "WYNN", "XEL",
+      "XOM", "XRAY", "XYL", "YUM", "ZBH", "ZBRA", "ZION", "ZTS"
+    ];
+  } catch (error) {
+    console.error('获取股票代码列表失败:', error);
+    throw error;
+  }
+};
+
+// 获取可用的股票代码和公司名称列表
+export const getAvailableStocksWithNames = async (): Promise<{symbol: string, name: string}[]> => {
+  try {
+    const stocks = await getAvailableStocks();
+    return stocks.map(symbol => ({
+      symbol,
+      name: stockNameMapping[symbol] || ''
+    }));
+  } catch (error) {
+    console.error('获取股票代码和名称列表失败:', error);
+    throw error;
   }
 }; 

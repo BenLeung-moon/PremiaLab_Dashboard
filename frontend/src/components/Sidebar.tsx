@@ -1,5 +1,3 @@
-import React from 'react';
-
 const Sidebar = () => {
   const menuItems = [
     { id: 'dashboard', label: '仪表盘', icon: '📊' },
