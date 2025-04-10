@@ -78,6 +78,9 @@ const ChatHomePage = () => {
     default: [{ role: 'system', content: t('chat.welcome') }]
   });
 
+  // 修改状态：为每个对话存储对应的投资组合ID
+  const [conversationPortfolios, setConversationPortfolios] = useState<{[key: string]: string | null}>({});
+
   // 当语言改变时更新欢迎消息
   useEffect(() => {
     setConversationMessages(prev => {
@@ -349,56 +352,65 @@ const ChatHomePage = () => {
     setInput(question);
   };
 
-  // 发送投资组合到后端并显示仪表板
+  // 修改sendPortfolioToBackend函数
   const sendPortfolioToBackend = async () => {
     if (!extractedPortfolio) return;
     
     try {
+      setIsLoading(true);
+      
+      // 使用服务发送投资组合
       const response = await submitPortfolio(extractedPortfolio);
+      const portfolioId = response.id || 'test-123';
       
-      // 保存投资组合信息
-      setSavedPortfolios(prev => [
-        {
-          id: response.id,
-          name: extractedPortfolio.name,
-          created_at: response.created_at
-        },
-        ...prev
-      ]);
-      
-      // 记录最后发送的投资组合ID
-      setLastPortfolioId(response.id);
-      
-      // 成功消息
-      const successMessage = { role: 'system' as const, content: `投资组合已成功发送到仪表板！\n组合ID: ${response.id}\n创建时间: ${new Date(response.created_at).toLocaleString()}` };
+      // 添加一个系统消息表示投资组合已发送到仪表板
+      const systemMessage = { 
+        role: 'system' as const, 
+        content: t('portfolio.sentToDashboard') 
+      };
       
       // 更新当前显示的消息
-      setMessages(prev => [...prev, successMessage]);
+      setMessages(prev => [...prev, systemMessage]);
       
       // 同时更新存储的对话消息
       setConversationMessages(prev => ({
         ...prev,
-        [activeConversationId]: [...(prev[activeConversationId] || []), successMessage]
+        [activeConversationId]: [...(prev[activeConversationId] || []), systemMessage]
       }));
-
-      // 激活仪表板视图
+      
+      // 存储当前对话对应的投资组合ID
+      setConversationPortfolios(prev => ({
+        ...prev,
+        [activeConversationId]: portfolioId
+      }));
+      
+      // 设置最后使用的投资组合ID
+      setLastPortfolioId(portfolioId);
+      
+      // 激活仪表板
       setDashboardActive(true);
       
-      // 清除已提取的投资组合
+      // 保存到最近的投资组合列表
+      setSavedPortfolios(prev => [
+        { id: portfolioId, name: extractedPortfolio.name, created_at: new Date().toISOString() },
+        ...prev.filter(p => p.id !== portfolioId)
+      ]);
+      
       setExtractedPortfolio(null);
     } catch (error) {
-      console.error('发送到后端失败:', error);
-      
-      const errorMessage = { role: 'system' as const, content: `发送失败：${error instanceof Error ? error.message : '未知错误'}\n请稍后重试。` };
-      
-      // 更新当前显示的消息
+      console.error('发送投资组合失败:', error);
+      // 添加错误消息
+      const errorMessage = { 
+        role: 'system' as const, 
+        content: t('portfolio.error')
+      };
       setMessages(prev => [...prev, errorMessage]);
-      
-      // 同时更新存储的对话消息
       setConversationMessages(prev => ({
         ...prev,
         [activeConversationId]: [...(prev[activeConversationId] || []), errorMessage]
       }));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -614,6 +626,10 @@ const ChatHomePage = () => {
     }
   };
 
+  // 修改切换到仪表板的部分
+  // ...在显示仪表板入口按钮的条件中使用当前对话的投资组合ID
+  const currentConversationPortfolioId = conversationPortfolios[activeConversationId] || null;
+
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* 顶部导航栏 */}
@@ -679,7 +695,7 @@ const ChatHomePage = () => {
           {dashboardActive ? (
             /* 仪表板视图 */
             <div className="flex-1 bg-gray-50 overflow-auto">
-              <Dashboard portfolioId={lastPortfolioId || ''} />
+              <Dashboard portfolioId={currentConversationPortfolioId || ''} />
               
               {/* 返回聊天按钮 */}
               <div className="container mx-auto max-w-4xl px-6 pb-6">
@@ -699,15 +715,59 @@ const ChatHomePage = () => {
             <div className="flex-1 flex flex-col">
               <div className="flex-1 overflow-auto">
                 <div className={`container mx-auto ${isManualInputActive ? 'max-w-3xl' : 'max-w-2xl'} px-4 py-6`}>
-                  {/* 欢迎语 */}
-                  <div className="text-center mb-10">
-                    <h1 className="text-3xl font-bold mb-2">
-                      我是 PremiaLab AI, 很高兴见到你!
-                    </h1>
-                    <p className="text-gray-600">
-                      我可以帮你分析投资组合、提供市场洞察，并回答投资相关问题。
-                    </p>
-                  </div>
+                  {/* 只在新对话（消息数为1，即只有系统欢迎消息）时显示欢迎语 */}
+                  {messages.length === 1 && (
+                    <div className="text-center mb-4">
+                      <h1 className="text-3xl font-bold mb-2">
+                        我是 PremiaLab AI, 很高兴见到你!
+                      </h1>
+                      <p className="text-gray-600 mb-4">
+                        我可以帮你分析投资组合、提供市场洞察，并回答投资相关问题。
+                      </p>
+                      
+                      {/* 输入框移到这里 - 在欢迎语下方 */}
+                      <div className="mt-2 mb-4">
+                        <form onSubmit={handleSubmit} className="mx-auto max-w-xl">
+                          <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border border-gray-200">
+                            <input
+                              type="text"
+                              value={input}
+                              onChange={(e) => setInput(e.target.value)}
+                              className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-gray-800 placeholder-gray-400"
+                              placeholder="输入您的问题..."
+                              disabled={isLoading}
+                            />
+                            
+                            <button
+                              type="submit"
+                              disabled={!input.trim() || isLoading}
+                              className={`p-2 rounded-md ${
+                                !input.trim() || isLoading ? 'text-gray-400' : 'text-blue-600 hover:bg-blue-50'
+                              }`}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                              </svg>
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                      
+                      {/* 示例问题区 - 更新样式 */}
+                      <div className="text-sm text-gray-500 mb-2">你可以试着问:</div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-w-xl mx-auto">
+                        {exampleQuestions.map((question, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleExampleClick(question)}
+                            className="text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors border-b border-gray-100 rounded"
+                          >
+                            {question}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   
                   {/* 聊天消息 */}
                   {messages.slice(1).map((message, index) => (
@@ -747,247 +807,228 @@ const ChatHomePage = () => {
                 </div>
               </div>
               
-              {/* 输入区域 */}
-              <div className="border-t border-gray-200 bg-white p-4">
-                <div className={`container mx-auto ${isManualInputActive ? 'max-w-3xl' : 'max-w-2xl'}`}>
-                  {/* 投资组合卡片 */}
-                  {extractedPortfolio && (
-                    <div className="mb-4 rounded-lg p-4 bg-blue-50 border border-blue-200">
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-medium text-blue-800">{extractedPortfolio.name}</h3>
-                        <button
-                          onClick={sendPortfolioToBackend}
-                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
-                        >
-                          {t('portfolio.sendToDashboard')}
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {extractedPortfolio.tickers.map((ticker, idx) => (
-                          <div key={idx} className="flex justify-between bg-white p-2 rounded border border-blue-100">
-                            <div className="flex flex-col">
-                              <span className="font-medium">{ticker.symbol}</span>
-                              {stockNameMapping[ticker.symbol] && (
-                                <span className="text-xs text-gray-500">{stockNameMapping[ticker.symbol]}</span>
-                              )}
-                            </div>
-                            <span>{(ticker.weight * 100).toFixed(4)}%</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* 显示最近投资组合仪表盘入口 */}
-                  {lastPortfolioId && !dashboardActive && (
-                    <div className="mb-4">
-                      <button
-                        onClick={() => setDashboardActive(true)}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-green-50 text-green-600 hover:bg-green-100 border border-green-200"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                          <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
-                          <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
-                        </svg>
-                        打开投资组合仪表盘
-                      </button>
-                    </div>
-                  )}
-                  
-                  {/* 输入框 */}
-                  <form onSubmit={handleSubmit}>
-                    <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border border-gray-200">
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 bg-white rounded-full border border-gray-200 hover:bg-gray-50"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                          </svg>
-                          联网搜索
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleToggleManualInput}
-                          className={`flex items-center gap-1 px-3 py-1.5 text-sm ${
-                            isManualInputActive 
-                              ? 'bg-blue-100 text-blue-700' 
-                              : 'bg-white text-gray-600'
-                          } rounded-full border border-gray-200 hover:bg-gray-50`}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                          手动输入
-                        </button>
-                      </div>
-                      
-                      {!isManualInputActive ? (
-                        <>
-                          <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-gray-800 placeholder-gray-400"
-                            placeholder="给 PremiaLab AI 发送消息"
-                            disabled={isLoading}
-                          />
-                          
+              {/* 输入区域 - 只在已有消息时显示 */}
+              {messages.length > 1 && (
+                <div className="p-4">
+                  <div className={`container mx-auto ${isManualInputActive ? 'max-w-3xl' : 'max-w-2xl'}`}>
+                    {/* 投资组合卡片 */}
+                    {extractedPortfolio && (
+                      <div className="mb-4 rounded-lg p-4 bg-blue-50 border border-blue-200">
+                        <div className="flex justify-between items-center mb-2">
+                          <h3 className="font-medium text-blue-800">{extractedPortfolio.name}</h3>
                           <button
-                            type="submit"
-                            disabled={!input.trim() || isLoading}
-                            className={`p-2 rounded-md ${
-                              !input.trim() || isLoading ? 'text-gray-400' : 'text-blue-600 hover:bg-blue-50'
-                            }`}
+                            onClick={sendPortfolioToBackend}
+                            className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                            </svg>
+                            {t('portfolio.sendToDashboard')}
                           </button>
-                        </>
-                      ) : (
-                        <div className="flex-1 mt-4 w-full">
-                          <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">投资组合名称</label>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {extractedPortfolio.tickers.map((ticker, idx) => (
+                            <div key={idx} className="flex justify-between bg-white p-2 rounded border border-blue-100">
+                              <div className="flex flex-col">
+                                <span className="font-medium">{ticker.symbol}</span>
+                                {stockNameMapping[ticker.symbol] && (
+                                  <span className="text-xs text-gray-500">{stockNameMapping[ticker.symbol]}</span>
+                                )}
+                              </div>
+                              <span>{(ticker.weight * 100).toFixed(4)}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* 显示最近投资组合仪表盘入口，确保使用当前对话的投资组合ID */}
+                    {currentConversationPortfolioId && !dashboardActive && (
+                      <div className="mb-4">
+                        <button
+                          onClick={() => setDashboardActive(true)}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-green-50 text-green-600 hover:bg-green-100 border border-green-200"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                          </svg>
+                          打开投资组合仪表盘
+                        </button>
+                      </div>
+                    )}
+                    
+                    {/* 输入框 */}
+                    <form onSubmit={handleSubmit}>
+                      <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border border-gray-200">
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 bg-white rounded-full border border-gray-200 hover:bg-gray-50"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                            </svg>
+                            联网搜索
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleToggleManualInput}
+                            className={`flex items-center gap-1 px-3 py-1.5 text-sm ${
+                              isManualInputActive 
+                                ? 'bg-blue-100 text-blue-700' 
+                                : 'bg-white text-gray-600'
+                            } rounded-full border border-gray-200 hover:bg-gray-50`}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            手动输入
+                          </button>
+                        </div>
+                        
+                        {!isManualInputActive ? (
+                          <>
                             <input
                               type="text"
-                              value={portfolioName}
-                              onChange={(e) => setPortfolioName(e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                              placeholder="输入投资组合名称"
+                              value={input}
+                              onChange={(e) => setInput(e.target.value)}
+                              className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-gray-800 placeholder-gray-400"
+                              placeholder="给 PremiaLab AI 发送消息..."
+                              disabled={isLoading}
                             />
-                          </div>
-                          
-                          <div className="mb-4">
-                            <div className="flex justify-between items-center mb-2">
-                              <h3 className="text-lg font-medium">股票列表</h3>
-                              <button
-                                type="button"
-                                onClick={addStock}
-                                className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                              >
-                                添加股票
-                              </button>
+                            
+                            <button
+                              type="submit"
+                              disabled={!input.trim() || isLoading}
+                              className={`p-2 rounded-md ${
+                                !input.trim() || isLoading ? 'text-gray-400' : 'text-blue-600 hover:bg-blue-50'
+                              }`}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                              </svg>
+                            </button>
+                          </>
+                        ) : (
+                          <div className="flex-1 mt-4 w-full">
+                            <div className="mb-4">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">投资组合名称</label>
+                              <input
+                                type="text"
+                                value={portfolioName}
+                                onChange={(e) => setPortfolioName(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="输入投资组合名称"
+                              />
                             </div>
                             
-                            <div className="space-y-3">
-                              {manualStocks.map((stock, index) => (
-                                <div key={index} className="flex space-x-3">
-                                  <div className="flex-1 relative">
-                                    <input
-                                      type="text"
-                                      value={stock.symbol}
-                                      onChange={(e) => handleStockSymbolChange(index, e.target.value)}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                      placeholder="股票代码 (例如: AAPL)"
-                                      onFocus={() => setFocusedSymbolIndex(index)}
-                                      onBlur={() => setTimeout(() => setStockSuggestions([]), 200)}
-                                    />
-                                    {stock.symbol && stockNameMapping[stock.symbol.toUpperCase()] && (
-                                      <div className="mt-1 text-xs text-gray-500">
-                                        {stockNameMapping[stock.symbol.toUpperCase()]}
-                                      </div>
-                                    )}
-                                    {stockSuggestions.length > 0 && focusedSymbolIndex === index && (
-                                      <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm">
-                                        {stockSuggestions.map((suggestion, i) => (
-                                          <div
-                                            key={i}
-                                            className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50"
-                                            onClick={() => selectStockSuggestion(index, suggestion)}
-                                          >
-                                            <div className="flex items-center">
-                                              <span className="font-medium">{suggestion.symbol}</span>
-                                              {suggestion.name && (
-                                                <span className="text-gray-500 ml-2 text-sm">
-                                                  {suggestion.name}
-                                                </span>
-                                              )}
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="relative">
+                            <div className="mb-4">
+                              <div className="flex justify-between items-center mb-2">
+                                <h3 className="text-lg font-medium">股票列表</h3>
+                                <button
+                                  type="button"
+                                  onClick={addStock}
+                                  className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                >
+                                  添加股票
+                                </button>
+                              </div>
+                              
+                              <div className="space-y-3">
+                                {manualStocks.map((stock, index) => (
+                                  <div key={index} className="flex space-x-3">
+                                    <div className="flex-1 relative">
                                       <input
-                                        type="number"
-                                        value={stock.weight}
-                                        onChange={(e) => updateStock(index, 'weight', parseFloat(e.target.value) || 0)}
-                                        step="0.0001"
-                                        min="0"
-                                        max="100"
-                                        className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="权重"
+                                        type="text"
+                                        value={stock.symbol}
+                                        onChange={(e) => handleStockSymbolChange(index, e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="股票代码 (例如: AAPL)"
+                                        onFocus={() => setFocusedSymbolIndex(index)}
+                                        onBlur={() => setTimeout(() => setStockSuggestions([]), 200)}
                                       />
-                                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                        <span className="text-gray-500">%</span>
+                                      {stock.symbol && stockNameMapping[stock.symbol.toUpperCase()] && (
+                                        <div className="mt-1 text-xs text-gray-500">
+                                          {stockNameMapping[stock.symbol.toUpperCase()]}
+                                        </div>
+                                      )}
+                                      {stockSuggestions.length > 0 && focusedSymbolIndex === index && (
+                                        <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm">
+                                          {stockSuggestions.map((suggestion, i) => (
+                                            <div
+                                              key={i}
+                                              className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50"
+                                              onClick={() => selectStockSuggestion(index, suggestion)}
+                                            >
+                                              <div className="flex items-center">
+                                                <span className="font-medium">{suggestion.symbol}</span>
+                                                {suggestion.name && (
+                                                  <span className="text-gray-500 ml-2 text-sm">
+                                                    {suggestion.name}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="relative">
+                                        <input
+                                          type="number"
+                                          value={stock.weight}
+                                          onChange={(e) => updateStock(index, 'weight', parseFloat(e.target.value) || 0)}
+                                          step="0.0001"
+                                          min="0"
+                                          max="100"
+                                          className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                          placeholder="权重"
+                                        />
+                                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                          <span className="text-gray-500">%</span>
+                                        </div>
                                       </div>
                                     </div>
+                                    {manualStocks.length > 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => removeStock(index)}
+                                        className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                                      >
+                                        删除
+                                      </button>
+                                    )}
                                   </div>
-                                  {manualStocks.length > 1 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => removeStock(index)}
-                                      className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                                    >
-                                      删除
-                                    </button>
-                                  )}
-                                </div>
-                              ))}
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div className="flex justify-end mt-4">
+                              <button
+                                type="button"
+                                onClick={() => setIsManualInputActive(false)}
+                                className="px-4 py-2 mr-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                              >
+                                取消
+                              </button>
+                              <button
+                                type="button"
+                                onClick={submitManualPortfolio}
+                                className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                              >
+                                提交投资组合
+                              </button>
                             </div>
                           </div>
-                          
-                          <div className="flex justify-end mt-4">
-                            <button
-                              type="button"
-                              onClick={() => setIsManualInputActive(false)}
-                              className="px-4 py-2 mr-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
-                            >
-                              取消
-                            </button>
-                            <button
-                              type="button"
-                              onClick={submitManualPortfolio}
-                              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
-                            >
-                              提交投资组合
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </form>
-
-                  {/* 示例问题区 - 移除搜索、深入研究和更多按钮 */}
-                  {messages.length === 1 && !isLoading && !isManualInputActive && (
-                    <div className="mt-6">
-                      {/* 示例问题列表 */}
-                      <div className="space-y-2 max-w-md mx-auto">
-                        {exampleQuestions.map((question, index) => (
-                          <button
-                            key={index}
-                            onClick={() => handleExampleClick(question)}
-                            className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-2 rounded-md transition-colors"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                            </svg>
-                            <span>{question}</span>
-                          </button>
-                        ))}
+                        )}
                       </div>
-                    </div>
-                  )}
+                    </form>
 
-                  <p className="text-xs text-center text-gray-400 mt-4">
-                    内容由 AI 生成，请仔细甄别
-                  </p>
+                    <p className="text-xs text-center text-gray-400 mt-4">
+                      ChatGPT 也可能会犯错。请检查重要信息。
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>
