@@ -5,11 +5,9 @@ import RiskMetrics from './RiskMetrics'
 import HistoricalTrends from './HistoricalTrends'
 import AssetAllocation from './AssetAllocation'
 import Comparison from './Comparison'
-import ChatBar from '../chat/ChatBar'
-import PortfolioInput from '../portfolio/PortfolioInput'
 
 const Dashboard = ({ portfolioId = '' }) => {
-  const [activeTab, setActiveTab] = useState('portfolio-input')
+  const [activeTab, setActiveTab] = useState('performance')
 
   // 根据URL参数或props设置portfolioId
   useEffect(() => {
@@ -20,14 +18,12 @@ const Dashboard = ({ portfolioId = '' }) => {
   }, [portfolioId]);
 
   const tabs = [
-    { id: 'portfolio-input', label: '创建投资组合' },
     { id: 'performance', label: '历史表现' },
     { id: 'allocation', label: '资产配置' },
     { id: 'comparison', label: '对标比较' },
     { id: 'factors', label: '因子暴露' },
     { id: 'risk', label: '风险指标' },
     { id: 'trends', label: '历史趋势' },
-    { id: 'chat', label: '分析助手' },
   ]
 
   return (
@@ -55,7 +51,6 @@ const Dashboard = ({ portfolioId = '' }) => {
         </nav>
       </div>
 
-      {activeTab === 'portfolio-input' && <PortfolioInput />}
       {activeTab === 'allocation' && <AssetAllocation portfolioId={portfolioId || 'test-123'} />}
       {activeTab === 'comparison' && <Comparison portfolioId={portfolioId || 'test-123'} />}
       
@@ -65,12 +60,6 @@ const Dashboard = ({ portfolioId = '' }) => {
           {activeTab === 'factors' && <FactorExposure />}
           {activeTab === 'risk' && <RiskMetrics />}
           {activeTab === 'trends' && <HistoricalTrends />}
-        </div>
-      )}
-      
-      {activeTab === 'chat' && (
-        <div className="h-[600px]">
-          <ChatBar />
         </div>
       )}
     </div>
