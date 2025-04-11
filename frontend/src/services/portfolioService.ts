@@ -25,6 +25,24 @@ export interface PerformanceData {
   maxDrawdown: number;
   winRate: number;
   monthlyReturns: Array<{month: string, return: number}>;
+  // 添加不同时间段表现数据
+  timeFrames?: {
+    ytd: PerformanceTimeFrame;
+    oneYear: PerformanceTimeFrame;
+    threeYear: PerformanceTimeFrame;
+    fiveYear: PerformanceTimeFrame;
+    tenYear?: PerformanceTimeFrame; // 可选，有些投资组合可能没有10年数据
+  };
+}
+
+// 定义不同时间段的表现数据结构
+export interface PerformanceTimeFrame {
+  return: number;           // 百分比收益率
+  annualized?: number;      // 年化收益率
+  benchmarkReturn: number;  // 基准收益率
+  excessReturn: number;     // 超额收益率
+  volatility?: number;      // 波动率
+  sharpe?: number;          // 夏普比率
 }
 
 export interface AllocationData {
@@ -50,12 +68,29 @@ export interface ComparisonData {
 export interface FactorData {
   name: string;
   exposure: number;
+  rawExposure?: number;
   positive: boolean;
+}
+
+export interface FactorCorrelation {
+  factor1: string;
+  factor2: string;
+  correlation: number;
+}
+
+export interface RiskContribution {
+  name: string;
+  contribution: number;
 }
 
 export interface FactorsData {
   styleFactors: FactorData[];
-  macroFactors: FactorData[];
+  industryFactors: FactorData[];
+  countryFactors: FactorData[];
+  otherFactors: FactorData[];
+  factorCorrelations?: FactorCorrelation[];
+  riskContributions?: RiskContribution[];
+  hasCorrelationData?: boolean;
 }
 
 export interface PortfolioAnalysis {
@@ -218,7 +253,42 @@ export const mockPortfolioAnalysis = (): PortfolioAnalysis => {
         { month: '四月', return: 4.5 },
         { month: '五月', return: -0.7 },
         { month: '六月', return: 2.9 }
-      ]
+      ],
+      // 添加不同时间段表现数据
+      timeFrames: {
+        ytd: { 
+          return: 8.4, 
+          annualized: undefined, 
+          benchmarkReturn: 5.2, 
+          excessReturn: 3.2,
+          volatility: 10.8,
+          sharpe: 1.21
+        },
+        oneYear: { 
+          return: 15.7, 
+          annualized: 15.7, 
+          benchmarkReturn: 12.5, 
+          excessReturn: 3.2,
+          volatility: 12.5,
+          sharpe: 1.42
+        },
+        threeYear: { 
+          return: 42.3, 
+          annualized: 12.5, 
+          benchmarkReturn: 35.6, 
+          excessReturn: 6.7,
+          volatility: 14.2,
+          sharpe: 1.35
+        },
+        fiveYear: { 
+          return: 78.6, 
+          annualized: 12.3, 
+          benchmarkReturn: 65.8, 
+          excessReturn: 12.8,
+          volatility: 15.1,
+          sharpe: 1.28
+        }
+      }
     },
     allocation: {
       sector: [
@@ -258,19 +328,47 @@ export const mockPortfolioAnalysis = (): PortfolioAnalysis => {
     ],
     factors: {
       styleFactors: [
-        { name: '规模', exposure: 0.85, positive: true },
-        { name: '价值', exposure: -0.32, positive: false },
-        { name: '动量', exposure: 1.27, positive: true },
-        { name: '质量', exposure: 0.53, positive: true },
-        { name: '波动性', exposure: -0.21, positive: false }
+        { name: 'size', exposure: 0.85, rawExposure: 0.80, positive: true },
+        { name: 'value', exposure: -0.32, rawExposure: -0.30, positive: false },
+        { name: 'momentum', exposure: 1.27, rawExposure: 1.20, positive: true },
+        { name: 'quality', exposure: 0.53, rawExposure: 0.50, positive: true },
+        { name: 'volatility', exposure: -0.21, rawExposure: -0.25, positive: false }
       ],
-      macroFactors: [
-        { name: '经济增长', exposure: 1.32, positive: true },
-        { name: '通货膨胀', exposure: -0.45, positive: false },
-        { name: '利率风险', exposure: 0.78, positive: true },
-        { name: '信用风险', exposure: 0.41, positive: true },
-        { name: '新兴市场', exposure: 0.66, positive: true }
-      ]
+      industryFactors: [
+        { name: 'technology', exposure: 0.92, rawExposure: 0.90, positive: true },
+        { name: 'healthcare', exposure: 0.45, rawExposure: 0.45, positive: true },
+        { name: 'financials', exposure: -0.18, rawExposure: -0.20, positive: false },
+        { name: 'consumer', exposure: 0.22, rawExposure: 0.20, positive: true },
+        { name: 'energy', exposure: -0.65, rawExposure: -0.60, positive: false }
+      ],
+      countryFactors: [
+        { name: 'us', exposure: 0.78, rawExposure: 0.75, positive: true },
+        { name: 'china', exposure: 0.52, rawExposure: 0.50, positive: true },
+        { name: 'europe', exposure: -0.15, rawExposure: -0.15, positive: false },
+        { name: 'japan', exposure: 0.08, rawExposure: 0.10, positive: true },
+        { name: 'emergingmarkets', exposure: 0.31, rawExposure: 0.30, positive: true }
+      ],
+      otherFactors: [
+        { name: 'liquidity', exposure: 0.24, rawExposure: 0.25, positive: true },
+        { name: 'marketrisk', exposure: -0.35, rawExposure: -0.35, positive: false },
+        { name: 'dividend', exposure: 0.12, rawExposure: 0.10, positive: true }
+      ],
+      factorCorrelations: [
+        { factor1: 'value', factor2: 'growth', correlation: -0.65 },
+        { factor1: 'value', factor2: 'quality', correlation: 0.45 },
+        { factor1: 'momentum', factor2: 'volatility', correlation: -0.30 },
+        { factor1: 'size', factor2: 'quality', correlation: 0.20 },
+        { factor1: 'quality', factor2: 'volatility', correlation: -0.25 }
+      ],
+      riskContributions: [
+        { name: 'value', contribution: 22.5 },
+        { name: 'growth', contribution: 15.8 },
+        { name: 'size', contribution: 12.7 },
+        { name: 'momentum', contribution: 28.4 },
+        { name: 'quality', contribution: 10.3 },
+        { name: 'volatility', contribution: 10.3 }
+      ],
+      hasCorrelationData: true
     }
   };
 };
@@ -284,4 +382,47 @@ export const getStocksData = async (): Promise<Record<string, any>> => {
     console.error('获取股票数据失败:', error);
     throw error;
   }
+};
+
+// 添加缺失的函数
+/**
+ * 获取可用股票列表及名称
+ */
+export const getAvailableStocksWithNames = async (): Promise<{symbol: string, name: string}[]> => {
+  try {
+    // 模拟API调用
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return [
+      { symbol: 'AAPL', name: '苹果公司' },
+      { symbol: 'MSFT', name: '微软公司' },
+      { symbol: 'GOOGL', name: '谷歌' },
+      { symbol: 'AMZN', name: '亚马逊' },
+      { symbol: 'META', name: 'Meta平台' },
+      { symbol: 'TSLA', name: '特斯拉' },
+      { symbol: 'NVDA', name: '英伟达' },
+      { symbol: 'JPM', name: '摩根大通' },
+      { symbol: 'BAC', name: '美国银行' },
+      { symbol: 'V', name: '维萨' }
+    ];
+  } catch (error) {
+    console.error('获取可用股票列表失败:', error);
+    throw error;
+  }
+};
+
+/**
+ * 股票名称映射
+ */
+export const stockNameMapping: Record<string, string> = {
+  'AAPL': '苹果公司',
+  'MSFT': '微软公司',
+  'GOOGL': '谷歌',
+  'AMZN': '亚马逊',
+  'META': 'Meta平台',
+  'TSLA': '特斯拉',
+  'NVDA': '英伟达',
+  'JPM': '摩根大通',
+  'BAC': '美国银行',
+  'V': '维萨'
 }; 

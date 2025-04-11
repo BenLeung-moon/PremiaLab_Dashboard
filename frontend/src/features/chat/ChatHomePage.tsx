@@ -1,13 +1,55 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { submitPortfolio, getAvailableStocksWithNames, stockNameMapping } from '../../shared/services/portfolioService';
+import { submitPortfolio } from '../../services/portfolioService';
+import { getAvailableStocksWithNames, stockNameMapping } from '../../shared/services/portfolioService';
 import { useLanguage } from '../../shared/i18n/LanguageContext';
 import LanguageSwitcher from '../../shared/components/LanguageSwitcher';
 import { encryptData, decryptData } from '../../shared/utils/encryption';
 
+// 添加内联样式
+const styles = {
+  customScrollbar: `
+    /* 直接定义全局滚动条样式 */
+    ::-webkit-scrollbar {
+      width: 8px !important;
+      height: 8px !important;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1 !important;
+      border-radius: 10px !important;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: #888 !important;
+      border-radius: 10px !important;
+      border: 2px solid #f1f1f1 !important;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: #555 !important;
+    }
+    
+    /* 为特定类添加更强的选择器 */
+    .custom-scrollbar::-webkit-scrollbar {
+      display: block !important;
+      width: 10px !important;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f1f1 !important;
+      border-radius: 10px !important;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #888 !important;
+      border-radius: 10px !important;
+      border: 2px solid #f1f1f1 !important;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background-color: #555 !important;
+    }
+  `
+};
+
 // Add mock responses for test mode
-const TEST_MODE = true; // Test mode enabled
+const TEST_MODE = false; // Test mode enabled
 const getMockResponses = (t: (key: string) => string) => ({
   "default": t('chat.defaultMockResponse'),
   "portfolio": JSON.stringify({
@@ -183,6 +225,13 @@ const ChatHomePage = () => {
     }
   }, [language, t, activeConversationId]);
 
+  // 当组件首次加载时，创建一个新的聊天
+  useEffect(() => {
+    // Only create a new chat when the component first loads
+    createNewConversation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array ensures this runs only once on mount
+  
   // 当切换对话时加载对应消息
   useEffect(() => {
     if (conversationMessages[activeConversationId]) {
@@ -681,7 +730,7 @@ const ChatHomePage = () => {
     setManualStocks(newStocks);
   };
 
-  const submitManualPortfolio = () => {
+  const submitManualPortfolio = async () => {
     // 添加验证逻辑
     if (!portfolioName.trim()) {
       alert("请输入投资组合名称");
@@ -695,6 +744,13 @@ const ChatHomePage = () => {
     
     if (manualStocks.some(stock => stock.weight <= 0)) {
       alert("所有股票的权重必须大于0");
+      return;
+    }
+    
+    // 计算总权重，确保接近100%
+    const totalWeight = manualStocks.reduce((sum, stock) => sum + stock.weight, 0);
+    if (Math.abs(totalWeight - 100) > 1) {
+      alert(`股票总权重应为100%，当前为${totalWeight.toFixed(2)}%`);
       return;
     }
     
@@ -726,6 +782,59 @@ const ChatHomePage = () => {
     setIsManualInputActive(false);
     setManualStocks([{symbol: '', weight: 0}]);
     setPortfolioName('');
+    
+    // 立即发送到后端获取仪表板
+    try {
+      setIsLoading(true);
+      
+      // 使用服务发送投资组合
+      const response = await submitPortfolio(portfolio);
+      const portfolioId = response.id || 'portfolio-' + Date.now();
+      
+      // 添加一个系统消息表示投资组合已发送到仪表板
+      const dashboardMessage = { 
+        role: 'system' as const, 
+        content: t('portfolio.sentToDashboard') 
+      };
+      
+      // 更新当前显示的消息
+      setMessages(prev => [...prev, dashboardMessage]);
+      
+      // 同时更新存储的对话消息
+      setConversationMessages(prev => ({
+        ...prev,
+        [activeConversationId]: [...(prev[activeConversationId] || []), dashboardMessage]
+      }));
+      
+      // 存储当前对话对应的投资组合ID
+      setConversationPortfolios(prev => ({
+        ...prev,
+        [activeConversationId]: portfolioId
+      }));
+      
+      // 设置最后使用的投资组合ID
+      setLastPortfolioId(portfolioId);
+      
+      // 保存到最近的投资组合列表
+      setSavedPortfolios(prev => [
+        { id: portfolioId, name: portfolio.name, created_at: new Date().toISOString() },
+        ...prev.filter(p => p.id !== portfolioId)
+      ]);
+    } catch (error) {
+      console.error('发送投资组合失败:', error);
+      // 添加错误消息
+      const errorMessage = { 
+        role: 'system' as const, 
+        content: t('portfolio.error')
+      };
+      setMessages(prev => [...prev, errorMessage]);
+      setConversationMessages(prev => ({
+        ...prev,
+        [activeConversationId]: [...(prev[activeConversationId] || []), errorMessage]
+      }));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // 加载可用股票代码
@@ -816,8 +925,127 @@ const ChatHomePage = () => {
   // ...在显示仪表板入口按钮的条件中使用当前对话的投资组合ID
   const currentConversationPortfolioId = conversationPortfolios[activeConversationId] || null;
 
+  // 添加删除对话函数
+  const deleteConversation = (id: string) => {
+    if (window.confirm(t('chat.deleteConfirm'))) {
+      // 更新对话列表
+      setConversations(prev => prev.filter(conv => conv.id !== id));
+      
+      // 从消息存储中移除
+      setConversationMessages(prev => {
+        const newMessages = { ...prev };
+        delete newMessages[id];
+        return newMessages;
+      });
+      
+      // 从投资组合映射中移除
+      setConversationPortfolios(prev => {
+        const newPortfolios = { ...prev };
+        delete newPortfolios[id];
+        return newPortfolios;
+      });
+      
+      // 如果删除的是当前激活的对话，则创建新对话
+      if (id === activeConversationId) {
+        createNewConversation();
+      }
+    }
+  };
+
+  // 添加菜单打开状态
+  const [menuOpenConversationId, setMenuOpenConversationId] = useState<string | null>(null);
+
+  // 切换菜单显示状态
+  const toggleMenu = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMenuOpenConversationId(menuOpenConversationId === id ? null : id);
+  };
+
+  // 关闭菜单
+  const closeMenu = () => {
+    setMenuOpenConversationId(null);
+  };
+
+  // 添加点击外部关闭菜单的处理
+  useEffect(() => {
+    const handleClickOutside = () => {
+      closeMenu();
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen bg-white">
+      {/* 添加内联样式标签，使用更明确的滚动条样式 */}
+      <style>
+        {`
+          /* 原生滚动样式 - 确保有效 */
+          .chat-list-scroll {
+            height: 300px !important; 
+            overflow-y: scroll !important;
+            scrollbar-width: thin !important;
+            scrollbar-color: #888 #f1f1f1 !important;
+            display: block !important;
+            margin-right: 2px !important;
+            padding-right: 2px !important;
+          }
+          
+          .chat-list-scroll::-webkit-scrollbar {
+            width: 8px !important;
+            display: block !important;
+          }
+          
+          .chat-list-scroll::-webkit-scrollbar-track {
+            background-color: #f1f1f1 !important;
+            border-radius: 10px !important;
+          }
+          
+          .chat-list-scroll::-webkit-scrollbar-thumb {
+            background-color: #888 !important;
+            border-radius: 10px !important;
+            border: 2px solid #f1f1f1 !important;
+          }
+          
+          .chat-list-scroll::-webkit-scrollbar-thumb:hover {
+            background-color: #555 !important;
+          }
+          
+          /* Chrome使用原生滚动条行为 */
+          * {
+            overflow-behavior: auto;
+            -ms-overflow-style: auto;
+          }
+        `}
+      </style>
+      
+      {/* 添加内联样式标签，使用常规滚动条样式 */}
+      <style>
+        {`
+          .force-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #888 #f1f1f1;
+            overflow-y: scroll !important;
+          }
+          .force-scrollbar::-webkit-scrollbar {
+            width: 10px !important;
+          }
+          .force-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1 !important;
+          }
+          .force-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #888 !important;
+            border-radius: 8px !important;
+          }
+        `}
+      </style>
+      
+      {/* 添加内联样式标签 */}
+      <style>{styles.customScrollbar}</style>
+      
       {/* 顶部导航栏 */}
       <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-3">
@@ -859,51 +1087,97 @@ const ChatHomePage = () => {
             </button>
             
             <h3 className="text-gray-500 text-sm mb-2">{t('chat.recentChats')}</h3>
-            <div className="space-y-1">
-              {conversations.map(conv => {
-                // 检查该对话是否有关联的投资组合
-                const hasPortfolio = conversationPortfolios[conv.id] ? true : false;
-                
-                return (
-                  <div 
-                    key={conv.id}
-                    className={`flex items-center justify-between px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer ${activeConversationId === conv.id ? 'bg-gray-100' : ''}`}
-                  >
+            
+            {/* 使用最基本的结构和样式 */}
+            <div 
+              className="border border-gray-200 rounded bg-gray-50" 
+              style={{ 
+                height: '500px', 
+                overflowY: 'scroll',
+                position: 'relative' 
+              }}
+            >
+              <div style={{ padding: '8px' }}>
+                {conversations.map(conv => {
+                  // 检查该对话是否有关联的投资组合
+                  const hasPortfolio = conversationPortfolios[conv.id] ? true : false;
+                  
+                  return (
                     <div 
-                      className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
-                      onClick={() => {
-                        setActiveConversationId(conv.id);
-                        // 切换对话时重置仪表板状态
-                        setExtractedPortfolio(null);
-                        // 加载对应的消息
-                        if (conversationMessages[conv.id]) {
-                          setMessages(conversationMessages[conv.id]);
-                        }
-                      }}
+                      key={conv.id}
+                      className={`flex items-center justify-between px-3 py-2 mb-2 rounded-md hover:bg-gray-100 cursor-pointer relative ${activeConversationId === conv.id ? 'bg-gray-100' : 'bg-white'}`}
+                      style={{ marginBottom: '8px' }}
                     >
-                      {conv.title}
-                    </div>
-                    
-                    {hasPortfolio && (
-                      <Link 
-                        to={`/dashboard/${conversationPortfolios[conv.id]}`}
-                        className="ml-2 p-1 text-green-600 hover:bg-green-50 rounded-md"
-                        title={t('navigation.viewDashboard')}
+                      <div 
+                        className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
+                        onClick={() => {
+                          setActiveConversationId(conv.id);
+                          // 切换对话时重置仪表板状态
+                          setExtractedPortfolio(null);
+                          // 加载对应的消息
+                          if (conversationMessages[conv.id]) {
+                            setMessages(conversationMessages[conv.id]);
+                          }
+                        }}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                          <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
-                          <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
-                        </svg>
-                      </Link>
-                    )}
+                        {conv.title}
+                      </div>
+                      
+                      <div className="flex items-center gap-1">
+                        {hasPortfolio && (
+                          <Link 
+                            to={`/dashboard/${conversationPortfolios[conv.id]}`}
+                            className="p-1 text-green-600 hover:bg-green-50 rounded-md"
+                            title={t('navigation.viewDashboard')}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                              <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                              <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                            </svg>
+                          </Link>
+                        )}
+                        
+                        {/* 添加菜单按钮 */}
+                        <button
+                          onClick={(e) => toggleMenu(conv.id, e)}
+                          className="p-1 text-gray-500 hover:bg-gray-200 rounded-md"
+                          title={t('chat.options')}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
+                          </svg>
+                        </button>
+                        
+                        {/* 菜单下拉框 */}
+                        {menuOpenConversationId === conv.id && (
+                          <div className="absolute right-0 top-9 z-10 mt-1 w-48 bg-white rounded-md shadow-lg py-1 text-sm overflow-hidden border border-gray-200">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteConversation(conv.id);
+                              }}
+                              className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 flex items-center gap-2"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                              </svg>
+                              {t('chat.delete')}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {conversations.length === 0 && (
+                  <div className="px-3 py-2 text-gray-400 text-sm">
+                    {t('chat.noChats')}
                   </div>
-                );
-              })}
-              {conversations.length === 0 && (
-                <div className="px-3 py-2 text-gray-400 text-sm">
-                  {t('chat.noChats')}
-                </div>
-              )}
+                )}
+              
+              </div>
             </div>
           </div>
         </div>
