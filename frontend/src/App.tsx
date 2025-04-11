@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { ChatHomePage } from './features/chat'
+import { Dashboard } from './features/dashboard'
 import { LanguageProvider } from './shared/i18n/LanguageContext'
 
 const queryClient = new QueryClient()
@@ -11,10 +12,14 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <Router>
           <Routes>
-            {/* 首页路由 - 显示聊天界面 */}
+            {/* Home route - display chat interface */}
             <Route path="/" element={<ChatHomePage />} />
             
-            {/* 重定向其他未匹配路径到首页 */}
+            {/* Dashboard routes */}
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/:portfolioId" element={<Dashboard />} />
+            
+            {/* Redirect other unmatched paths to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>
