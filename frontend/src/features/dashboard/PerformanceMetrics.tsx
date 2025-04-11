@@ -1,6 +1,7 @@
 // import React from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { format } from 'date-fns'
+import { useLanguage } from '../../shared/i18n/LanguageContext'
 
 // Mock data - replace with actual API data
 const performanceData = [
@@ -12,16 +13,18 @@ const performanceData = [
 ]
 
 const PerformanceMetrics = () => {
+  const { t } = useLanguage();
+  
   const metrics = [
-    { name: '年化收益率', value: '12.8%', change: '+2.3%', status: 'up' },
-    { name: '夏普比率', value: '1.75', change: '+0.15', status: 'up' },
-    { name: '最大回撤', value: '-8.2%', change: '-1.4%', status: 'down' },
-    { name: '信息比率', value: '0.95', change: '+0.05', status: 'up' },
+    { name: t('dashboard.metrics.annualReturn'), value: '12.8%', change: '+2.3%', status: 'up' },
+    { name: t('dashboard.metrics.sharpeRatio'), value: '1.75', change: '+0.15', status: 'up' },
+    { name: t('dashboard.metrics.maxDrawdown'), value: '-8.2%', change: '-1.4%', status: 'down' },
+    { name: t('dashboard.metrics.informationRatio'), value: '0.95', change: '+0.05', status: 'up' },
   ];
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-xl font-semibold mb-4">Performance Metrics</h2>
+      <h2 className="text-xl font-semibold mb-4">{t('dashboard.tabs.performance')}</h2>
       <div className="grid grid-cols-2 gap-4">
         {metrics.map((metric, index) => (
           <div key={index} className="bg-gray-50 p-4 rounded-md">
@@ -41,7 +44,7 @@ const PerformanceMetrics = () => {
       </div>
 
       <div className="card">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Performance vs Benchmark</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('dashboard.performanceVsBenchmark')}</h3>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={performanceData}>
@@ -60,13 +63,13 @@ const PerformanceMetrics = () => {
                 type="monotone"
                 dataKey="return"
                 stroke="#2563eb"
-                name="Portfolio Return"
+                name={t('dashboard.portfolioReturn')}
               />
               <Line
                 type="monotone"
                 dataKey="benchmark"
                 stroke="#9ca3af"
-                name="Benchmark"
+                name={t('dashboard.benchmark')}
               />
             </LineChart>
           </ResponsiveContainer>
