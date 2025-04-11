@@ -83,6 +83,7 @@
     "portfolioId": "Portfolio ID",
     "tabs": {
       "performance": "Historical Performance",
+      "holdings": "Portfolio Holdings",
       "allocation": "Asset Allocation",
       "comparison": "Benchmark Comparison",
       "factors": "Factor Exposure",
@@ -103,9 +104,32 @@
     "sectorDistribution": "Sector Distribution",
     "regionDistribution": "Region Distribution",
     "marketCapDistribution": "Market Cap Distribution",
+    "portfolioComposition": "Portfolio Composition",
+    "holdingsWeight": "Holdings Weight",
+    "symbol": "Symbol",
+    "name": "Name",
+    "sector": "Sector",
+    "weight": "Weight",
+    "price": "Price",
+    "dailyChange": "Daily Change",
+    "noHoldings": "No holdings data available",
     "noData": "No data available",
+    "timeframes": {
+      "title": "Performance by Time Period",
+      "ytd": "YTD",
+      "oneYear": "1 Year",
+      "threeYear": "3 Years",
+      "fiveYear": "5 Years",
+      "period": "Period",
+      "totalReturn": "Total Return",
+      "annualized": "Annualized Return",
+      "volatility": "Volatility",
+      "sharpe": "Sharpe Ratio",
+      "excess": "Excess Return"
+    },
     "errors": {
-      "loadAllocationFailed": "Failed to load asset allocation data"
+      "loadAllocationFailed": "Failed to load asset allocation data",
+      "loadPortfolioFailed": "Failed to load portfolio holdings data"
     }
   }
 } 

@@ -370,22 +370,22 @@ def calculate_comparison(historical_data, weights):
 def calculate_factor_exposure():
     # 模拟数据：风格因子暴露
     style_factors = [
-        {"name": "价值", "exposure": 0.65, "positive": True},
-        {"name": "成长", "exposure": 0.42, "positive": True},
-        {"name": "规模", "exposure": -0.28, "positive": False},
-        {"name": "动量", "exposure": 0.36, "positive": True},
-        {"name": "质量", "exposure": 0.72, "positive": True},
-        {"name": "波动性", "exposure": -0.18, "positive": False}
+        {"name": "value", "exposure": 0.65, "positive": True},
+        {"name": "growth", "exposure": 0.42, "positive": True},
+        {"name": "size", "exposure": -0.28, "positive": False},
+        {"name": "momentum", "exposure": 0.36, "positive": True},
+        {"name": "quality", "exposure": 0.72, "positive": True},
+        {"name": "volatility", "exposure": -0.18, "positive": False}
     ]
     
     # 模拟数据：宏观暴露
     macro_factors = [
-        {"name": "货币政策", "exposure": 0.22, "positive": True},
-        {"name": "信贷环境", "exposure": 0.31, "positive": True},
-        {"name": "经济增长", "exposure": 0.58, "positive": True},
-        {"name": "通货膨胀", "exposure": -0.17, "positive": False},
-        {"name": "利率变化", "exposure": -0.25, "positive": False},
-        {"name": "能源价格", "exposure": 0.12, "positive": True}
+        {"name": "monetaryPolicy", "exposure": 0.22, "positive": True},
+        {"name": "creditEnvironment", "exposure": 0.31, "positive": True},
+        {"name": "economicGrowth", "exposure": 0.58, "positive": True},
+        {"name": "inflation", "exposure": -0.17, "positive": False},
+        {"name": "interestRateChange", "exposure": -0.25, "positive": False},
+        {"name": "energyPrices", "exposure": 0.12, "positive": True}
     ]
     
     return {
@@ -562,8 +562,17 @@ async def get_portfolio_comparison(portfolio_id: str):
         ]
     }
     
+    # 将字典转换为Ticker对象列表
+    tickers = [
+        Ticker(
+            symbol=t["symbol"],
+            weight=t["weight"]
+        )
+        for t in mock_portfolio["tickers"]
+    ]
+    
     # 使用市场数据工具进行比较
-    comparison_result = compare_with_benchmark(mock_portfolio)
+    comparison_result = compare_with_benchmark(tickers)
     
     return {
         "portfolio_id": portfolio_id,
@@ -591,7 +600,7 @@ async def get_portfolio_allocation(portfolio_id: str):
     return {
         "portfolio_id": portfolio_id,
         "allocation": allocation_result
-    }
+    } 
 
 @router.get("/available-stocks")
 async def get_available_stocks():
@@ -642,8 +651,27 @@ async def mock_analyze_portfolio(portfolio: Portfolio):
         # 计算资产配置
         allocation_data = get_asset_allocation(tickers)
         
-        # 计算与基准的对比
+        # 计算与基准的对比（包含不同时间段）
         comparison_data = compare_with_benchmark(tickers)
+        
+        # 计算投资组合收益率（包含不同时间段）
+        returns_data = get_portfolio_returns(
+            tickers, 
+            {ticker.symbol: ticker.weight for ticker in tickers},
+            include_timeframes=True
+        )
+        
+        # 提取不同时间段数据
+        timeframes_data = returns_data.get('timeFrames', {})
+        
+        # 补充timeframes_data中的基准比较数据
+        if 'timeFrames' in comparison_data:
+            for time_frame, data in comparison_data['timeFrames'].items():
+                if time_frame in timeframes_data and timeframes_data[time_frame] is not None:
+                    if data:
+                        if 'return' in data:
+                            timeframes_data[time_frame]['benchmarkReturn'] = data['return']['benchmark']
+                            timeframes_data[time_frame]['excessReturn'] = data['return']['excess']
         
         # 计算因子暴露
         factor_exposure = get_portfolio_factor_exposure(tickers)
@@ -657,22 +685,41 @@ async def mock_analyze_portfolio(portfolio: Portfolio):
             },
             "analysis": {
                 "performance": {
-                    "annualReturn": comparison_data["年化收益率"]["投资组合"],
-                    "sharpeRatio": comparison_data["夏普比率"]["投资组合"],
-                    "maxDrawdown": comparison_data["最大回撤"]["投资组合"],
-                    "volatility": comparison_data["波动率"]["投资组合"]
+                    "totalReturn": comparison_data["totalReturn"]["portfolio"],
+                    "annualizedReturn": comparison_data["annualizedReturn"]["portfolio"],
+                    "sharpeRatio": comparison_data["sharpeRatio"]["portfolio"],
+                    "maxDrawdown": comparison_data["maxDrawdown"]["portfolio"],
+                    "volatility": comparison_data["volatility"]["portfolio"],
+                    "winRate": comparison_data["winRate"],
+                    "monthlyReturns": [
+                        {"month": "Jan", "return": 2.3},
+                        {"month": "Feb", "return": -0.7},
+                        {"month": "Mar", "return": 1.5},
+                        {"month": "Apr", "return": 3.2},
+                        {"month": "May", "return": 0.8},
+                        {"month": "Jun", "return": 1.9}
+                    ],
+                    "timeFrames": timeframes_data
                 },
                 "allocation": allocation_data,
-                "risk": {
-                    "volatility": comparison_data["波动率"]["投资组合"],
-                    "maxDrawdown": abs(comparison_data["最大回撤"]["投资组合"]),
-                    "beta": 1.05,
-                    "var": 2.3,
-                    "downside_risk": 6.2,
-                    "sortino": 0.92
-                },
-                "comparison": comparison_data,
-                "factors": factor_exposure
+                "risk": [
+                    {"name": "Volatility", "value": f"{comparison_data['volatility']['portfolio']}%", "status": "medium", "percentage": 60},
+                    {"name": "Max Drawdown", "value": f"{comparison_data['maxDrawdown']['portfolio']}%", "status": "low", "percentage": 40},
+                    {"name": "Downside Risk", "value": "12.3%", "status": "medium", "percentage": 55},
+                    {"name": "Beta", "value": "0.85", "status": "high", "percentage": 75},
+                    {"name": "VaR (95%)", "value": "-2.8%", "status": "low", "percentage": 30},
+                    {"name": "Sharpe Ratio", "value": f"{comparison_data['sharpeRatio']['portfolio']}", "status": "medium", "percentage": 65}
+                ],
+                "comparison": [
+                    {"metric": "Annualized Return", "portfolio": f"{comparison_data['annualizedReturn']['portfolio']}%", "benchmark": f"{comparison_data['annualizedReturn']['benchmark']}%", "difference": f"{comparison_data['annualizedReturn']['excess']}%", "positive": comparison_data['annualizedReturn']['excess'] > 0},
+                    {"metric": "Sharpe Ratio", "portfolio": f"{comparison_data['sharpeRatio']['portfolio']}", "benchmark": f"{comparison_data['sharpeRatio']['benchmark']}", "difference": f"{comparison_data['sharpeRatio']['difference']}", "positive": comparison_data['sharpeRatio']['difference'] > 0},
+                    {"metric": "Max Drawdown", "portfolio": f"{comparison_data['maxDrawdown']['portfolio']}%", "benchmark": f"{comparison_data['maxDrawdown']['benchmark']}%", "difference": f"{comparison_data['maxDrawdown']['difference']}%", "positive": comparison_data['maxDrawdown']['difference'] > 0},
+                    {"metric": "Volatility", "portfolio": f"{comparison_data['volatility']['portfolio']}%", "benchmark": f"{comparison_data['volatility']['benchmark']}%", "difference": f"{comparison_data['volatility']['difference']}%", "positive": comparison_data['volatility']['difference'] < 0},
+                    {"metric": "Beta", "portfolio": "0.85", "benchmark": "1.00", "difference": "-0.15", "positive": False},
+                    {"metric": "Alpha", "portfolio": "2.1%", "benchmark": "0.0%", "difference": "+2.1%", "positive": True}
+                ],
+                "factors": factor_exposure,
+                "timeFrames": comparison_data.get('timeFrames', {})
             }
         }
         

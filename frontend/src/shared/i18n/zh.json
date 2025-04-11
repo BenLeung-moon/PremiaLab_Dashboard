@@ -79,12 +79,13 @@
   },
   "dashboard": {
     "title": "投资组合分析仪表板",
-    "description": "全面分析投资组合的表现、风险和资产配置",
+    "description": "全面分析投资组合表现、风险和资产配置",
     "portfolioId": "投资组合ID",
     "tabs": {
       "performance": "历史表现",
+      "holdings": "持仓详情",
       "allocation": "资产配置",
-      "comparison": "基准比较",
+      "comparison": "基准对比",
       "factors": "因子暴露",
       "risk": "风险指标",
       "trends": "历史趋势",
@@ -92,20 +93,43 @@
     },
     "portfolioNotFound": "未找到投资组合数据",
     "metrics": {
-      "annualReturn": "年化收益率",
+      "annualReturn": "年化收益",
       "sharpeRatio": "夏普比率",
       "maxDrawdown": "最大回撤",
       "informationRatio": "信息比率"
     },
-    "performanceVsBenchmark": "业绩对比基准",
+    "performanceVsBenchmark": "与基准表现对比",
     "portfolioReturn": "投资组合收益",
     "benchmark": "基准",
     "sectorDistribution": "行业分布",
     "regionDistribution": "地区分布",
     "marketCapDistribution": "市值分布",
+    "portfolioComposition": "投资组合构成",
+    "holdingsWeight": "持仓权重",
+    "symbol": "股票代码",
+    "name": "名称",
+    "sector": "行业",
+    "weight": "权重",
+    "price": "价格",
+    "dailyChange": "日涨跌幅",
+    "noHoldings": "暂无持仓数据",
     "noData": "暂无数据",
+    "timeframes": {
+      "title": "不同时间段表现",
+      "ytd": "今年以来",
+      "oneYear": "1年",
+      "threeYear": "3年",
+      "fiveYear": "5年",
+      "period": "时间段",
+      "totalReturn": "总收益",
+      "annualized": "年化收益",
+      "volatility": "波动率",
+      "sharpe": "夏普比率",
+      "excess": "超额收益"
+    },
     "errors": {
-      "loadAllocationFailed": "无法加载资产配置数据"
+      "loadAllocationFailed": "加载资产配置数据失败",
+      "loadPortfolioFailed": "加载投资组合持仓数据失败"
     }
   }
 } 
