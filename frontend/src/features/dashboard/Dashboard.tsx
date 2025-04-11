@@ -8,6 +8,7 @@ import RiskMetrics from './RiskMetrics'
 import HistoricalTrends from './HistoricalTrends'
 import AssetAllocation from './AssetAllocation'
 import Comparison from './Comparison'
+import PortfolioComposition from './PortfolioComposition'
 
 const Dashboard = ({ portfolioId = '' }) => {
   const { t } = useLanguage()
@@ -26,6 +27,7 @@ const Dashboard = ({ portfolioId = '' }) => {
 
   const tabs = [
     { id: 'performance', label: t('dashboard.tabs.performance') },
+    { id: 'holdings', label: t('dashboard.tabs.holdings') },
     { id: 'allocation', label: t('dashboard.tabs.allocation') },
     { id: 'comparison', label: t('dashboard.tabs.comparison') },
     { id: 'factors', label: t('dashboard.tabs.factors') },
@@ -103,7 +105,10 @@ const Dashboard = ({ portfolioId = '' }) => {
           </nav>
         </div>
 
+        {activeTab === 'holdings' && <PortfolioComposition portfolioId={currentPortfolioId || 'test-portfolio'} />}
+        
         {activeTab === 'allocation' && <AssetAllocation portfolioId={currentPortfolioId || 'test-portfolio'} />}
+        
         {activeTab === 'comparison' && <Comparison portfolioId={currentPortfolioId || 'test-portfolio'} />}
         
         {(activeTab === 'performance' || activeTab === 'factors' || activeTab === 'risk' || activeTab === 'trends') && (

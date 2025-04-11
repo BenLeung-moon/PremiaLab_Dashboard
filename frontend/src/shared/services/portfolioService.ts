@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_URL = '/api/portfolios';
-const TEST_MODE = true; // Match with ChatHomePage setting
+const TEST_MODE = false; // Set to false to connect to real backend
 
 interface Ticker {
   symbol: string;
@@ -135,7 +135,7 @@ export const submitPortfolio = async (portfolio: Portfolio): Promise<PortfolioRe
       };
     }
 
-    const response = await axios.post('/api/portfolio', portfolio);
+    const response = await axios.post(API_URL, portfolio);
     return response.data;
   } catch (error) {
     console.error('API call failed:', error);
@@ -315,5 +315,40 @@ export const getPortfolioComparison = async (portfolioId: string): Promise<Compa
   } catch (error) {
     console.error('获取比较数据失败:', error);
     throw new Error('无法获取比较数据。请稍后重试。');
+  }
+};
+
+/**
+ * Get portfolio by ID
+ * @param portfolioId Portfolio ID
+ * @returns Promise containing portfolio data
+ */
+export const getPortfolio = async (portfolioId: string): Promise<any> => {
+  try {
+    if (TEST_MODE) {
+      // Simulate successful response in test mode
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
+      return {
+        id: portfolioId,
+        name: "Test Portfolio",
+        created_at: new Date().toISOString(),
+        tickers: [
+          { symbol: "AAPL", weight: 0.25, name: "Apple Inc.", sector: "Technology", price: 173.57, change: 0.0123 },
+          { symbol: "MSFT", weight: 0.20, name: "Microsoft Corp.", sector: "Technology", price: 402.28, change: -0.0056 },
+          { symbol: "GOOGL", weight: 0.15, name: "Alphabet Inc.", sector: "Communication Services", price: 147.68, change: 0.0034 },
+          { symbol: "AMZN", weight: 0.15, name: "Amazon.com Inc.", sector: "Consumer Discretionary", price: 178.08, change: 0.0212 },
+          { symbol: "NVDA", weight: 0.10, name: "NVIDIA Corporation", sector: "Technology", price: 922.28, change: 0.0345 },
+          { symbol: "META", weight: 0.05, name: "Meta Platforms, Inc.", sector: "Communication Services", price: 481.73, change: 0.0078 },
+          { symbol: "TSM", weight: 0.05, name: "Taiwan Semiconductor", sector: "Technology", price: 148.57, change: 0.0045 },
+          { symbol: "AVGO", weight: 0.05, name: "Broadcom Inc.", sector: "Technology", price: 1342.63, change: 0.0067 }
+        ]
+      };
+    }
+
+    const response = await axios.get(`${API_URL}/${portfolioId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to fetch portfolio ${portfolioId}:`, error);
+    throw new Error('Could not retrieve portfolio. Please check your API connection or try again later.');
   }
 }; 
