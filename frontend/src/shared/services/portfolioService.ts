@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_URL = '/api/portfolios';
-const TEST_MODE = true; // 与ChatHomePage保持一致
+const TEST_MODE = true; // Match with ChatHomePage setting
 
 interface Ticker {
   symbol: string;
@@ -37,7 +37,7 @@ interface ComparisonData {
   胜率: number;
 }
 
-// 股票代码与公司名称对应表
+// Stock code to company name mapping
 export const stockNameMapping: { [key: string]: string } = {
   "AAPL": "Apple Inc.",
   "MSFT": "Microsoft Corporation",
@@ -119,15 +119,15 @@ export const stockNameMapping: { [key: string]: string } = {
 };
 
 /**
- * 提交投资组合到后端API
- * @param portfolio 投资组合数据
- * @returns Promise，包含API响应
+ * Submit portfolio to backend API
+ * @param portfolio Portfolio data
+ * @returns Promise containing API response
  */
 export const submitPortfolio = async (portfolio: Portfolio): Promise<PortfolioResponse> => {
   try {
     if (TEST_MODE) {
-      // 在测试模式下模拟成功响应
-      await new Promise(resolve => setTimeout(resolve, 500)); // 模拟网络延迟
+      // Simulate successful response in test mode
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
       return {
         id: 'test-' + Date.now(),
         created_at: new Date().toISOString(),
@@ -138,23 +138,23 @@ export const submitPortfolio = async (portfolio: Portfolio): Promise<PortfolioRe
     const response = await axios.post('/api/portfolio', portfolio);
     return response.data;
   } catch (error) {
-    console.error('API调用失败:', error);
-    throw new Error('无法提交投资组合。请检查API连接是否正常，或稍后重试。');
+    console.error('API call failed:', error);
+    throw new Error('Could not submit portfolio. Please check your API connection or try again later.');
   }
 };
 
 /**
- * 获取用户的投资组合列表
- * @returns Promise，包含投资组合数组
+ * Get user's portfolio list
+ * @returns Promise containing portfolio array
  */
 export const getPortfolios = async (): Promise<Portfolio[]> => {
   try {
     if (TEST_MODE) {
-      // 在测试模式下返回模拟数据
+      // Return mock data in test mode
       await new Promise(resolve => setTimeout(resolve, 500));
       return [
         {
-          name: "测试投资组合 1",
+          name: "Test Portfolio 1",
           tickers: [
             { symbol: "AAPL", weight: 0.4 },
             { symbol: "MSFT", weight: 0.3 },
@@ -168,8 +168,8 @@ export const getPortfolios = async (): Promise<Portfolio[]> => {
     const response = await axios.get(API_URL);
     return response.data;
   } catch (error) {
-    console.error('获取投资组合失败:', error);
-    throw new Error('无法获取投资组合列表。请检查API连接是否正常，或稍后重试。');
+    console.error('Failed to fetch portfolios:', error);
+    throw new Error('Could not retrieve portfolio list. Please check your API connection or try again later.');
   }
 };
 

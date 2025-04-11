@@ -15,29 +15,97 @@
     "loading": "思考中...",
     "apiKeyRequired": "请先设置Perplexity API密钥才能继续。点击右上角的设置图标进行设置。",
     "apiCallFailed": "API调用失败，请检查您的API密钥是否正确，或稍后重试。",
+    "apiKeyInvalid": "您提供的API密钥无效或已过期。请更新您的API密钥。",
+    "apiRateLimited": "请求频率过高，API限制了访问。请稍等片刻再试。",
+    "networkError": "网络连接错误，无法连接到API服务器。请检查您的网络连接。",
     "backendError": "发送到后端失败，请检查API连接是否正常，或稍后重试。",
     "portfolioSent": "投资组合已成功发送到后端。",
     "responseId": "响应ID",
-    "createdAt": "创建时间"
+    "createdAt": "创建时间",
+    "defaultMockResponse": "我是测试模式下的AI助手，我会根据您的输入提供模拟响应。",
+    "mockPortfolioResponse": "我已为您创建了一个科技股投资组合，这是一个测试响应。",
+    "mockPortfolioName": "测试投资组合",
+    "newChat": "开启新对话",
+    "recentChats": "最近对话",
+    "noChats": "暂无对话记录",
+    "sendMessage": "给 PremiaLab AI 发送消息...",
+    "networkSearch": "联网搜索",
+    "manualInput": "手动输入",
+    "aiDisclaimer": "AI 可能会犯错。请检查重要信息。",
+    "welcomeTitle": "我是 PremiaLab AI, 很高兴见到你!",
+    "welcomeDescription": "我可以帮你分析投资组合、提供市场洞察，并回答投资相关问题。",
+    "newChatTitle": "新对话"
   },
   "portfolio": {
     "title": "投资组合",
-    "sendToDashboard": "发送到仪表板"
+    "sendToDashboard": "发送到仪表板",
+    "name": "投资组合名称",
+    "enterName": "输入投资组合名称",
+    "stockList": "股票列表",
+    "addStock": "添加股票",
+    "stockCode": "股票代码 (例如: AAPL)",
+    "weight": "权重",
+    "delete": "删除",
+    "cancel": "取消",
+    "submit": "提交投资组合",
+    "createManually": "手动创建投资组合",
+    "error": "投资组合创建失败",
+    "sentToDashboard": "仪表板已生成，可点击查看"
   },
   "settings": {
-    "title": "Perplexity API设置",
-    "description": "输入您的Perplexity API密钥以启用AI助手功能。",
-    "apiLinkText": "Perplexity API设置",
-    "placeholder": "pplx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "title": "设置",
+    "description": "请在下方输入您的Perplexity API密钥。您可以从Perplexity网站获取API密钥。",
+    "apiLinkText": "获取API密钥",
+    "placeholder": "输入您的API密钥",
+    "save": "保存",
+    "saveApi": "保存API密钥",
+    "apiTitle": "API密钥设置",
+    "close": "关闭",
     "cancel": "取消",
-    "save": "保存"
+    "language": "语言设置",
+    "emptyApiKeyError": "API密钥不能为空，请输入有效的密钥。",
+    "sessionExpired": "您的会话已过期，请重新输入API密钥。"
   },
   "navigation": {
     "toDashboard": "切换到仪表板",
-    "toChat": "切换到聊天模式"
+    "toChat": "切换到聊天模式",
+    "backToChat": "返回聊天",
+    "toCurrentDashboard": "查看当前仪表板",
+    "viewDashboard": "查看投资组合仪表板"
   },
   "language": {
     "switchTo": "English",
     "current": "中文"
+  },
+  "dashboard": {
+    "title": "投资组合分析仪表板",
+    "description": "全面分析投资组合的表现、风险和资产配置",
+    "portfolioId": "投资组合ID",
+    "tabs": {
+      "performance": "历史表现",
+      "allocation": "资产配置",
+      "comparison": "基准比较",
+      "factors": "因子暴露",
+      "risk": "风险指标",
+      "trends": "历史趋势",
+      "chat": "AI助手"
+    },
+    "portfolioNotFound": "未找到投资组合数据",
+    "metrics": {
+      "annualReturn": "年化收益率",
+      "sharpeRatio": "夏普比率",
+      "maxDrawdown": "最大回撤",
+      "informationRatio": "信息比率"
+    },
+    "performanceVsBenchmark": "业绩对比基准",
+    "portfolioReturn": "投资组合收益",
+    "benchmark": "基准",
+    "sectorDistribution": "行业分布",
+    "regionDistribution": "地区分布",
+    "marketCapDistribution": "市值分布",
+    "noData": "暂无数据",
+    "errors": {
+      "loadAllocationFailed": "无法加载资产配置数据"
+    }
   }
 } 

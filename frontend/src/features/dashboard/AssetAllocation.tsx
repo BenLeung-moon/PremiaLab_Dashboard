@@ -2,32 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { getPortfolioAllocation } from '../../shared/services/portfolioService';
 import { useLanguage } from '../../shared/i18n/LanguageContext';
 
-// 饼图颜色
+// Chart colors
 const CHART_COLORS = [
-  '#4f46e5', // 蓝色
-  '#0ea5e9', // 亮蓝
-  '#06b6d4', // 青色
-  '#14b8a6', // 青绿色
-  '#10b981', // 绿色
-  '#84cc16', // 黄绿色
-  '#eab308', // 黄色
-  '#f59e0b', // 琥珀色
-  '#f97316', // 橙色
-  '#ef4444', // 红色
-  '#ec4899', // 粉色
-  '#8b5cf6', // 紫色
-  '#a855f7', // 洋红色
-  '#6366f1', // 靛蓝色
-  '#3b82f6', // 天蓝色
-  '#0891b2', // 深青色
-  '#059669', // 祖母绿
-  '#65a30d', // 酸橙色
-  '#ca8a04', // 深黄色
-  '#ea580c', // 深橙色
-  '#dc2626', // 深红色
-  '#db2777', // 深粉色
-  '#7e22ce', // 深紫色
-  '#4338ca', // 深靛蓝色
+  '#4f46e5', // Blue
+  '#0ea5e9', // Light blue
+  '#06b6d4', // Cyan
+  '#14b8a6', // Teal
+  '#10b981', // Green
+  '#84cc16', // Lime
+  '#eab308', // Yellow
+  '#f59e0b', // Amber
+  '#f97316', // Orange
+  '#ef4444', // Red
+  '#ec4899', // Pink
+  '#8b5cf6', // Purple
+  '#a855f7', // Magenta
+  '#6366f1', // Indigo
+  '#3b82f6', // Sky blue
+  '#0891b2', // Deep cyan
+  '#059669', // Emerald
+  '#65a30d', // Lime green
+  '#ca8a04', // Deep yellow
+  '#ea580c', // Deep orange
+  '#dc2626', // Deep red
+  '#db2777', // Deep pink
+  '#7e22ce', // Deep purple
+  '#4338ca', // Deep indigo
 ];
 
 interface AssetAllocationProps {
@@ -35,170 +35,15 @@ interface AssetAllocationProps {
 }
 
 interface AllocationData {
-  行业分布: { [key: string]: number };
-  地区分布: { [key: string]: number };
-  市值分布: { [key: string]: number };
+  sectorDistribution: { [key: string]: number };
+  regionDistribution: { [key: string]: number };
+  marketCapDistribution: { [key: string]: number };
 }
 
-const AssetAllocation: React.FC<AssetAllocationProps> = ({ portfolioId }) => {
-  const { t } = useLanguage();
-  const [allocation, setAllocation] = useState<AllocationData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchAllocation = async () => {
-      try {
-        setLoading(true);
-        const data = await getPortfolioAllocation(portfolioId);
-        setAllocation(data);
-        setError(null);
-      } catch (err) {
-        setError('无法加载资产配置数据');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAllocation();
-  }, [portfolioId]);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="loader"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 text-red-700 p-4 rounded-lg">
-        <p>{error}</p>
-      </div>
-    );
-  }
-
-  if (!allocation) {
-    return (
-      <div className="bg-gray-50 text-gray-700 p-4 rounded-lg">
-        <p>暂无数据</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-8">
-      {/* 行业分布 */}
-      <div>
-        <h3 className="text-lg font-medium mb-4">行业分布</h3>
-        <div className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-[300px]">
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="flex h-64 items-center justify-center">
-                <div className="relative w-full h-full flex items-center justify-center">
-                  <svg viewBox="0 0 100 100" className="w-full h-full">
-                    {renderPieChart(allocation.行业分布)}
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="flex-1 min-w-[300px]">
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="space-y-2">
-                {Object.entries(allocation.行业分布).map(([sector, percentage], index) => (
-                  <div key={sector} className="flex items-center">
-                    <div
-                      className="w-4 h-4 mr-2 rounded-sm"
-                      style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
-                    ></div>
-                    <div className="flex-1 text-sm">{sector}</div>
-                    <div className="font-semibold">{percentage.toFixed(1)}%</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 地区分布 */}
-      <div>
-        <h3 className="text-lg font-medium mb-4">地区分布</h3>
-        <div className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-[300px]">
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="flex h-64 items-center justify-center">
-                <div className="relative w-full h-full flex items-center justify-center">
-                  <svg viewBox="0 0 100 100" className="w-full h-full">
-                    {renderPieChart(allocation.地区分布)}
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="flex-1 min-w-[300px]">
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="space-y-2">
-                {Object.entries(allocation.地区分布).map(([region, percentage], index) => (
-                  <div key={region} className="flex items-center">
-                    <div
-                      className="w-4 h-4 mr-2 rounded-sm"
-                      style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
-                    ></div>
-                    <div className="flex-1 text-sm">{region}</div>
-                    <div className="font-semibold">{percentage.toFixed(1)}%</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 市值分布 */}
-      <div>
-        <h3 className="text-lg font-medium mb-4">市值分布</h3>
-        <div className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-[300px]">
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="flex h-64 items-center justify-center">
-                <div className="relative w-full h-full flex items-center justify-center">
-                  <svg viewBox="0 0 100 100" className="w-full h-full">
-                    {renderPieChart(allocation.市值分布)}
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="flex-1 min-w-[300px]">
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="space-y-2">
-                {Object.entries(allocation.市值分布).map(([size, percentage], index) => (
-                  <div key={size} className="flex items-center">
-                    <div
-                      className="w-4 h-4 mr-2 rounded-sm"
-                      style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
-                    ></div>
-                    <div className="flex-1 text-sm">{size}</div>
-                    <div className="font-semibold">{percentage.toFixed(1)}%</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// 渲染饼图
+// Render pie chart function
 const renderPieChart = (data: { [key: string]: number }) => {
   const total = Object.values(data).reduce((sum, value) => sum + value, 0);
-  const items = Object.entries(data).sort((a, b) => b[1] - a[1]); // 按百分比降序排序
+  const items = Object.entries(data).sort((a, b) => b[1] - a[1]); // Sort by percentage in descending order
   
   let currentAngle = 0;
   
@@ -238,6 +83,168 @@ const renderPieChart = (data: { [key: string]: number }) => {
       </path>
     );
   });
+};
+
+const AssetAllocation: React.FC<AssetAllocationProps> = ({ portfolioId }) => {
+  const { t } = useLanguage();
+  const [allocation, setAllocation] = useState<AllocationData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAllocation = async () => {
+      try {
+        setLoading(true);
+        const data = await getPortfolioAllocation(portfolioId);
+        
+        // Convert the API response to camelCase keys for consistency
+        setAllocation({
+          sectorDistribution: data.行业分布, 
+          regionDistribution: data.地区分布,
+          marketCapDistribution: data.市值分布
+        });
+        
+        setError(null);
+      } catch (err) {
+        setError(t('dashboard.errors.loadAllocationFailed'));
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllocation();
+  }, [portfolioId, t]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="loader"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 text-red-700 p-4 rounded-lg">
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  if (!allocation) {
+    return (
+      <div className="bg-gray-50 text-gray-700 p-4 rounded-lg">
+        <p>{t('dashboard.noData')}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Sector Distribution */}
+      <div>
+        <h3 className="text-lg font-medium mb-4">{t('dashboard.sectorDistribution')}</h3>
+        <div className="flex flex-wrap gap-4">
+          <div className="flex-1 min-w-[300px]">
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="flex h-64 items-center justify-center">
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <svg viewBox="0 0 100 100" className="w-full h-full">
+                    {renderPieChart(allocation.sectorDistribution)}
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 min-w-[300px]">
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="space-y-2">
+                {Object.entries(allocation.sectorDistribution).map(([sector, percentage], index) => (
+                  <div key={sector} className="flex items-center">
+                    <div
+                      className="w-4 h-4 mr-2 rounded-sm"
+                      style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
+                    ></div>
+                    <div className="flex-1 text-sm">{sector}</div>
+                    <div className="font-semibold">{percentage.toFixed(1)}%</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Region Distribution */}
+      <div>
+        <h3 className="text-lg font-medium mb-4">{t('dashboard.regionDistribution')}</h3>
+        <div className="flex flex-wrap gap-4">
+          <div className="flex-1 min-w-[300px]">
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="flex h-64 items-center justify-center">
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <svg viewBox="0 0 100 100" className="w-full h-full">
+                    {renderPieChart(allocation.regionDistribution)}
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 min-w-[300px]">
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="space-y-2">
+                {Object.entries(allocation.regionDistribution).map(([region, percentage], index) => (
+                  <div key={region} className="flex items-center">
+                    <div
+                      className="w-4 h-4 mr-2 rounded-sm"
+                      style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
+                    ></div>
+                    <div className="flex-1 text-sm">{region}</div>
+                    <div className="font-semibold">{percentage.toFixed(1)}%</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Market Cap Distribution */}
+      <div>
+        <h3 className="text-lg font-medium mb-4">{t('dashboard.marketCapDistribution')}</h3>
+        <div className="flex flex-wrap gap-4">
+          <div className="flex-1 min-w-[300px]">
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="flex h-64 items-center justify-center">
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <svg viewBox="0 0 100 100" className="w-full h-full">
+                    {renderPieChart(allocation.marketCapDistribution)}
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 min-w-[300px]">
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="space-y-2">
+                {Object.entries(allocation.marketCapDistribution).map(([size, percentage], index) => (
+                  <div key={size} className="flex items-center">
+                    <div
+                      className="w-4 h-4 mr-2 rounded-sm"
+                      style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
+                    ></div>
+                    <div className="flex-1 text-sm">{size}</div>
+                    <div className="font-semibold">{percentage.toFixed(1)}%</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default AssetAllocation; 
