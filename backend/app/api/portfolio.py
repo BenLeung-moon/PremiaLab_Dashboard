@@ -72,6 +72,45 @@ for i in range(50):
         "change": change
     }
 
+# 股票名称映射 - 与前端的stockNameMapping匹配
+stock_name_mapping = {
+    "AAPL": "Apple Inc.",
+    "MSFT": "Microsoft Corporation",
+    "AMZN": "Amazon.com Inc.",
+    "GOOGL": "Alphabet Inc. (Google) Class A",
+    "GOOG": "Alphabet Inc. (Google) Class C",
+    "META": "Meta Platforms Inc.",
+    "TSLA": "Tesla Inc.",
+    "NVDA": "NVIDIA Corporation",
+    "BRK-B": "Berkshire Hathaway Inc. Class B",
+    "JPM": "JPMorgan Chase & Co.",
+    "JNJ": "Johnson & Johnson",
+    "V": "Visa Inc.",
+    "PG": "Procter & Gamble Co.",
+    "UNH": "UnitedHealth Group Inc.",
+    "HD": "Home Depot Inc.",
+    "MA": "Mastercard Inc.",
+    "BAC": "Bank of America Corp.",
+    "DIS": "Walt Disney Co.",
+    "ADBE": "Adobe Inc.",
+    "CRM": "Salesforce Inc."
+}
+
+# 更新stocks_db以包含映射中的全部股票
+for symbol, name in stock_name_mapping.items():
+    if symbol not in stocks_db:
+        sector_choice = random.choice(["Technology", "Healthcare", "Financial Services", "Consumer Discretionary", 
+                                     "Communication Services", "Industrials", "Energy", "Materials", "Utilities"])
+        price = round(random.uniform(10, 500), 2)
+        change = round(random.uniform(-0.05, 0.05), 4)
+        
+        stocks_db[symbol] = {
+            "name": name,
+            "sector": sector_choice,
+            "price": price,
+            "change": change
+        }
+
 # 辅助函数：生成模拟历史数据
 def generate_historical_data(tickers, days=30):
     end_date = datetime.now()
@@ -391,13 +430,86 @@ async def create_portfolio(portfolio: Portfolio):
 
 @router.get("/stocks-data", response_model=Dict[str, Dict[str, Any]])
 async def get_stocks_data():
-    """
-    获取可用的股票数据列表，用于前端选择
-    """
+    """返回所有股票的详细数据"""
     return stocks_db
+
+@router.get("/mock-portfolio-analysis")
+async def get_mock_portfolio_analysis():
+    """返回模拟的投资组合分析数据，用于前端测试"""
+    return {
+        "performance": {
+            "totalReturn": 15.7,
+            "annualizedReturn": 12.3,
+            "volatility": 12.5,
+            "sharpeRatio": 1.42,
+            "maxDrawdown": -8.5,
+            "winRate": 58.2,
+            "monthlyReturns": [
+                { "month": "一月", "return": 3.2 },
+                { "month": "二月", "return": -1.8 },
+                { "month": "三月", "return": 2.1 },
+                { "month": "四月", "return": 4.5 },
+                { "month": "五月", "return": -0.7 },
+                { "month": "六月", "return": 2.9 }
+            ]
+        },
+        "allocation": {
+            "sector": [
+                { "type": "科技", "percentage": 32.5 },
+                { "type": "医疗健康", "percentage": 15.8 },
+                { "type": "金融", "percentage": 12.3 },
+                { "type": "消费品", "percentage": 10.5 },
+                { "type": "通信服务", "percentage": 8.7 },
+                { "type": "工业", "percentage": 7.9 },
+                { "type": "能源", "percentage": 5.3 },
+                { "type": "材料", "percentage": 4.2 },
+                { "type": "公用事业", "percentage": 2.8 }
+            ],
+            "geography": [
+                { "region": "美国", "percentage": 45.7 },
+                { "region": "中国", "percentage": 21.5 },
+                { "region": "欧洲", "percentage": 15.8 },
+                { "region": "日本", "percentage": 7.3 },
+                { "region": "新兴市场", "percentage": 9.7 }
+            ]
+        },
+        "risk": [
+            { "name": "波动率", "value": "12.5%", "status": "medium", "percentage": 60 },
+            { "name": "最大回撤", "value": "-8.5%", "status": "low", "percentage": 40 },
+            { "name": "下行风险", "value": "12.3%", "status": "medium", "percentage": 55 },
+            { "name": "贝塔系数", "value": "0.85", "status": "high", "percentage": 75 },
+            { "name": "VaR (95%)", "value": "-2.8%", "status": "low", "percentage": 30 },
+            { "name": "夏普比率", "value": "1.42", "status": "medium", "percentage": 65 }
+        ],
+        "comparison": [
+            { "metric": "年化收益率", "portfolio": "12.3%", "benchmark": "10.2%", "difference": "+2.1%", "positive": True },
+            { "metric": "夏普比率", "portfolio": "1.42", "benchmark": "0.9", "difference": "+0.52", "positive": True },
+            { "metric": "最大回撤", "portfolio": "-8.5%", "benchmark": "-18.2%", "difference": "+9.7%", "positive": True },
+            { "metric": "波动率", "portfolio": "12.5%", "benchmark": "16.4%", "difference": "+3.9%", "positive": False },
+            { "metric": "贝塔系数", "portfolio": "0.85", "benchmark": "1.00", "difference": "+0.15", "positive": False },
+            { "metric": "年化α值", "portfolio": "2.1%", "benchmark": "0.0%", "difference": "+2.1%", "positive": True }
+        ],
+        "factors": {
+            "styleFactors": [
+                { "name": "规模", "exposure": 0.85, "positive": True },
+                { "name": "价值", "exposure": -0.32, "positive": False },
+                { "name": "动量", "exposure": 1.27, "positive": True },
+                { "name": "质量", "exposure": 0.53, "positive": True },
+                { "name": "波动性", "exposure": -0.21, "positive": False }
+            ],
+            "macroFactors": [
+                { "name": "经济增长", "exposure": 1.32, "positive": True },
+                { "name": "通货膨胀", "exposure": -0.45, "positive": False },
+                { "name": "利率风险", "exposure": 0.78, "positive": True },
+                { "name": "信用风险", "exposure": 0.41, "positive": True },
+                { "name": "新兴市场", "exposure": 0.66, "positive": True }
+            ]
+        }
+    }
 
 @router.get("/portfolios", response_model=List[PortfolioResponse])
 async def get_portfolios():
+    """获取所有投资组合"""
     return list(portfolios_db.values())
 
 @router.get("/portfolios/{portfolio_id}", response_model=PortfolioResponse)
@@ -479,4 +591,97 @@ async def get_portfolio_allocation(portfolio_id: str):
     return {
         "portfolio_id": portfolio_id,
         "allocation": allocation_result
-    } 
+    }
+
+@router.get("/available-stocks")
+async def get_available_stocks():
+    """获取所有可用的股票代码和名称"""
+    result = []
+    for symbol, data in stocks_db.items():
+        result.append({
+            "symbol": symbol,
+            "name": data.get("name", ""),
+            "sector": data.get("sector", ""),
+            "price": data.get("price", 0),
+            "change": data.get("change", 0)
+        })
+    return result
+
+@router.post("/mock-analyze")
+async def mock_analyze_portfolio(portfolio: Portfolio):
+    """分析投资组合 - 使用真实数据集
+
+    Args:
+        portfolio (Portfolio): 投资组合数据
+
+    Returns:
+        dict: 分析结果
+    """
+    try:
+        # 转换tickers对象到请求格式
+        tickers = [
+            Ticker(
+                symbol=ticker.symbol,
+                weight=ticker.weight,
+                name=stock_name_mapping.get(ticker.symbol, stocks_db.get(ticker.symbol, {}).get("name", "")),
+                sector=stocks_db.get(ticker.symbol, {}).get("sector", "未分类"),
+                price=stocks_db.get(ticker.symbol, {}).get("price", 0),
+                change=stocks_db.get(ticker.symbol, {}).get("change", 0)
+            )
+            for ticker in portfolio.tickers
+        ]
+        
+        # 使用实际数据计算各项指标
+        from ..utils.market_data import (
+            get_portfolio_returns, 
+            get_portfolio_factor_exposure, 
+            compare_with_benchmark,
+            get_asset_allocation
+        )
+        
+        # 计算资产配置
+        allocation_data = get_asset_allocation(tickers)
+        
+        # 计算与基准的对比
+        comparison_data = compare_with_benchmark(tickers)
+        
+        # 计算因子暴露
+        factor_exposure = get_portfolio_factor_exposure(tickers)
+        
+        # 构建响应数据
+        response = {
+            "portfolio": {
+                "id": f"mock-{portfolio.name.lower().replace(' ', '-')}-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                "name": portfolio.name,
+                "tickers": [ticker.dict() for ticker in tickers]
+            },
+            "analysis": {
+                "performance": {
+                    "annualReturn": comparison_data["年化收益率"]["投资组合"],
+                    "sharpeRatio": comparison_data["夏普比率"]["投资组合"],
+                    "maxDrawdown": comparison_data["最大回撤"]["投资组合"],
+                    "volatility": comparison_data["波动率"]["投资组合"]
+                },
+                "allocation": allocation_data,
+                "risk": {
+                    "volatility": comparison_data["波动率"]["投资组合"],
+                    "maxDrawdown": abs(comparison_data["最大回撤"]["投资组合"]),
+                    "beta": 1.05,
+                    "var": 2.3,
+                    "downside_risk": 6.2,
+                    "sortino": 0.92
+                },
+                "comparison": comparison_data,
+                "factors": factor_exposure
+            }
+        }
+        
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"投资组合分析失败: {str(e)}")
+
+@router.get("/chat/{chat_id}/portfolio-analysis")
+async def get_chat_portfolio_analysis(chat_id: str):
+    """获取与聊天相关的投资组合分析数据"""
+    # 这里直接返回模拟数据
+    return await get_mock_portfolio_analysis() 
