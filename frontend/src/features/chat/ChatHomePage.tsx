@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { submitPortfolio } from '../../services/portfolioService';
-import { getAvailableStocksWithNames, stockNameMapping } from '../../shared/services/portfolioService';
+import { getAvailableStocksWithNames, stockNameMapping, getPortfolio } from '../../shared/services/portfolioService';
 import { useLanguage } from '../../shared/i18n/LanguageContext';
 import LanguageSwitcher from '../../shared/components/LanguageSwitcher';
 import { encryptData, decryptData } from '../../shared/utils/encryption';
@@ -225,12 +225,19 @@ const ChatHomePage = () => {
     }
   }, [language, t, activeConversationId]);
 
-  // 当组件首次加载时，创建一个新的聊天
+  // 当组件首次加载时，检查是否有对话
   useEffect(() => {
-    // Only create a new chat when the component first loads
-    createNewConversation();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array ensures this runs only once on mount
+    if (conversations.length > 0) {
+      // 如果已经有对话，则设置最新的一个为活动对话
+      const latestConversation = conversations[conversations.length - 1];
+      setActiveConversationId(latestConversation.id);
+      setMessages(conversationMessages[latestConversation.id] || []);
+    } else {
+      // 如果没有对话，则设置欢迎消息在界面上显示，但不创建对话记录
+      setActiveConversationId('default');
+      setMessages([{ role: 'assistant', content: t('chat.welcome') }]);
+    }
+  }, []);
   
   // 当切换对话时加载对应消息
   useEffect(() => {
@@ -362,6 +369,11 @@ const ChatHomePage = () => {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!input.trim() || isLoading) return;
+
+    // 检查是否需要创建新对话
+    if (!activeConversationId || activeConversationId === 'default' || !conversations.some(conv => conv.id === activeConversationId)) {
+      createNewConversation();
+    }
 
     // 重置仪表板状态
     setExtractedPortfolio(null);
@@ -522,7 +534,9 @@ const ChatHomePage = () => {
             headers: {
               'Authorization': `Bearer ${apiKey}`,
               'Content-Type': 'application/json'
-            }
+            },
+            timeout: 20000, // 20秒超时
+            maxContentLength: 5 * 1024 * 1024 // 5MB内容限制
           }
         );
 
@@ -568,8 +582,22 @@ const ChatHomePage = () => {
       }
     } catch (error) {
       console.error('操作失败:', error);
-      // 检查是否是API密钥错误
+      // 详细记录错误信息
       const axiosError = error as any;
+      console.error('错误详情:', {
+        status: axiosError.response?.status,
+        statusText: axiosError.response?.statusText,
+        data: axiosError.response?.data,
+        code: axiosError.code,
+        message: axiosError.message,
+        request: {
+          url: axiosError.config?.url,
+          method: axiosError.config?.method,
+          headers: axiosError.config?.headers
+        }
+      });
+      
+      // 检查是否是API密钥错误
       if (axiosError.response?.status === 401 || axiosError.response?.status === 403) {
         // API密钥无效
         setIsApiKeyValid(false);
@@ -620,8 +648,8 @@ const ChatHomePage = () => {
     try {
       setIsLoading(true);
       
-      // 使用服务发送投资组合
-      const response = await submitPortfolio(extractedPortfolio);
+      // 使用服务发送投资组合，传递当前语言
+      const response = await submitPortfolio(extractedPortfolio, language);
       const portfolioId = response.id || 'test-123';
       
       // 添加一个系统消息表示投资组合已发送到仪表板
@@ -787,8 +815,8 @@ const ChatHomePage = () => {
     try {
       setIsLoading(true);
       
-      // 使用服务发送投资组合
-      const response = await submitPortfolio(portfolio);
+      // 使用服务发送投资组合，传递当前语言
+      const response = await submitPortfolio(portfolio, language);
       const portfolioId = response.id || 'portfolio-' + Date.now();
       
       // 添加一个系统消息表示投资组合已发送到仪表板
@@ -977,6 +1005,40 @@ const ChatHomePage = () => {
       document.removeEventListener('click', handleClickOutside);
     };
   }, []);
+
+  // 修改用于处理历史对话中的投资组合查看逻辑
+  useEffect(() => {
+    // 当切换对话时，如果当前对话有关联的投资组合ID，检查其有效性
+    if (activeConversationId && conversationPortfolios[activeConversationId]) {
+      // 记录投资组合ID供调试
+      console.log(`当前对话关联的投资组合ID: ${conversationPortfolios[activeConversationId]}`);
+      
+      // 预先验证投资组合ID是否存在
+      const validatePortfolioId = async () => {
+        try {
+          // 异步验证投资组合是否存在，但不做任何UI更新
+          await getPortfolio(conversationPortfolios[activeConversationId] || '');
+        } catch (error) {
+          console.error('投资组合ID验证失败:', error);
+          
+          // 如果获取失败，可能是ID格式不对，尝试用mock数据的ID格式
+          if (conversationPortfolios[activeConversationId]?.startsWith('test-')) {
+            // 将test-xxx格式的ID转换为port-x格式
+            const newId = 'port-' + conversationPortfolios[activeConversationId].split('-')[1];
+            console.log(`尝试转换投资组合ID: ${conversationPortfolios[activeConversationId]} -> ${newId}`);
+            
+            // 更新ID映射
+            setConversationPortfolios(prev => ({
+              ...prev,
+              [activeConversationId]: newId
+            }));
+          }
+        }
+      };
+      
+      validatePortfolioId();
+    }
+  }, [activeConversationId, conversationPortfolios]);
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -1464,6 +1526,22 @@ const ChatHomePage = () => {
                       <Link
                         to={`/dashboard/${currentConversationPortfolioId}`}
                         className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-green-50 text-green-600 hover:bg-green-100 border border-green-200"
+                        onClick={(e) => {
+                          // 检查ID是否是test-开头，如果是则转换格式
+                          if (currentConversationPortfolioId.startsWith('test-')) {
+                            e.preventDefault();
+                            const newId = 'port-' + currentConversationPortfolioId.split('-')[1];
+                            
+                            // 更新转换后的ID
+                            setConversationPortfolios(prev => ({
+                              ...prev,
+                              [activeConversationId]: newId
+                            }));
+                            
+                            // 重定向到新格式的ID
+                            window.location.href = `/dashboard/${newId}`;
+                          }
+                        }}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                           <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
