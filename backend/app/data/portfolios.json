@@ -1,0 +1,216 @@
+{
+  "port-1": {
+    "id": "port-1",
+    "name": "a",
+    "created_at": "2025-04-13T21:30:46.693260",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "Apple Inc.",
+        "sector": "Technology",
+        "price": 173.57,
+        "change": 0.0123
+      }
+    ]
+  },
+  "port-2": {
+    "id": "port-2",
+    "name": "a",
+    "created_at": "2025-04-13T21:30:47.585506",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "Apple Inc.",
+        "sector": "Technology",
+        "price": 173.57,
+        "change": 0.0123
+      }
+    ]
+  },
+  "port-3": {
+    "id": "port-3",
+    "name": "a",
+    "created_at": "2025-04-13T21:32:14.984966",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "Apple Inc.",
+        "sector": "Technology",
+        "price": 173.57,
+        "change": 0.0123
+      }
+    ]
+  },
+  "port-4": {
+    "id": "port-4",
+    "name": "a",
+    "created_at": "2025-04-13T21:32:15.838149",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "Apple Inc.",
+        "sector": "Technology",
+        "price": 173.57,
+        "change": 0.0123
+      }
+    ]
+  },
+  "port-5": {
+    "id": "port-5",
+    "name": "aa",
+    "created_at": "2025-04-13T22:30:26.214873",
+    "tickers": [
+      {
+        "symbol": "ACGL",
+        "weight": 1.0,
+        "name": "ARCH CAPITAL GROUP LTD",
+        "sector": "Financials",
+        "price": null,
+        "change": null
+      }
+    ]
+  },
+  "port-6": {
+    "id": "port-6",
+    "name": "aa",
+    "created_at": "2025-04-13T22:30:26.886307",
+    "tickers": [
+      {
+        "symbol": "ACGL",
+        "weight": 1.0,
+        "name": "ARCH CAPITAL GROUP LTD",
+        "sector": "Financials",
+        "price": null,
+        "change": null
+      }
+    ]
+  },
+  "port-7": {
+    "id": "port-7",
+    "name": "aa",
+    "created_at": "2025-04-13T22:30:54.340050",
+    "tickers": [
+      {
+        "symbol": "AMD",
+        "weight": 0.333333,
+        "name": "ADVANCED MICRO DEVICES INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null
+      },
+      {
+        "symbol": "FDS",
+        "weight": 0.333333,
+        "name": "FACTSET RESEARCH SYSTEMS INC",
+        "sector": "Financials",
+        "price": null,
+        "change": null
+      },
+      {
+        "symbol": "ABT",
+        "weight": 0.333333,
+        "name": "Abbott Laboratories",
+        "sector": "Healthcare",
+        "price": null,
+        "change": null
+      }
+    ]
+  },
+  "port-8": {
+    "id": "port-8",
+    "name": "aa",
+    "created_at": "2025-04-13T22:30:55.119952",
+    "tickers": [
+      {
+        "symbol": "AMD",
+        "weight": 0.333333,
+        "name": "ADVANCED MICRO DEVICES INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null
+      },
+      {
+        "symbol": "FDS",
+        "weight": 0.333333,
+        "name": "FACTSET RESEARCH SYSTEMS INC",
+        "sector": "Financials",
+        "price": null,
+        "change": null
+      },
+      {
+        "symbol": "ABT",
+        "weight": 0.333333,
+        "name": "Abbott Laboratories",
+        "sector": "Healthcare",
+        "price": null,
+        "change": null
+      }
+    ]
+  },
+  "port-9": {
+    "id": "port-9",
+    "name": "a",
+    "created_at": "2025-04-13T22:40:05.876978",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 0.333333,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": 173.57,
+        "change": 0.0123
+      },
+      {
+        "symbol": "AMD",
+        "weight": 0.333333,
+        "name": "ADVANCED MICRO DEVICES INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null
+      },
+      {
+        "symbol": "ABT",
+        "weight": 0.333333,
+        "name": "Abbott Laboratories",
+        "sector": "Healthcare",
+        "price": null,
+        "change": null
+      }
+    ]
+  },
+  "port-10": {
+    "id": "port-10",
+    "name": "a",
+    "created_at": "2025-04-13T22:40:08.523369",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 0.333333,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": 173.57,
+        "change": 0.0123
+      },
+      {
+        "symbol": "AMD",
+        "weight": 0.333333,
+        "name": "ADVANCED MICRO DEVICES INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null
+      },
+      {
+        "symbol": "ABT",
+        "weight": 0.333333,
+        "name": "Abbott Laboratories",
+        "sector": "Healthcare",
+        "price": null,
+        "change": null
+      }
+    ]
+  }
+}

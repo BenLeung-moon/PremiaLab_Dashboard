@@ -52,7 +52,7 @@ start_frontend() {
   # 创建环境变量文件（如果不存在）
   if [ ! -f ".env" ]; then
     info "创建前端环境变量文件..."
-    echo "VITE_API_URL=http://localhost:8000" > .env
+    echo "VITE_API_URL=http://localhost:3001" > .env
   fi
   
   # 启动前端开发服务器
@@ -90,7 +90,7 @@ SECRET_KEY=your_secret_key" > .env
   fi
   
   # 启动后端服务
-  uvicorn app.main:app --reload &
+  uvicorn app.main:app --reload --host 0.0.0.0 --port 3001 &
   BACKEND_PID=$!
   log "后端服务已启动 (PID: $BACKEND_PID)"
   cd ..
@@ -122,7 +122,7 @@ start_backend
 # 显示服务信息
 info "服务已启动:"
 info "- 前端: http://localhost:5173"
-info "- 后端: http://localhost:8000"
+info "- 后端: http://localhost:3001"
 info "按 Ctrl+C 停止所有服务"
 
 # 保持脚本运行

@@ -1,8 +1,8 @@
 export default {
   chat: {
-    title: "I'm DeepSeek, nice to meet you!",
+    title: "I'm PremiaLab AI, nice to meet you!",
     welcome: 'I can help you analyze portfolios, provide market insights, and answer investment-related questions.',
-    inputPlaceholder: 'Send a message to DeepSeek',
+    inputPlaceholder: 'Send a message to PremiaLab AI',
     apiKeyRequired: 'Please set up your API key to continue',
     apiCallFailed: 'Request failed, please try again later',
     portfolioSent: 'Portfolio has been successfully sent to the dashboard!',
@@ -25,6 +25,24 @@ export default {
   },
   navigation: {
     toDashboard: 'View Dashboard'
+  },
+  dashboard: {
+    sectorAllocation: 'Sector Allocation',
+    geographicAllocation: 'Geographic Allocation',
+    marketCapAllocation: 'Market Cap Allocation',
+    portfolioDetails: 'Portfolio Details',
+    performance: 'Performance',
+    allocation: 'Asset Allocation',
+    risk: 'Risk Metrics',
+    comparison: 'Benchmark Comparison',
+    portfolioComposition: 'Holdings',
+    symbol: 'Symbol',
+    name: 'Name',
+    sector: 'Sector',
+    weight: 'Weight',
+    price: 'Price',
+    dailyChange: 'Daily Change',
+    noHoldings: 'No holdings data available'
   },
   portfolio: {
     sendToDashboard: 'Send to Dashboard',

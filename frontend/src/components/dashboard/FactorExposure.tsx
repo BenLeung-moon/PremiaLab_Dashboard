@@ -3,7 +3,12 @@ import { useLanguage } from '../../i18n/LanguageContext';
 import { getPortfolioAnalysis, mockPortfolioAnalysis, FactorCorrelation, RiskContribution } from '../../services/portfolioService';
 import { useParams } from 'react-router-dom';
 
-const FactorExposure: React.FC = () => {
+interface FactorExposureProps {
+  data?: any; // 接收从父组件传递的因子数据
+}
+
+const FactorExposure: React.FC<FactorExposureProps> = ({ data }) => {
+  console.log('FactorExposure component rendering with data:', data);
   const { t } = useLanguage();
   const { portfolioId } = useParams<{ portfolioId: string }>();
   const [styleFactors, setStyleFactors] = useState<any[]>([]);
@@ -15,43 +20,150 @@ const FactorExposure: React.FC = () => {
   const [hasCorrelationData, setHasCorrelationData] = useState<boolean>(false);
   const [showRawExposure, setShowRawExposure] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const [showDebugInfo, setShowDebugInfo] = useState<boolean>(false);
+  const [rawFactorData, setRawFactorData] = useState<any>(null);
   
   useEffect(() => {
-    const fetchData = async () => {
+    const processData = async () => {
       try {
+        // 如果父组件传递了数据，优先使用
         let analysisData;
-        
-        if (portfolioId) {
-          // 从API获取数据
+        if (data) {
+          // 使用传递的数据
+          analysisData = { factors: data };
+          console.log('Using provided data:', analysisData);
+        } else if (portfolioId) {
+          // 如果没有传递数据但有portfolioId，从API获取
           analysisData = await getPortfolioAnalysis(portfolioId);
+          console.log('Fetched data from API:', analysisData);
         } else {
-          // 使用模拟数据
+          // 否则使用模拟数据
           analysisData = mockPortfolioAnalysis();
+          console.log('Using mock data:', analysisData);
         }
         
-        // 转换风格因子数据并应用翻译
-        const translatedStyleFactors = analysisData.factors.styleFactors?.map(factor => ({
-          ...factor,
-          displayName: t(`factors.${factor.name}`) || factor.name
-        })) || [];
+        console.log('Factor Exposure Data (原始数据):', analysisData.factors);
+        console.log('Style Factors (原始):', analysisData.factors.styleFactors);
+        console.log('Industry Factors (原始):', analysisData.factors.industryFactors);
+        // 保存原始数据用于调试
+        setRawFactorData(analysisData.factors);
         
-        // 转换行业因子数据并应用翻译
-        const translatedIndustryFactors = analysisData.factors.industryFactors?.map(factor => ({
-          ...factor,
-          displayName: t(`industries.${factor.name}`) || factor.name
-        })) || [];
+        // 检查并转换styleFactors数据结构
+        let styleFactorsData = [];
+        if (analysisData.factors.styleFactors) {
+          styleFactorsData = analysisData.factors.styleFactors.map(factor => {
+            // 处理新的API返回格式 (portfolio_exposure, benchmark_exposure, difference)
+            if ('portfolio_exposure' in factor) {
+              return {
+                name: factor.name,
+                displayName: t(`factors.${factor.name}`) || factor.name,
+                exposure: factor.portfolio_exposure,
+                benchmarkExposure: factor.benchmark_exposure,
+                difference: factor.difference,
+                positive: factor.difference > 0
+              };
+            } 
+            // 处理旧的API返回格式 (exposure, positive)
+            else {
+              return {
+                ...factor,
+                displayName: t(`factors.${factor.name}`) || factor.name
+              };
+            }
+          });
+        }
+        console.log('风格因子(处理后):', styleFactorsData);
+        
+        // 检查和转换macroFactors数据为industryFactors (如果后端返回macroFactors)
+        let industryFactorsData = [];
+        if (analysisData.factors.industryFactors) {
+          industryFactorsData = analysisData.factors.industryFactors.map(factor => {
+            // 处理新的API返回格式 (portfolio_exposure, benchmark_exposure, difference)
+            if ('portfolio_exposure' in factor) {
+              return {
+                name: factor.name,
+                displayName: t(`industries.${factor.name}`) || factor.name,
+                exposure: factor.portfolio_exposure,
+                benchmarkExposure: factor.benchmark_exposure,
+                difference: factor.difference,
+                positive: factor.difference > 0
+              };
+            } 
+            // 处理旧的API返回格式
+            else {
+              return {
+                ...factor,
+                displayName: t(`industries.${factor.name}`) || factor.name
+              };
+            }
+          });
+        } else if (analysisData.factors.macroFactors) {
+          industryFactorsData = analysisData.factors.macroFactors.map(factor => {
+            // 处理新的API返回格式 (portfolio_exposure, benchmark_exposure, difference)
+            if ('portfolio_exposure' in factor) {
+              return {
+                name: factor.name,
+                displayName: t(`industries.${factor.name}`) || factor.name,
+                exposure: factor.portfolio_exposure,
+                benchmarkExposure: factor.benchmark_exposure,
+                difference: factor.difference,
+                positive: factor.difference > 0
+              };
+            } 
+            // 处理旧的API返回格式
+            else {
+              return {
+                ...factor,
+                displayName: t(`industries.${factor.name}`) || factor.name
+              };
+            }
+          });
+        }
+        console.log('行业因子(处理后):', industryFactorsData);
         
         // 转换国家/地区因子数据并应用翻译
-        const translatedCountryFactors = analysisData.factors.countryFactors?.map(factor => ({
-          ...factor,
-          displayName: t(`countries.${factor.name}`) || factor.name
-        })) || [];
+        const translatedCountryFactors = analysisData.factors.countryFactors?.map(factor => {
+          // 处理新的API返回格式 (portfolio_exposure, benchmark_exposure, difference)
+          if ('portfolio_exposure' in factor) {
+            return {
+              name: factor.name,
+              displayName: t(`countries.${factor.name}`) || factor.name,
+              exposure: factor.portfolio_exposure,
+              benchmarkExposure: factor.benchmark_exposure,
+              difference: factor.difference,
+              positive: factor.difference > 0
+            };
+          } 
+          // 处理旧的API返回格式
+          else {
+            return {
+              ...factor,
+              displayName: t(`countries.${factor.name}`) || factor.name
+            };
+          }
+        }) || [];
         
         // 转换其他因子数据并应用翻译
-        const translatedOtherFactors = analysisData.factors.otherFactors?.map(factor => ({
-          ...factor,
-          displayName: t(`factors.${factor.name}`) || factor.name
-        })) || [];
+        const translatedOtherFactors = analysisData.factors.otherFactors?.map(factor => {
+          // 处理新的API返回格式 (portfolio_exposure, benchmark_exposure, difference)
+          if ('portfolio_exposure' in factor) {
+            return {
+              name: factor.name,
+              displayName: t(`factors.${factor.name}`) || factor.name,
+              exposure: factor.portfolio_exposure,
+              benchmarkExposure: factor.benchmark_exposure, 
+              difference: factor.difference,
+              positive: factor.difference > 0
+            };
+          }
+          // 处理旧的API返回格式
+          else {
+            return {
+              ...factor,
+              displayName: t(`factors.${factor.name}`) || factor.name
+            };
+          }
+        }) || [];
         
         // 获取因子相关性和风险贡献数据
         const correlations = analysisData.factors.factorCorrelations || [];
@@ -71,8 +183,8 @@ const FactorExposure: React.FC = () => {
           displayName: t(`factors.${risk.name}`) || risk.name
         }));
         
-        setStyleFactors(translatedStyleFactors);
-        setIndustryFactors(translatedIndustryFactors);
+        setStyleFactors(styleFactorsData);
+        setIndustryFactors(industryFactorsData);
         setCountryFactors(translatedCountryFactors);
         setOtherFactors(translatedOtherFactors);
         setFactorCorrelations(translatedCorrelations);
@@ -85,8 +197,8 @@ const FactorExposure: React.FC = () => {
       }
     };
     
-    fetchData();
-  }, [portfolioId, t]);
+    processData();
+  }, [data, portfolioId, t]);
   
   // 获取因子条的宽度
   const getBarWidth = (exposure: number) => {
@@ -148,6 +260,12 @@ const FactorExposure: React.FC = () => {
               <div className="flex justify-between text-sm mb-1">
                 <span>{factor.displayName}</span>
                 <div>
+                  {/* 如果有基准暴露数据，显示 */}
+                  {factor.benchmarkExposure !== undefined && (
+                    <span className="text-gray-500 mr-2">
+                      {t('common.benchmark')}: {factor.benchmarkExposure.toFixed(2)}
+                    </span>
+                  )}
                   {showRawExposure && factor.rawExposure !== undefined && (
                     <span className="text-gray-500 mr-2">
                       {factor.rawExposure.toFixed(2)}
@@ -156,10 +274,26 @@ const FactorExposure: React.FC = () => {
                   <span className={factor.positive ? 'text-green-600' : 'text-red-600'}>
                     {factor.exposure.toFixed(2)}
                   </span>
+                  {/* 如果有差异数据，显示 */}
+                  {factor.difference !== undefined && (
+                    <span className={`ml-2 ${factor.difference > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ({factor.difference > 0 ? '+' : ''}{factor.difference.toFixed(2)})
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="h-2 bg-gray-200 rounded-full relative">
                 <div className="absolute inset-y-0 w-1/2 left-1/2 border-l border-gray-400"></div>
+                {/* 如果有基准暴露数据，显示基准暴露（灰色条） */}
+                {factor.benchmarkExposure !== undefined && (
+                  <div 
+                    className={`absolute inset-y-0 ${getBarPosition(factor.benchmarkExposure)} bg-gray-400 opacity-50 rounded-full`}
+                    style={{ 
+                      width: getBarWidth(factor.benchmarkExposure)
+                    }}
+                  ></div>
+                )}
+                {/* 投资组合暴露（主色条） */}
                 <div 
                   className={`absolute inset-y-0 ${getBarPosition(factor.exposure)} ${
                     factor.exposure > 0 ? 'bg-green-500' : 'bg-red-500'
@@ -287,10 +421,44 @@ const FactorExposure: React.FC = () => {
     return <div className="p-5 text-center text-gray-500">{t('common.loading')}</div>;
   }
   
+  console.log('FactorExposure data being rendered:', {
+    styleFactors,
+    industryFactors,
+    countryFactors,
+    otherFactors
+  });
+  
   return (
     <div className="space-y-6">
+      {/* 调试信息切换按钮 */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowDebugInfo(!showDebugInfo)}
+          className="text-sm text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded"
+        >
+          {showDebugInfo ? '隐藏调试信息' : '显示调试信息'}
+        </button>
+      </div>
+      
+      {/* 调试信息 */}
+      {showDebugInfo && rawFactorData && (
+        <div className="bg-gray-100 p-4 rounded overflow-auto max-h-96">
+          <h3 className="font-medium mb-2 text-gray-700">原始因子数据</h3>
+          <pre className="text-xs text-gray-800">{JSON.stringify(rawFactorData, null, 2)}</pre>
+        </div>
+      )}
+      
       {/* 风格因子暴露 */}
-      {renderFactorSection(t('factors.styleFactorExposure'), styleFactors)}
+      {styleFactors.length > 0 && renderFactorSection(t('factors.styleFactorExposure'), styleFactors)}
+      
+      {/* 行业因子暴露 */}
+      {industryFactors.length > 0 && renderFactorSection(t('factors.industryFactorExposure'), industryFactors)}
+      
+      {/* 国家/地区因子暴露 */}
+      {countryFactors.length > 0 && renderFactorSection(t('factors.countryFactorExposure'), countryFactors)}
+      
+      {/* 其他因子暴露 */}
+      {otherFactors.length > 0 && renderFactorSection(t('factors.otherFactorExposure'), otherFactors)}
       
       {/* 当存在相关性数据时，显示风险贡献和相关性矩阵 */}
       {hasCorrelationData && (
@@ -300,30 +468,23 @@ const FactorExposure: React.FC = () => {
         </>
       )}
       
-      {/* 行业因子暴露 */}
-      {renderFactorSection(t('factors.industryFactorExposure'), industryFactors)}
-      
-      {/* 国家/地区因子暴露 */}
-      {renderFactorSection(t('factors.countryFactorExposure'), countryFactors)}
-      
-      {/* 其他因子暴露 */}
-      {otherFactors.length > 0 && renderFactorSection(t('factors.otherFactorExposure'), otherFactors)}
-      
       {/* 因子解释 */}
-      <div className="bg-white rounded-lg shadow-md p-5">
-        <h2 className="text-lg font-medium mb-4">{t('factors.analysisExplanation')}</h2>
-        <div className="p-4 bg-blue-50 text-blue-800 rounded-lg text-sm">
-          <p className="mb-2"><strong>{t('factors.exposureTitle')}</strong> {t('factors.exposureDescription')}</p>
-          <p className="mb-2">{t('factors.positiveExposure')}</p>
-          <p className="mb-2">{t('factors.negativeExposure')}</p>
-          {showRawExposure && (
-            <p className="mt-2"><strong>{t('factors.adjustedExposureTitle')}</strong> {t('factors.adjustedExposureDescription')}</p>
-          )}
-          {hasCorrelationData && (
-            <p className="mt-2"><strong>{t('factors.correlationExplanation')}</strong> {t('factors.correlationDescription')}</p>
-          )}
+      {styleFactors.length > 0 && (
+        <div className="bg-white rounded-lg shadow-md p-5">
+          <h2 className="text-lg font-medium mb-4">{t('factors.analysisExplanation')}</h2>
+          <div className="p-4 bg-blue-50 text-blue-800 rounded-lg text-sm">
+            <p className="mb-2"><strong>{t('factors.exposureTitle')}</strong> {t('factors.exposureDescription')}</p>
+            <p className="mb-2">{t('factors.positiveExposure')}</p>
+            <p className="mb-2">{t('factors.negativeExposure')}</p>
+            {showRawExposure && (
+              <p className="mt-2"><strong>{t('factors.adjustedExposureTitle')}</strong> {t('factors.adjustedExposureDescription')}</p>
+            )}
+            {hasCorrelationData && (
+              <p className="mt-2"><strong>{t('factors.correlationExplanation')}</strong> {t('factors.correlationDescription')}</p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

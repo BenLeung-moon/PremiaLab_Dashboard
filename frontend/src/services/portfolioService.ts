@@ -81,6 +81,7 @@ export interface FactorCorrelation {
 export interface RiskContribution {
   name: string;
   contribution: number;
+  displayName?: string;
 }
 
 export interface FactorsData {
@@ -102,14 +103,16 @@ export interface PortfolioAnalysis {
 }
 
 // API常量
-const API_URL = '/api';
+const API_URL = 'http://localhost:3001/api';
 
 /**
  * 提交投资组合到后端
  */
-export const submitPortfolio = async (portfolio: Portfolio): Promise<Portfolio> => {
+export const submitPortfolio = async (portfolio: Portfolio, language?: string): Promise<Portfolio> => {
   try {
-    const response = await axios.post(`${API_URL}/portfolios`, portfolio);
+    // Add the current language as a query parameter if provided
+    const queryParams = language ? `?lang=${language}` : '';
+    const response = await axios.post(`${API_URL}/portfolios${queryParams}`, portfolio);
     return response.data;
   } catch (error) {
     console.error('Failed to submit portfolio:', error);
@@ -204,7 +207,107 @@ export const getPortfolio = async (portfolioId: string): Promise<Portfolio> => {
 export const getPortfolioAnalysis = async (portfolioId: string): Promise<PortfolioAnalysis> => {
   try {
     const response = await axios.get(`${API_URL}/portfolios/${portfolioId}/analyze`);
-    return response.data;
+    const data = response.data;
+    
+    // 处理API响应中的数据结构差异
+    // 确保risk是一个数组
+    if (data.risk && !Array.isArray(data.risk)) {
+      console.warn('API返回的risk不是数组格式，正在转换...');
+      // 如果是对象，转换为数组
+      if (typeof data.risk === 'object') {
+        const riskArray: RiskData[] = [];
+        for (const key in data.risk) {
+          if (Object.prototype.hasOwnProperty.call(data.risk, key)) {
+            const riskItem = data.risk[key];
+            riskArray.push({
+              name: key,
+              value: typeof riskItem.value === 'string' ? riskItem.value : `${riskItem.value}`,
+              status: riskItem.status || 'neutral',
+              percentage: riskItem.percentage || 50
+            });
+          }
+        }
+        data.risk = riskArray;
+      } else {
+        // 如果不是对象也不是数组，设置为空数组
+        data.risk = [];
+      }
+    }
+    
+    // 确保comparison是一个数组
+    if (data.comparison && !Array.isArray(data.comparison)) {
+      console.warn('API返回的comparison不是数组格式，正在转换...');
+      // 如果是对象，转换为数组
+      if (typeof data.comparison === 'object') {
+        const comparisonArray: ComparisonData[] = [];
+        for (const key in data.comparison) {
+          if (Object.prototype.hasOwnProperty.call(data.comparison, key)) {
+            const compItem = data.comparison[key];
+            if (typeof compItem === 'object' && compItem !== null) {
+              let portfolio = '';
+              let benchmark = '';
+              let difference = '';
+              let positive = true;
+              
+              // 处理不同的数据格式
+              if ('portfolio' in compItem && 'benchmark' in compItem) {
+                portfolio = `${compItem.portfolio}`;
+                benchmark = `${compItem.benchmark}`;
+                
+                // 计算差异
+                if ('difference' in compItem) {
+                  difference = compItem.difference;
+                } else if ('excess' in compItem) {
+                  difference = `${compItem.excess}`;
+                  positive = compItem.excess >= 0;
+                } else {
+                  const portfolioVal = parseFloat(portfolio);
+                  const benchmarkVal = parseFloat(benchmark);
+                  if (!isNaN(portfolioVal) && !isNaN(benchmarkVal)) {
+                    const diff = portfolioVal - benchmarkVal;
+                    difference = diff >= 0 ? `+${diff.toFixed(1)}` : `${diff.toFixed(1)}`;
+                    positive = diff >= 0;
+                  }
+                }
+              } else if ('投资组合' in compItem && '基准' in compItem) {
+                // 处理中文键名
+                portfolio = `${compItem.投资组合}`;
+                benchmark = `${compItem.基准}`;
+                
+                if ('差异' in compItem) {
+                  difference = `${compItem.差异}`;
+                } else if ('超额' in compItem) {
+                  difference = `${compItem.超额}`;
+                  positive = compItem.超额 >= 0;
+                } else {
+                  const portfolioVal = parseFloat(portfolio);
+                  const benchmarkVal = parseFloat(benchmark);
+                  if (!isNaN(portfolioVal) && !isNaN(benchmarkVal)) {
+                    const diff = portfolioVal - benchmarkVal;
+                    difference = diff >= 0 ? `+${diff.toFixed(1)}` : `${diff.toFixed(1)}`;
+                    positive = diff >= 0;
+                  }
+                }
+              }
+              
+              comparisonArray.push({
+                metric: key,
+                portfolio: portfolio,
+                benchmark: benchmark,
+                difference: difference,
+                positive: positive
+              });
+            }
+          }
+        }
+        data.comparison = comparisonArray;
+      } else {
+        // 如果不是对象也不是数组，设置为空数组
+        data.comparison = [];
+      }
+    }
+    
+    return data;
   } catch (error) {
     console.error(`获取投资组合分析 ${portfolioId} 失败:`, error);
     throw error;

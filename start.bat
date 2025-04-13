@@ -5,7 +5,7 @@ echo =====================================
 
 :: Set URL variables
 set FRONTEND_URL=http://localhost:5173
-set BACKEND_URL=http://localhost:8000
+set BACKEND_URL=http://localhost:3001
 
 :: Start frontend
 echo [INFO] Starting frontend service...
@@ -21,7 +21,7 @@ echo [INFO] Starting backend service...
 cd backend
 
 :: Activate virtual environment and start backend service
-start "PremiaLab Backend" cmd /c "call venv\Scripts\activate && uvicorn app.main:app --reload"
+start "PremiaLab Backend" cmd /c "call venv\Scripts\activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 3001"
 echo [INFO] Backend service started
 cd ..
 

@@ -113,7 +113,7 @@ const PortfolioAnalyzer: React.FC = () => {
           onClick={() => setUseMockData(!useMockData)}
           className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200"
         >
-          {useMockData ? '使用真实API' : '使用模拟数据'}
+          {useMockData ? '使用实际计算数据' : '使用模拟数据'}
         </button>
       </div>
       
@@ -167,7 +167,13 @@ const PortfolioAnalyzer: React.FC = () => {
         {activeTab === 'factors' && (
           <div>
             <h2 className="text-xl font-medium mb-4">因子分析</h2>
-            <FactorExposure data={analysisData.factors} />
+            {analysisData.factors ? (
+              <FactorExposure data={analysisData.factors} />
+            ) : (
+              <div className="bg-gray-50 p-4 rounded text-center text-gray-500">
+                没有因子数据可用
+              </div>
+            )}
           </div>
         )}
       </div>

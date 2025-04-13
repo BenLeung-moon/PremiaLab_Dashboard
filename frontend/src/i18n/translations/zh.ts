@@ -1,8 +1,8 @@
 export default {
   chat: {
-    title: '我是 DeepSeek, 很高兴见到你！',
+    title: '我是 PremiaLab AI, 很高兴见到你！',
     welcome: '我可以帮你分析投资组合、提供市场洞察，并回答投资相关问题。',
-    inputPlaceholder: '给 DeepSeek 发送消息',
+    inputPlaceholder: '给 PremiaLab AI 发送消息',
     apiKeyRequired: '请先设置API密钥才能继续对话',
     apiCallFailed: '请求失败，请稍后重试',
     portfolioSent: '投资组合已成功发送到仪表板！',
@@ -25,6 +25,24 @@ export default {
   },
   navigation: {
     toDashboard: '查看仪表板'
+  },
+  dashboard: {
+    sectorAllocation: '行业配置',
+    geographicAllocation: '地区配置',
+    marketCapAllocation: '市值配置',
+    portfolioDetails: '投资组合详情',
+    performance: '绩效分析',
+    allocation: '资产配置',
+    risk: '风险指标',
+    comparison: '基准比较',
+    portfolioComposition: '持仓明细',
+    symbol: '股票代码',
+    name: '名称',
+    sector: '行业',
+    weight: '权重',
+    price: '价格',
+    dailyChange: '日涨跌',
+    noHoldings: '暂无持仓数据'
   },
   portfolio: {
     sendToDashboard: '发送到仪表板',

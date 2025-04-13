@@ -1,9 +1,14 @@
 interface Ticker {
   symbol: string;
   weight: number;
+  name?: string;
+  sector?: string;
+  price?: number;
+  change?: number;
 }
 
 interface Portfolio {
+  id?: string;
   name: string;
   tickers: Ticker[];
   createdAt: Date;

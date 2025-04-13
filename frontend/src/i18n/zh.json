@@ -47,7 +47,28 @@
     "created": "投资组合已创建：{name}，包含{count}只股票",
     "defaultName": "我的投资组合",
     "createNew": "创建新投资组合",
-    "totalWeight": "总权重"
+    "totalWeight": "总权重",
+    "manualAnalyzer": {
+      "title": "手动投资组合分析器",
+      "description": "输入您自己的投资组合进行分析",
+      "createTitle": "创建投资组合",
+      "nameLabel": "投资组合名称",
+      "descriptionLabel": "描述（可选）",
+      "stocksLabel": "股票列表",
+      "addStock": "添加股票",
+      "codeLabel": "股票代码",
+      "nameLabel": "股票名称",
+      "weightLabel": "权重",
+      "actionLabel": "操作",
+      "removeStock": "移除",
+      "balanceWeights": "平衡权重",
+      "totalWeight": "总权重",
+      "startAnalysis": "开始分析",
+      "analyzing": "分析中...",
+      "returnToEdit": "返回编辑",
+      "analysisError": "分析错误",
+      "analysisResults": "分析结果"
+    }
   },
   "settings": {
     "title": "Perplexity API设置",
@@ -55,11 +76,18 @@
     "apiLinkText": "Perplexity API设置",
     "placeholder": "pplx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "cancel": "取消",
-    "save": "保存"
+    "save": "保存",
+    "language": "语言设置"
   },
   "navigation": {
+    "main": "主页",
+    "tools": "工具",
+    "dashboard": "仪表板",
+    "chat": "对话",
+    "manualAnalyzer": "手动投资组合分析器",
     "toDashboard": "切换到仪表板",
-    "toChat": "切换到对话模式"
+    "toChat": "切换到对话模式",
+    "backToChat": "返回对话"
   },
   "language": {
     "switchTo": "English",
@@ -69,6 +97,9 @@
     "cancel": "取消"
   },
   "dashboard": {
+    "title": "投资组合分析",
+    "description": "查看您的投资组合分析结果",
+    "portfolioId": "投资组合ID",
     "overview": "投资组合概览",
     "performance": "表现",
     "allocation": "资产配置",
@@ -81,7 +112,17 @@
     "metrics": "关键指标",
     "assetAllocation": "资产配置",
     "sectorAllocation": "行业配置",
-    "geographicAllocation": "地理配置"
+    "geographicAllocation": "地理配置",
+    "factors": "因子暴露",
+    "tabs": {
+      "performance": "绩效指标",
+      "holdings": "持仓明细",
+      "allocation": "资产配置",
+      "comparison": "基准比较",
+      "factors": "因子暴露",
+      "risk": "风险指标",
+      "trends": "历史趋势"
+    }
   },
   "factors": {
     "value": "价值",
@@ -101,6 +142,23 @@
     "industryFactorExposure": "行业因子暴露",
     "countryFactorExposure": "国家/地区因子暴露",
     "otherFactorExposure": "其他因子暴露",
+    "valueFactor": "价值因子",
+    "growthFactor": "成长因子",
+    "sizeFactor": "规模因子",
+    "momentumFactor": "动量因子",
+    "qualityFactor": "质量因子",
+    "volatilityFactor": "波动性因子",
+    "monetaryPolicyFactor": "货币政策因子",
+    "creditEnvironmentFactor": "信贷环境因子",
+    "economicGrowthFactor": "经济增长因子",
+    "inflationFactor": "通胀因子",
+    "interestRateChangeFactor": "利率变化因子",
+    "energyPricesFactor": "能源价格因子",
+    "styleFactorExposureFactor": "风格因子暴露",
+    "macroFactorExposureFactor": "宏观因子暴露",
+    "industryFactorExposureFactor": "行业因子暴露",
+    "countryFactorExposureFactor": "国家/地区因子暴露",
+    "otherFactorExposureFactor": "其他因子暴露",
     "analysisExplanation": "因子分析解释",
     "exposureTitle": "因子暴露",
     "exposureDescription": "表明投资组合对各种市场因素的敏感度。",
@@ -124,16 +182,17 @@
     "riskContributionDescription": "显示每个因子对投资组合整体风险的贡献百分比，同时考虑暴露大小和因子间相关性。"
   },
   "industries": {
-    "technology": "科技",
-    "healthcare": "医疗健康",
-    "financials": "金融",
-    "consumer": "消费品",
-    "energy": "能源",
-    "utilities": "公用事业",
-    "materials": "材料",
-    "industrials": "工业",
-    "communication": "通信服务",
-    "realestate": "房地产"
+    "Information Technology": "信息技术",
+    "Health Care": "医疗保健",
+    "Financials": "金融",
+    "Consumer Discretionary": "非必需消费品",
+    "Consumer Staples": "必需消费品",
+    "Industrials": "工业",
+    "Communication Services": "通信服务",
+    "Energy": "能源",
+    "Materials": "材料",
+    "Utilities": "公用事业",
+    "Real Estate": "房地产"
   },
   "countries": {
     "us": "美国",

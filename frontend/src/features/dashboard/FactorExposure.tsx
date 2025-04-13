@@ -1,40 +1,44 @@
+import { useLanguage } from '../../shared/i18n/LanguageContext';
+
 const FactorExposure = () => {
+  const { language } = useLanguage();
+
   const factors = [
-    { name: '动量因子', exposure: 0.68, benchmark: 0.45 },
-    { name: '价值因子', exposure: 0.32, benchmark: 0.55 },
-    { name: '规模因子', exposure: -0.15, benchmark: 0.10 },
-    { name: '波动因子', exposure: -0.25, benchmark: -0.15 },
-    { name: '质量因子', exposure: 0.85, benchmark: 0.60 },
+    { nameEn: 'Momentum Factor', nameZh: '动量因子', exposure: 0.68, benchmark: 0.45 },
+    { nameEn: 'Value Factor', nameZh: '价值因子', exposure: 0.32, benchmark: 0.55 },
+    { nameEn: 'Size Factor', nameZh: '规模因子', exposure: -0.15, benchmark: 0.10 },
+    { nameEn: 'Volatility Factor', nameZh: '波动因子', exposure: -0.25, benchmark: -0.15 },
+    { nameEn: 'Quality Factor', nameZh: '质量因子', exposure: 0.85, benchmark: 0.60 },
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-xl font-semibold mb-4">Factor Exposure</h2>
-      <div className="overflow-x-auto">
+    <div className="bg-white rounded-lg shadow p-6 w-full">
+      <h2 className="text-xl font-semibold mb-4">{language === 'en' ? 'Factor Exposure' : '因子暴露'}</h2>
+      <div className="w-full overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead>
             <tr>
               <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                因子
+                {language === 'en' ? 'Factor' : '因子'}
               </th>
               <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                组合暴露
+                {language === 'en' ? 'Portfolio Exposure' : '组合暴露'}
               </th>
               <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                基准暴露
+                {language === 'en' ? 'Benchmark Exposure' : '基准暴露'}
               </th>
               <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                差异
+                {language === 'en' ? 'Difference' : '差异'}
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody>
             {factors.map((factor, index) => {
               const diff = factor.exposure - factor.benchmark;
               return (
                 <tr key={index}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {factor.name}
+                    {language === 'en' ? factor.nameEn : factor.nameZh}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {factor.exposure.toFixed(2)}

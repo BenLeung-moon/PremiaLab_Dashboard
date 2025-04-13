@@ -1,0 +1,2176 @@
+{
+  "companies": {
+    "AAPL": {
+      "name": "APPLE INC",
+      "sector": "Information Technology",
+      "industry": "Consumer Electronics",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide."
+    },
+    "MSFT": {
+      "name": "MICROSOFT CORP",
+      "sector": "Information Technology",
+      "industry": "Software",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "Microsoft Corporation develops, licenses, and supports software, services, devices, and solutions worldwide."
+    },
+    "GOOGL": {
+      "name": "ALPHABET INC CLASS A",
+      "sector": "Communication",
+      "industry": "Internet Content & Information",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "Alphabet Inc. offers various products and platforms in the United States, Europe, the Middle East, Africa, the Asia-Pacific, Canada, and Latin America."
+    },
+    "GOOG": {
+      "name": "ALPHABET INC CLASS C",
+      "sector": "Communication",
+      "industry": "Internet Content & Information",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "Alphabet Inc. offers various products and platforms in the United States, Europe, the Middle East, Africa, the Asia-Pacific, Canada, and Latin America."
+    },
+    "AMZN": {
+      "name": "AMAZON COM INC",
+      "sector": "Consumer Discretionary",
+      "industry": "Internet Retail",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "Amazon.com, Inc. engages in the retail sale of consumer products and subscriptions through online and physical stores in North America and internationally."
+    },
+    "META": {
+      "name": "META PLATFORMS INC CLASS A",
+      "sector": "Communication",
+      "industry": "Internet Content & Information",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "Meta Platforms, Inc. engages in the development of products that enable people to connect and share with friends and family through mobile devices, personal computers, virtual reality headsets, and wearables worldwide."
+    },
+    "TSLA": {
+      "name": "TESLA INC",
+      "sector": "Consumer Discretionary",
+      "industry": "Auto Manufacturers",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "Tesla, Inc. designs, develops, manufactures, leases, and sells electric vehicles, and energy generation and storage systems."
+    },
+    "NVDA": {
+      "name": "NVIDIA CORP",
+      "sector": "Information Technology",
+      "industry": "Semiconductors",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "NVIDIA Corporation provides graphics, and compute and networking solutions in the United States, Taiwan, China, and internationally."
+    },
+    "JPM": {
+      "name": "JPMORGAN CHASE & CO",
+      "sector": "Financials",
+      "industry": "Banks",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "JPMorgan Chase & Co. operates as a financial services company worldwide."
+    },
+    "V": {
+      "name": "VISA INC CLASS A",
+      "sector": "Financials",
+      "industry": "Credit Services",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "Visa Inc. operates as a payments technology company worldwide."
+    },
+    "JNJ": {
+      "name": "JOHNSON & JOHNSON",
+      "sector": "Health Care",
+      "industry": "Drug Manufacturers",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "Johnson & Johnson researches and develops, manufactures, and sells various products in the healthcare field worldwide."
+    },
+    "PG": {
+      "name": "PROCTER & GAMBLE",
+      "sector": "Consumer Staples",
+      "industry": "Household & Personal Products",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "The Procter & Gamble Company provides branded consumer packaged goods to consumers in North and Latin America, Europe, the Asia Pacific, Greater China, India, the Middle East, and Africa."
+    },
+    "UNH": {
+      "name": "UNITEDHEALTH GROUP INC",
+      "sector": "Health Care",
+      "industry": "Healthcare Plans",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "UnitedHealth Group Incorporated operates as a diversified health care company in the United States."
+    },
+    "HD": {
+      "name": "HOME DEPOT INC",
+      "sector": "Consumer Discretionary",
+      "industry": "Home Improvement Retail",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "The Home Depot, Inc. operates as a home improvement retailer."
+    },
+    "MA": {
+      "name": "MASTERCARD INC CLASS A",
+      "sector": "Financials",
+      "industry": "Credit Services",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "Mastercard Incorporated, a technology company, provides transaction processing and other payment-related products and services in the United States and internationally."
+    },
+    "BAC": {
+      "name": "BANK OF AMERICA CORP",
+      "sector": "Financials",
+      "industry": "Banks",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "Bank of America Corporation, through its subsidiaries, provides banking and financial products and services for individual consumers, small and middle-market businesses, institutional investors, large corporations, and governments worldwide."
+    },
+    "DIS": {
+      "name": "WALT DISNEY",
+      "sector": "Communication",
+      "industry": "Entertainment",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "The Walt Disney Company, together with its subsidiaries, operates as an entertainment company worldwide."
+    },
+    "ADBE": {
+      "name": "ADOBE INC",
+      "sector": "Information Technology",
+      "industry": "Software",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "Adobe Inc. operates as a diversified software company worldwide."
+    },
+    "CRM": {
+      "name": "SALESFORCE INC",
+      "sector": "Information Technology",
+      "industry": "Software",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "Salesforce, Inc. provides customer relationship management technology that brings companies and customers together worldwide."
+    },
+    "BABA": {
+      "name": "Alibaba Group Holding Ltd.",
+      "sector": "Consumer Discretionary",
+      "industry": "Internet Retail",
+      "region": "China",
+      "marketCap": "Large Cap",
+      "description": "Alibaba Group Holding Limited provides technology infrastructure and marketing reach to help merchants, brands, retailers, and other businesses to engage with their users and customers in the People's Republic of China and internationally."
+    },
+    "TCEHY": {
+      "name": "Tencent Holdings Ltd.",
+      "sector": "Communication Services",
+      "industry": "Internet Content & Information",
+      "region": "China",
+      "marketCap": "Large Cap",
+      "description": "Tencent Holdings Limited, an investment holding company, provides value-added services, online advertising, fintech, and business services in the People's Republic of China and internationally."
+    },
+    "AMD": {
+      "name": "ADVANCED MICRO DEVICES INC",
+      "sector": "Information Technology",
+      "industry": "Semiconductors",
+      "region": "United States",
+      "marketCap": "Mid Cap",
+      "description": "Advanced Micro Devices, Inc. operates as a semiconductor company worldwide."
+    },
+    "NFLX": {
+      "name": "NETFLIX INC",
+      "sector": "Communication",
+      "industry": "Entertainment",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "Netflix, Inc. provides entertainment services worldwide."
+    },
+    "INTC": {
+      "name": "INTEL CORPORATION CORP",
+      "sector": "Information Technology",
+      "industry": "Semiconductors",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "Intel Corporation designs, manufactures, and sells essential technologies for the cloud, smart, and connected devices for retail, industrial, and consumer uses worldwide."
+    },
+    "CSCO": {
+      "name": "CISCO SYSTEMS INC",
+      "sector": "Information Technology",
+      "industry": "Communication Equipment",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "Cisco Systems, Inc. designs, manufactures, and sells Internet Protocol based networking and other products related to the communications and information technology industry worldwide."
+    },
+    "PYPL": {
+      "name": "PAYPAL HOLDINGS INC",
+      "sector": "Financials",
+      "industry": "Credit Services",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "PayPal Holdings, Inc. operates as a technology platform and digital payments company that enables digital and mobile payments on behalf of consumers and merchants worldwide."
+    },
+    "TSM": {
+      "name": "Taiwan Semiconductor Manufacturing Co. Ltd.",
+      "sector": "Technology",
+      "industry": "Semiconductors",
+      "region": "Taiwan",
+      "marketCap": "Large Cap",
+      "description": "Taiwan Semiconductor Manufacturing Company Limited manufactures, packages, tests, and sells integrated circuits and other semiconductor devices in Taiwan, China, Europe, the Middle East, Africa, Japan, the United States, and internationally."
+    },
+    "SPOT": {
+      "name": "Spotify Technology S.A.",
+      "sector": "Communication Services",
+      "industry": "Internet Content & Information",
+      "region": "Sweden",
+      "marketCap": "Mid Cap",
+      "description": "Spotify Technology S.A. provides audio streaming services worldwide."
+    },
+    "GME": {
+      "name": "GameStop Corp.",
+      "sector": "Consumer Discretionary",
+      "industry": "Specialty Retail",
+      "region": "United States",
+      "marketCap": "Small Cap",
+      "description": "GameStop Corp., a specialty retailer, provides games and entertainment products through its e-commerce properties and various stores in the United States, Canada, Australia, and Europe."
+    },
+    "SONY": {
+      "name": "Sony Group Corporation",
+      "sector": "Technology",
+      "industry": "Consumer Electronics",
+      "region": "Japan",
+      "marketCap": "Mid Cap",
+      "description": "Sony Group Corporation designs, develops, produces, and sells electronic equipment, instruments, and devices for the consumer, professional, and industrial markets in Japan, the United States, Europe, China, and internationally."
+    },
+    "SAP": {
+      "name": "SAP SE",
+      "sector": "Technology",
+      "industry": "Software",
+      "region": "Germany",
+      "marketCap": "Large Cap",
+      "description": "SAP SE, together with its subsidiaries, provides enterprise application software products worldwide."
+    },
+    "AVGO": {
+      "name": "BROADCOM INC",
+      "sector": "Information Technology"
+    },
+    "BRKB": {
+      "name": "BERKSHIRE HATHAWAY INC CLASS B",
+      "sector": "Financials"
+    },
+    "LLY": {
+      "name": "ELI LILLY",
+      "sector": "Health Care"
+    },
+    "XOM": {
+      "name": "EXXON MOBIL CORP",
+      "sector": "Energy"
+    },
+    "COST": {
+      "name": "COSTCO WHOLESALE CORP",
+      "sector": "Consumer Staples"
+    },
+    "WMT": {
+      "name": "WALMART INC",
+      "sector": "Consumer Staples"
+    },
+    "ABBV": {
+      "name": "ABBVIE INC",
+      "sector": "Health Care"
+    },
+    "KO": {
+      "name": "COCA-COLA",
+      "sector": "Consumer Staples"
+    },
+    "CVX": {
+      "name": "CHEVRON CORP",
+      "sector": "Energy"
+    },
+    "ORCL": {
+      "name": "ORACLE CORP",
+      "sector": "Information Technology"
+    },
+    "IBM": {
+      "name": "INTERNATIONAL BUSINESS MACHINES CO",
+      "sector": "Information Technology"
+    },
+    "MRK": {
+      "name": "MERCK & CO INC",
+      "sector": "Health Care"
+    },
+    "ABT": {
+      "name": "Abbott Laboratories",
+      "sector": "Healthcare",
+      "industry": "Medical Devices & Equipment",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "Abbott Laboratories is an American multinational medical devices and healthcare company that develops and manufactures a broad range of healthcare products."
+    },
+    "WFC": {
+      "name": "WELLS FARGO",
+      "sector": "Financials"
+    },
+    "PM": {
+      "name": "PHILIP MORRIS INTERNATIONAL INC",
+      "sector": "Consumer Staples"
+    },
+    "MCD": {
+      "name": "MCDONALDS CORP",
+      "sector": "Consumer Discretionary"
+    },
+    "LIN": {
+      "name": "LINDE PLC",
+      "sector": "Materials"
+    },
+    "ACN": {
+      "name": "ACCENTURE PLC CLASS A",
+      "sector": "Information Technology"
+    },
+    "PEP": {
+      "name": "PEPSICO INC",
+      "sector": "Consumer Staples"
+    },
+    "GE": {
+      "name": "GE AEROSPACE",
+      "sector": "Industrials"
+    },
+    "TMO": {
+      "name": "THERMO FISHER SCIENTIFIC INC",
+      "sector": "Health Care"
+    },
+    "T": {
+      "name": "AT&T INC",
+      "sector": "Communication"
+    },
+    "VZ": {
+      "name": "VERIZON COMMUNICATIONS INC",
+      "sector": "Communication"
+    },
+    "ISRG": {
+      "name": "INTUITIVE SURGICAL INC",
+      "sector": "Health Care"
+    },
+    "QCOM": {
+      "name": "QUALCOMM INC",
+      "sector": "Information Technology"
+    },
+    "GS": {
+      "name": "GOLDMAN SACHS GROUP INC",
+      "sector": "Financials"
+    },
+    "NOW": {
+      "name": "SERVICENOW INC",
+      "sector": "Information Technology"
+    },
+    "AMGN": {
+      "name": "AMGEN INC",
+      "sector": "Health Care"
+    },
+    "PLTR": {
+      "name": "PALANTIR TECHNOLOGIES INC CLASS A",
+      "sector": "Information Technology"
+    },
+    "TXN": {
+      "name": "TEXAS INSTRUMENT INC",
+      "sector": "Information Technology"
+    },
+    "RTX": {
+      "name": "RTX CORP",
+      "sector": "Industrials"
+    },
+    "INTU": {
+      "name": "INTUIT INC",
+      "sector": "Information Technology"
+    },
+    "CAT": {
+      "name": "CATERPILLAR INC",
+      "sector": "Industrials"
+    },
+    "PGR": {
+      "name": "PROGRESSIVE CORP",
+      "sector": "Financials"
+    },
+    "UBER": {
+      "name": "UBER TECHNOLOGIES INC",
+      "sector": "Industrials"
+    },
+    "SPGI": {
+      "name": "S&P GLOBAL INC",
+      "sector": "Financials"
+    },
+    "BKNG": {
+      "name": "BOOKING HOLDINGS INC",
+      "sector": "Consumer Discretionary"
+    },
+    "AXP": {
+      "name": "American Express Company",
+      "sector": "Financial Services",
+      "industry": "Credit Services",
+      "region": "United States",
+      "marketCap": "Large Cap",
+      "description": "American Express Company is an American multinational financial services corporation specializing in payment cards and travel-related services."
+    },
+    "PFE": {
+      "name": "PFIZER INC",
+      "sector": "Health Care"
+    },
+    "UNP": {
+      "name": "UNION PACIFIC CORP",
+      "sector": "Industrials"
+    },
+    "NEE": {
+      "name": "NEXTERA ENERGY INC",
+      "sector": "Utilities"
+    },
+    "MS": {
+      "name": "MORGAN STANLEY",
+      "sector": "Financials"
+    },
+    "GILD": {
+      "name": "GILEAD SCIENCES INC",
+      "sector": "Health Care"
+    },
+    "BSX": {
+      "name": "BOSTON SCIENTIFIC CORP",
+      "sector": "Health Care"
+    },
+    "CMCSA": {
+      "name": "COMCAST CORP CLASS A",
+      "sector": "Communication"
+    },
+    "HON": {
+      "name": "HONEYWELL INTERNATIONAL INC",
+      "sector": "Industrials"
+    },
+    "BLK": {
+      "name": "BLACKROCK INC",
+      "sector": "Financials"
+    },
+    "LOW": {
+      "name": "LOWES COMPANIES INC",
+      "sector": "Consumer Discretionary"
+    },
+    "DHR": {
+      "name": "DANAHER CORP",
+      "sector": "Health Care"
+    },
+    "TJX": {
+      "name": "TJX INC",
+      "sector": "Consumer Discretionary"
+    },
+    "C": {
+      "name": "CITIGROUP INC",
+      "sector": "Financials"
+    },
+    "SYK": {
+      "name": "STRYKER CORP",
+      "sector": "Health Care"
+    },
+    "TMUS": {
+      "name": "T MOBILE US INC",
+      "sector": "Communication"
+    },
+    "AMAT": {
+      "name": "APPLIED MATERIAL INC",
+      "sector": "Information Technology"
+    },
+    "SCHW": {
+      "name": "CHARLES SCHWAB CORP",
+      "sector": "Financials"
+    },
+    "DE": {
+      "name": "DEERE",
+      "sector": "Industrials"
+    },
+    "VRTX": {
+      "name": "VERTEX PHARMACEUTICALS INC",
+      "sector": "Health Care"
+    },
+    "ADP": {
+      "name": "AUTOMATIC DATA PROCESSING INC",
+      "sector": "Industrials"
+    },
+    "FI": {
+      "name": "FISERV INC",
+      "sector": "Financials"
+    },
+    "BMY": {
+      "name": "BRISTOL MYERS SQUIBB",
+      "sector": "Health Care"
+    },
+    "MDT": {
+      "name": "MEDTRONIC PLC",
+      "sector": "Health Care"
+    },
+    "SBUX": {
+      "name": "STARBUCKS CORP",
+      "sector": "Consumer Discretionary"
+    },
+    "PANW": {
+      "name": "PALO ALTO NETWORKS INC",
+      "sector": "Information Technology"
+    },
+    "COP": {
+      "name": "CONOCOPHILLIPS",
+      "sector": "Energy"
+    },
+    "MMC": {
+      "name": "MARSH & MCLENNAN INC",
+      "sector": "Financials"
+    },
+    "BA": {
+      "name": "BOEING",
+      "sector": "Industrials"
+    },
+    "ETN": {
+      "name": "EATON PLC",
+      "sector": "Industrials"
+    },
+    "ADI": {
+      "name": "ANALOG DEVICES INC",
+      "sector": "Information Technology"
+    },
+    "PLD": {
+      "name": "PROLOGIS REIT INC",
+      "sector": "Real Estate"
+    },
+    "CB": {
+      "name": "CHUBB LTD",
+      "sector": "Financials"
+    },
+    "BX": {
+      "name": "BLACKSTONE INC",
+      "sector": "Financials"
+    },
+    "MU": {
+      "name": "MICRON TECHNOLOGY INC",
+      "sector": "Information Technology"
+    },
+    "LRCX": {
+      "name": "LAM RESEARCH CORP",
+      "sector": "Information Technology"
+    },
+    "SO": {
+      "name": "SOUTHERN",
+      "sector": "Utilities"
+    },
+    "LMT": {
+      "name": "LOCKHEED MARTIN CORP",
+      "sector": "Industrials"
+    },
+    "AMT": {
+      "name": "AMERICAN TOWER REIT CORP",
+      "sector": "Real Estate"
+    },
+    "MO": {
+      "name": "ALTRIA GROUP INC",
+      "sector": "Consumer Staples"
+    },
+    "ICE": {
+      "name": "INTERCONTINENTAL EXCHANGE INC",
+      "sector": "Financials"
+    },
+    "KLAC": {
+      "name": "KLA CORP",
+      "sector": "Information Technology"
+    },
+    "ELV": {
+      "name": "ELEVANCE HEALTH INC",
+      "sector": "Health Care"
+    },
+    "NKE": {
+      "name": "NIKE INC CLASS B",
+      "sector": "Consumer Discretionary"
+    },
+    "CME": {
+      "name": "CME GROUP INC CLASS A",
+      "sector": "Financials"
+    },
+    "MDLZ": {
+      "name": "MONDELEZ INTERNATIONAL INC CLASS A",
+      "sector": "Consumer Staples"
+    },
+    "DUK": {
+      "name": "DUKE ENERGY CORP",
+      "sector": "Utilities"
+    },
+    "CI": {
+      "name": "CIGNA",
+      "sector": "Health Care"
+    },
+    "UPS": {
+      "name": "UNITED PARCEL SERVICE INC CLASS B",
+      "sector": "Industrials"
+    },
+    "WELL": {
+      "name": "WELLTOWER INC",
+      "sector": "Real Estate"
+    },
+    "AON": {
+      "name": "AON PLC CLASS A",
+      "sector": "Financials"
+    },
+    "ANET": {
+      "name": "ARISTA NETWORKS INC",
+      "sector": "Information Technology"
+    },
+    "SHW": {
+      "name": "SHERWIN WILLIAMS",
+      "sector": "Materials"
+    },
+    "WM": {
+      "name": "WASTE MANAGEMENT INC",
+      "sector": "Industrials"
+    },
+    "CVS": {
+      "name": "CVS HEALTH CORP",
+      "sector": "Health Care"
+    },
+    "EQIX": {
+      "name": "EQUINIX REIT INC",
+      "sector": "Real Estate"
+    },
+    "MCK": {
+      "name": "MCKESSON CORP",
+      "sector": "Health Care"
+    },
+    "PH": {
+      "name": "PARKER-HANNIFIN CORP",
+      "sector": "Industrials"
+    },
+    "AJG": {
+      "name": "ARTHUR J GALLAGHER",
+      "sector": "Financials"
+    },
+    "GEV": {
+      "name": "GE VERNOVA INC",
+      "sector": "Industrials"
+    },
+    "MMM": {
+      "name": "3M",
+      "sector": "Industrials"
+    },
+    "CL": {
+      "name": "COLGATE-PALMOLIVE",
+      "sector": "Consumer Staples"
+    },
+    "KKR": {
+      "name": "KKR AND CO INC",
+      "sector": "Financials"
+    },
+    "CRWD": {
+      "name": "CROWDSTRIKE HOLDINGS INC CLASS A",
+      "sector": "Information Technology"
+    },
+    "TT": {
+      "name": "TRANE TECHNOLOGIES PLC",
+      "sector": "Industrials"
+    },
+    "ZTS": {
+      "name": "ZOETIS INC CLASS A",
+      "sector": "Health Care"
+    },
+    "ORLY": {
+      "name": "OREILLY AUTOMOTIVE INC",
+      "sector": "Consumer Discretionary"
+    },
+    "APH": {
+      "name": "AMPHENOL CORP CLASS A",
+      "sector": "Information Technology"
+    },
+    "TDG": {
+      "name": "TRANSDIGM GROUP INC",
+      "sector": "Industrials"
+    },
+    "REGN": {
+      "name": "REGENERON PHARMACEUTICALS INC",
+      "sector": "Health Care"
+    },
+    "ITW": {
+      "name": "ILLINOIS TOOL INC",
+      "sector": "Industrials"
+    },
+    "MCO": {
+      "name": "MOODYS CORP",
+      "sector": "Financials"
+    },
+    "PNC": {
+      "name": "PNC FINANCIAL SERVICES GROUP INC",
+      "sector": "Financials"
+    },
+    "MSI": {
+      "name": "MOTOROLA SOLUTIONS INC",
+      "sector": "Information Technology"
+    },
+    "EOG": {
+      "name": "EOG RESOURCES INC",
+      "sector": "Energy"
+    },
+    "APD": {
+      "name": "AIR PRODUCTS AND CHEMICALS INC",
+      "sector": "Materials"
+    },
+    "GD": {
+      "name": "GENERAL DYNAMICS CORP",
+      "sector": "Industrials"
+    },
+    "USB": {
+      "name": "US BANCORP",
+      "sector": "Financials"
+    },
+    "CTAS": {
+      "name": "CINTAS CORP",
+      "sector": "Industrials"
+    },
+    "SNPS": {
+      "name": "SYNOPSYS INC",
+      "sector": "Information Technology"
+    },
+    "CMG": {
+      "name": "CHIPOTLE MEXICAN GRILL INC",
+      "sector": "Consumer Discretionary"
+    },
+    "ECL": {
+      "name": "ECOLAB INC",
+      "sector": "Materials"
+    },
+    "EMR": {
+      "name": "EMERSON ELECTRIC",
+      "sector": "Industrials"
+    },
+    "CDNS": {
+      "name": "CADENCE DESIGN SYSTEMS INC",
+      "sector": "Information Technology"
+    },
+    "NOC": {
+      "name": "NORTHROP GRUMMAN CORP",
+      "sector": "Industrials"
+    },
+    "CEG": {
+      "name": "CONSTELLATION ENERGY CORP",
+      "sector": "Utilities"
+    },
+    "BDX": {
+      "name": "BECTON DICKINSON",
+      "sector": "Health Care"
+    },
+    "WMB": {
+      "name": "WILLIAMS INC",
+      "sector": "Energy"
+    },
+    "COF": {
+      "name": "CAPITAL ONE FINANCIAL CORP",
+      "sector": "Financials"
+    },
+    "FTNT": {
+      "name": "FORTINET INC",
+      "sector": "Information Technology"
+    },
+    "ROP": {
+      "name": "ROPER TECHNOLOGIES INC",
+      "sector": "Information Technology"
+    },
+    "BK": {
+      "name": "BANK OF NEW YORK MELLON CORP",
+      "sector": "Financials"
+    },
+    "AZO": {
+      "name": "AUTOZONE INC",
+      "sector": "Consumer Discretionary"
+    },
+    "MAR": {
+      "name": "MARRIOTT INTERNATIONAL INC CLASS A",
+      "sector": "Consumer Discretionary"
+    },
+    "CSX": {
+      "name": "CSX CORP",
+      "sector": "Industrials"
+    },
+    "HLT": {
+      "name": "HILTON WORLDWIDE HOLDINGS INC",
+      "sector": "Consumer Discretionary"
+    },
+    "HCA": {
+      "name": "HCA HEALTHCARE INC",
+      "sector": "Health Care"
+    },
+    "APO": {
+      "name": "APOLLO GLOBAL MANAGEMENT INC",
+      "sector": "Financials"
+    },
+    "TRV": {
+      "name": "TRAVELERS COMPANIES INC",
+      "sector": "Financials"
+    },
+    "SLB": {
+      "name": "SCHLUMBERGER NV",
+      "sector": "Energy"
+    },
+    "ABNB": {
+      "name": "AIRBNB INC CLASS A",
+      "sector": "Consumer Discretionary"
+    },
+    "PCAR": {
+      "name": "PACCAR INC",
+      "sector": "Industrials"
+    },
+    "FDX": {
+      "name": "FEDEX CORP",
+      "sector": "Industrials"
+    },
+    "NXPI": {
+      "name": "NXP SEMICONDUCTORS NV",
+      "sector": "Information Technology"
+    },
+    "CARR": {
+      "name": "CARRIER GLOBAL CORP",
+      "sector": "Industrials"
+    },
+    "TFC": {
+      "name": "TRUIST FINANCIAL CORP",
+      "sector": "Financials"
+    },
+    "ADSK": {
+      "name": "AUTODESK INC",
+      "sector": "Information Technology"
+    },
+    "AEP": {
+      "name": "AMERICAN ELECTRIC POWER INC",
+      "sector": "Utilities"
+    },
+    "OKE": {
+      "name": "ONEOK INC",
+      "sector": "Energy"
+    },
+    "NSC": {
+      "name": "NORFOLK SOUTHERN CORP",
+      "sector": "Industrials"
+    },
+    "AFL": {
+      "name": "AFLAC INC",
+      "sector": "Financials"
+    },
+    "WDAY": {
+      "name": "WORKDAY INC CLASS A",
+      "sector": "Information Technology"
+    },
+    "JCI": {
+      "name": "JOHNSON CONTROLS INTERNATIONAL PLC",
+      "sector": "Industrials"
+    },
+    "ALL": {
+      "name": "ALLSTATE CORP",
+      "sector": "Financials"
+    },
+    "FCX": {
+      "name": "FREEPORT MCMORAN INC",
+      "sector": "Materials"
+    },
+    "TGT": {
+      "name": "TARGET CORP",
+      "sector": "Consumer Staples"
+    },
+    "RCL": {
+      "name": "ROYAL CARIBBEAN GROUP LTD",
+      "sector": "Consumer Discretionary"
+    },
+    "SPG": {
+      "name": "SIMON PROPERTY GROUP REIT INC",
+      "sector": "Real Estate"
+    },
+    "GM": {
+      "name": "GENERAL MOTORS",
+      "sector": "Consumer Discretionary"
+    },
+    "PSX": {
+      "name": "PHILLIPS",
+      "sector": "Energy"
+    },
+    "O": {
+      "name": "REALTY INCOME REIT CORP",
+      "sector": "Real Estate"
+    },
+    "AIG": {
+      "name": "AMERICAN INTERNATIONAL GROUP INC",
+      "sector": "Financials"
+    },
+    "HWM": {
+      "name": "HOWMET AEROSPACE INC",
+      "sector": "Industrials"
+    },
+    "KMI": {
+      "name": "KINDER MORGAN INC",
+      "sector": "Energy"
+    },
+    "NEM": {
+      "name": "NEWMONT",
+      "sector": "Materials"
+    },
+    "PSA": {
+      "name": "PUBLIC STORAGE REIT",
+      "sector": "Real Estate"
+    },
+    "PAYX": {
+      "name": "PAYCHEX INC",
+      "sector": "Industrials"
+    },
+    "AMP": {
+      "name": "AMERIPRISE FINANCE INC",
+      "sector": "Financials"
+    },
+    "KMB": {
+      "name": "KIMBERLY CLARK CORP",
+      "sector": "Consumer Staples"
+    },
+    "MET": {
+      "name": "METLIFE INC",
+      "sector": "Financials"
+    },
+    "RSG": {
+      "name": "REPUBLIC SERVICES INC",
+      "sector": "Industrials"
+    },
+    "CPRT": {
+      "name": "COPART INC",
+      "sector": "Industrials"
+    },
+    "CMI": {
+      "name": "CUMMINS INC",
+      "sector": "Industrials"
+    },
+    "DLR": {
+      "name": "DIGITAL REALTY TRUST REIT INC",
+      "sector": "Real Estate"
+    },
+    "D": {
+      "name": "DOMINION ENERGY INC",
+      "sector": "Utilities"
+    },
+    "FAST": {
+      "name": "FASTENAL",
+      "sector": "Industrials"
+    },
+    "YUM": {
+      "name": "YUM BRANDS INC",
+      "sector": "Consumer Discretionary"
+    },
+    "TEL": {
+      "name": "TE CONNECTIVITY PLC",
+      "sector": "Information Technology"
+    },
+    "ROST": {
+      "name": "ROSS STORES INC",
+      "sector": "Consumer Discretionary"
+    },
+    "KVUE": {
+      "name": "KENVUE INC",
+      "sector": "Consumer Staples"
+    },
+    "GWW": {
+      "name": "WW GRAINGER INC",
+      "sector": "Industrials"
+    },
+    "FICO": {
+      "name": "FAIR ISAAC CORP",
+      "sector": "Information Technology"
+    },
+    "COR": {
+      "name": "CENCORA INC",
+      "sector": "Health Care"
+    },
+    "KR": {
+      "name": "KROGER",
+      "sector": "Consumer Staples"
+    },
+    "MPC": {
+      "name": "MARATHON PETROLEUM CORP",
+      "sector": "Energy"
+    },
+    "MSCI": {
+      "name": "MSCI INC",
+      "sector": "Financials"
+    },
+    "SRE": {
+      "name": "SEMPRA",
+      "sector": "Utilities"
+    },
+    "EXC": {
+      "name": "EXELON CORP",
+      "sector": "Utilities"
+    },
+    "AME": {
+      "name": "AMETEK INC",
+      "sector": "Industrials"
+    },
+    "CCI": {
+      "name": "CROWN CASTLE INC",
+      "sector": "Real Estate"
+    },
+    "BKR": {
+      "name": "BAKER HUGHES CLASS A",
+      "sector": "Energy"
+    },
+    "VRSK": {
+      "name": "VERISK ANALYTICS INC",
+      "sector": "Industrials"
+    },
+    "DFS": {
+      "name": "DISCOVER FINANCIAL SERVICES",
+      "sector": "Financials"
+    },
+    "LHX": {
+      "name": "L3HARRIS TECHNOLOGIES INC",
+      "sector": "Industrials"
+    },
+    "CTVA": {
+      "name": "CORTEVA INC",
+      "sector": "Materials"
+    },
+    "OTIS": {
+      "name": "OTIS WORLDWIDE CORP",
+      "sector": "Industrials"
+    },
+    "EW": {
+      "name": "EDWARDS LIFESCIENCES CORP",
+      "sector": "Health Care"
+    },
+    "CTSH": {
+      "name": "COGNIZANT TECHNOLOGY SOLUTIONS COR",
+      "sector": "Information Technology"
+    },
+    "URI": {
+      "name": "UNITED RENTALS INC",
+      "sector": "Industrials"
+    },
+    "HES": {
+      "name": "HESS CORP",
+      "sector": "Energy"
+    },
+    "VLO": {
+      "name": "VALERO ENERGY CORP",
+      "sector": "Energy"
+    },
+    "KDP": {
+      "name": "KEURIG DR PEPPER INC",
+      "sector": "Consumer Staples"
+    },
+    "TRGP": {
+      "name": "TARGA RESOURCES CORP",
+      "sector": "Energy"
+    },
+    "PRU": {
+      "name": "PRUDENTIAL FINANCIAL INC",
+      "sector": "Financials"
+    },
+    "GEHC": {
+      "name": "GE HEALTHCARE TECHNOLOGIES INC",
+      "sector": "Health Care"
+    },
+    "PEG": {
+      "name": "PUBLIC SERVICE ENTERPRISE GROUP IN",
+      "sector": "Utilities"
+    },
+    "CBRE": {
+      "name": "CBRE GROUP INC CLASS A",
+      "sector": "Real Estate"
+    },
+    "XEL": {
+      "name": "XCEL ENERGY INC",
+      "sector": "Utilities"
+    },
+    "DHI": {
+      "name": "D R HORTON INC",
+      "sector": "Consumer Discretionary"
+    },
+    "VST": {
+      "name": "VISTRA CORP",
+      "sector": "Utilities"
+    },
+    "LULU": {
+      "name": "LULULEMON ATHLETICA INC",
+      "sector": "Consumer Discretionary"
+    },
+    "F": {
+      "name": "FORD MOTOR CO",
+      "sector": "Consumer Discretionary"
+    },
+    "MNST": {
+      "name": "MONSTER BEVERAGE CORP",
+      "sector": "Consumer Staples"
+    },
+    "FIS": {
+      "name": "FIDELITY NATIONAL INFORMATION SERV",
+      "sector": "Financials"
+    },
+    "AXON": {
+      "name": "AXON ENTERPRISE INC",
+      "sector": "Industrials"
+    },
+    "SYY": {
+      "name": "SYSCO CORP",
+      "sector": "Consumer Staples"
+    },
+    "IT": {
+      "name": "GARTNER INC",
+      "sector": "Information Technology"
+    },
+    "CHTR": {
+      "name": "CHARTER COMMUNICATIONS INC CLASS A",
+      "sector": "Communication"
+    },
+    "A": {
+      "name": "AGILENT TECHNOLOGIES INC",
+      "sector": "Health Care"
+    },
+    "PWR": {
+      "name": "QUANTA SERVICES INC",
+      "sector": "Industrials"
+    },
+    "ED": {
+      "name": "CONSOLIDATED EDISON INC",
+      "sector": "Utilities"
+    },
+    "GIS": {
+      "name": "GENERAL MILLS INC",
+      "sector": "Consumer Staples"
+    },
+    "GLW": {
+      "name": "CORNING INC",
+      "sector": "Information Technology"
+    },
+    "IDXX": {
+      "name": "IDEXX LABORATORIES INC",
+      "sector": "Health Care"
+    },
+    "PCG": {
+      "name": "PG&E CORP",
+      "sector": "Utilities"
+    },
+    "ETR": {
+      "name": "ENTERGY CORP",
+      "sector": "Utilities"
+    },
+    "VICI": {
+      "name": "VICI PPTYS INC",
+      "sector": "Real Estate"
+    },
+    "IR": {
+      "name": "INGERSOLL RAND INC",
+      "sector": "Industrials"
+    },
+    "DAL": {
+      "name": "DELTA AIR LINES INC",
+      "sector": "Industrials"
+    },
+    "HIG": {
+      "name": "HARTFORD INSURANCE GROUP INC",
+      "sector": "Financials"
+    },
+    "RMD": {
+      "name": "RESMED INC",
+      "sector": "Health Care"
+    },
+    "ACGL": {
+      "name": "ARCH CAPITAL GROUP LTD",
+      "sector": "Financials"
+    },
+    "WEC": {
+      "name": "WEC ENERGY GROUP INC",
+      "sector": "Utilities"
+    },
+    "EBAY": {
+      "name": "EBAY INC",
+      "sector": "Consumer Discretionary"
+    },
+    "ODFL": {
+      "name": "OLD DOMINION FREIGHT LINE INC",
+      "sector": "Industrials"
+    },
+    "GRMN": {
+      "name": "GARMIN LTD",
+      "sector": "Consumer Discretionary"
+    },
+    "CSGP": {
+      "name": "COSTAR GROUP INC",
+      "sector": "Real Estate"
+    },
+    "EA": {
+      "name": "ELECTRONIC ARTS INC",
+      "sector": "Communication"
+    },
+    "TTWO": {
+      "name": "TAKE TWO INTERACTIVE SOFTWARE INC",
+      "sector": "Communication"
+    },
+    "EXR": {
+      "name": "EXTRA SPACE STORAGE REIT INC",
+      "sector": "Real Estate"
+    },
+    "WTW": {
+      "name": "WILLIS TOWERS WATSON PLC",
+      "sector": "Financials"
+    },
+    "IQV": {
+      "name": "IQVIA HOLDINGS INC",
+      "sector": "Health Care"
+    },
+    "DD": {
+      "name": "DUPONT DE NEMOURS INC",
+      "sector": "Materials"
+    },
+    "MCHP": {
+      "name": "MICROCHIP TECHNOLOGY INC",
+      "sector": "Information Technology"
+    },
+    "OXY": {
+      "name": "OCCIDENTAL PETROLEUM CORP",
+      "sector": "Energy"
+    },
+    "XYL": {
+      "name": "XYLEM INC",
+      "sector": "Industrials"
+    },
+    "EFX": {
+      "name": "EQUIFAX INC",
+      "sector": "Industrials"
+    },
+    "NUE": {
+      "name": "NUCOR CORP",
+      "sector": "Materials"
+    },
+    "HUM": {
+      "name": "HUMANA INC",
+      "sector": "Health Care"
+    },
+    "ROK": {
+      "name": "ROCKWELL AUTOMATION INC",
+      "sector": "Industrials"
+    },
+    "AVB": {
+      "name": "AVALONBAY COMMUNITIES REIT INC",
+      "sector": "Real Estate"
+    },
+    "NDAQ": {
+      "name": "NASDAQ INC",
+      "sector": "Financials"
+    },
+    "WAB": {
+      "name": "WESTINGHOUSE AIR BRAKE TECHNOLOGIE",
+      "sector": "Industrials"
+    },
+    "TSCO": {
+      "name": "TRACTOR SUPPLY",
+      "sector": "Consumer Discretionary"
+    },
+    "CAH": {
+      "name": "CARDINAL HEALTH INC",
+      "sector": "Health Care"
+    },
+    "DXCM": {
+      "name": "DEXCOM INC",
+      "sector": "Health Care"
+    },
+    "CNC": {
+      "name": "CENTENE CORP",
+      "sector": "Health Care"
+    },
+    "LEN": {
+      "name": "LENNAR A CORP CLASS A",
+      "sector": "Consumer Discretionary"
+    },
+    "MTB": {
+      "name": "M&T BANK CORP",
+      "sector": "Financials"
+    },
+    "HPQ": {
+      "name": "HP INC",
+      "sector": "Information Technology"
+    },
+    "VMC": {
+      "name": "VULCAN MATERIALS",
+      "sector": "Materials"
+    },
+    "MPWR": {
+      "name": "MONOLITHIC POWER SYSTEMS INC",
+      "sector": "Information Technology"
+    },
+    "STZ": {
+      "name": "CONSTELLATION BRANDS INC CLASS A",
+      "sector": "Consumer Staples"
+    },
+    "VTR": {
+      "name": "VENTAS REIT INC",
+      "sector": "Real Estate"
+    },
+    "ANSS": {
+      "name": "ANSYS INC",
+      "sector": "Information Technology"
+    },
+    "KHC": {
+      "name": "KRAFT HEINZ",
+      "sector": "Consumer Staples"
+    },
+    "AWK": {
+      "name": "AMERICAN WATER WORKS INC",
+      "sector": "Utilities"
+    },
+    "BR": {
+      "name": "BROADRIDGE FINANCIAL SOLUTIONS INC",
+      "sector": "Industrials"
+    },
+    "BRO": {
+      "name": "BROWN & BROWN INC",
+      "sector": "Financials"
+    },
+    "MLM": {
+      "name": "MARTIN MARIETTA MATERIALS INC",
+      "sector": "Materials"
+    },
+    "DELL": {
+      "name": "DELL TECHNOLOGIES INC CLASS C",
+      "sector": "Information Technology"
+    },
+    "EQT": {
+      "name": "EQT CORP",
+      "sector": "Energy"
+    },
+    "CHD": {
+      "name": "CHURCH AND DWIGHT INC",
+      "sector": "Consumer Staples"
+    },
+    "IP": {
+      "name": "INTERNATIONAL PAPER",
+      "sector": "Materials"
+    },
+    "HSY": {
+      "name": "HERSHEY FOODS",
+      "sector": "Consumer Staples"
+    },
+    "DTE": {
+      "name": "DTE ENERGY",
+      "sector": "Utilities"
+    },
+    "UAL": {
+      "name": "UNITED AIRLINES HOLDINGS INC",
+      "sector": "Industrials"
+    },
+    "MTD": {
+      "name": "METTLER TOLEDO INC",
+      "sector": "Health Care"
+    },
+    "KEYS": {
+      "name": "KEYSIGHT TECHNOLOGIES INC",
+      "sector": "Information Technology"
+    },
+    "FITB": {
+      "name": "FIFTH THIRD BANCORP",
+      "sector": "Financials"
+    },
+    "PPG": {
+      "name": "PPG INDUSTRIES INC",
+      "sector": "Materials"
+    },
+    "FTV": {
+      "name": "FORTIVE CORP",
+      "sector": "Industrials"
+    },
+    "AEE": {
+      "name": "AMEREN CORP",
+      "sector": "Utilities"
+    },
+    "STT": {
+      "name": "STATE STREET CORP",
+      "sector": "Financials"
+    },
+    "RJF": {
+      "name": "RAYMOND JAMES INC",
+      "sector": "Financials"
+    },
+    "DOW": {
+      "name": "DOW INC",
+      "sector": "Materials"
+    },
+    "FANG": {
+      "name": "DIAMONDBACK ENERGY INC",
+      "sector": "Energy"
+    },
+    "TPL": {
+      "name": "TEXAS PACIFIC LAND CORP",
+      "sector": "Energy"
+    },
+    "GPN": {
+      "name": "GLOBAL PAYMENTS INC",
+      "sector": "Financials"
+    },
+    "DOV": {
+      "name": "DOVER CORP",
+      "sector": "Industrials"
+    },
+    "TYL": {
+      "name": "TYLER TECHNOLOGIES INC",
+      "sector": "Information Technology"
+    },
+    "PPL": {
+      "name": "PPL CORP",
+      "sector": "Utilities"
+    },
+    "VLTO": {
+      "name": "VERALTO CORP",
+      "sector": "Industrials"
+    },
+    "IRM": {
+      "name": "IRON MOUNTAIN INC",
+      "sector": "Real Estate"
+    },
+    "WBD": {
+      "name": "WARNER BROS. DISCOVERY INC SERIES",
+      "sector": "Communication"
+    },
+    "GDDY": {
+      "name": "GODADDY INC CLASS A",
+      "sector": "Information Technology"
+    },
+    "EQR": {
+      "name": "EQUITY RESIDENTIAL REIT",
+      "sector": "Real Estate"
+    },
+    "SBAC": {
+      "name": "SBA COMMUNICATIONS REIT CORP CLASS",
+      "sector": "Real Estate"
+    },
+    "ADM": {
+      "name": "ARCHER DANIELS MIDLAND",
+      "sector": "Consumer Staples"
+    },
+    "CPAY": {
+      "name": "CORPAY INC",
+      "sector": "Financials"
+    },
+    "WAT": {
+      "name": "WATERS CORP",
+      "sector": "Health Care"
+    },
+    "ATO": {
+      "name": "ATMOS ENERGY CORP",
+      "sector": "Utilities"
+    },
+    "SW": {
+      "name": "SMURFIT WESTROCK PLC",
+      "sector": "Materials"
+    },
+    "STE": {
+      "name": "STERIS",
+      "sector": "Health Care"
+    },
+    "DRI": {
+      "name": "DARDEN RESTAURANTS INC",
+      "sector": "Consumer Discretionary"
+    },
+    "DVN": {
+      "name": "DEVON ENERGY CORP",
+      "sector": "Energy"
+    },
+    "NVR": {
+      "name": "NVR INC",
+      "sector": "Consumer Discretionary"
+    },
+    "EXPE": {
+      "name": "EXPEDIA GROUP INC",
+      "sector": "Consumer Discretionary"
+    },
+    "TDY": {
+      "name": "TELEDYNE TECHNOLOGIES INC",
+      "sector": "Information Technology"
+    },
+    "CDW": {
+      "name": "CDW CORP",
+      "sector": "Information Technology"
+    },
+    "TROW": {
+      "name": "T ROWE PRICE GROUP INC",
+      "sector": "Financials"
+    },
+    "ES": {
+      "name": "EVERSOURCE ENERGY",
+      "sector": "Utilities"
+    },
+    "CNP": {
+      "name": "CENTERPOINT ENERGY INC",
+      "sector": "Utilities"
+    },
+    "CBOE": {
+      "name": "CBOE GLOBAL MARKETS INC",
+      "sector": "Financials"
+    },
+    "WY": {
+      "name": "WEYERHAEUSER REIT",
+      "sector": "Real Estate"
+    },
+    "K": {
+      "name": "KELLANOVA",
+      "sector": "Consumer Staples"
+    },
+    "PHM": {
+      "name": "PULTEGROUP INC",
+      "sector": "Consumer Discretionary"
+    },
+    "HBAN": {
+      "name": "HUNTINGTON BANCSHARES INC",
+      "sector": "Financials"
+    },
+    "HAL": {
+      "name": "HALLIBURTON",
+      "sector": "Energy"
+    },
+    "BIIB": {
+      "name": "BIOGEN INC",
+      "sector": "Health Care"
+    },
+    "CINF": {
+      "name": "CINCINNATI FINANCIAL CORP",
+      "sector": "Financials"
+    },
+    "EIX": {
+      "name": "EDISON INTERNATIONAL",
+      "sector": "Utilities"
+    },
+    "CMS": {
+      "name": "CMS ENERGY CORP",
+      "sector": "Utilities"
+    },
+    "ZBH": {
+      "name": "ZIMMER BIOMET HOLDINGS INC",
+      "sector": "Health Care"
+    },
+    "CCL": {
+      "name": "CARNIVAL CORP",
+      "sector": "Consumer Discretionary"
+    },
+    "SYF": {
+      "name": "SYNCHRONY FINANCIAL",
+      "sector": "Financials"
+    },
+    "LH": {
+      "name": "LABCORP HOLDINGS INC",
+      "sector": "Health Care"
+    },
+    "IFF": {
+      "name": "INTERNATIONAL FLAVORS & FRAGRANCES",
+      "sector": "Materials"
+    },
+    "MKC": {
+      "name": "MCCORMICK & CO NON-VOTING INC",
+      "sector": "Consumer Staples"
+    },
+    "NTRS": {
+      "name": "NORTHERN TRUST CORP",
+      "sector": "Financials"
+    },
+    "HPE": {
+      "name": "HEWLETT PACKARD ENTERPRISE",
+      "sector": "Information Technology"
+    },
+    "LYB": {
+      "name": "LYONDELLBASELL INDUSTRIES NV CLASS",
+      "sector": "Materials"
+    },
+    "RF": {
+      "name": "REGIONS FINANCIAL CORP",
+      "sector": "Financials"
+    },
+    "LYV": {
+      "name": "LIVE NATION ENTERTAINMENT INC",
+      "sector": "Communication"
+    },
+    "VRSN": {
+      "name": "VERISIGN INC",
+      "sector": "Information Technology"
+    },
+    "FE": {
+      "name": "FIRSTENERGY CORP",
+      "sector": "Utilities"
+    },
+    "DGX": {
+      "name": "QUEST DIAGNOSTICS INC",
+      "sector": "Health Care"
+    },
+    "PTC": {
+      "name": "PTC INC",
+      "sector": "Information Technology"
+    },
+    "INVH": {
+      "name": "INVITATION HOMES INC",
+      "sector": "Real Estate"
+    },
+    "LII": {
+      "name": "LENNOX INTERNATIONAL INC",
+      "sector": "Industrials"
+    },
+    "MAA": {
+      "name": "MID AMERICA APARTMENT COMMUNITIES",
+      "sector": "Real Estate"
+    },
+    "ESS": {
+      "name": "ESSEX PROPERTY TRUST REIT INC",
+      "sector": "Real Estate"
+    },
+    "ON": {
+      "name": "ON SEMICONDUCTOR CORP",
+      "sector": "Information Technology"
+    },
+    "SMCI": {
+      "name": "SUPER MICRO COMPUTER INC",
+      "sector": "Information Technology"
+    },
+    "DECK": {
+      "name": "DECKERS OUTDOOR CORP",
+      "sector": "Consumer Discretionary"
+    },
+    "CTRA": {
+      "name": "COTERRA ENERGY INC",
+      "sector": "Energy"
+    },
+    "NTAP": {
+      "name": "NETAPP INC",
+      "sector": "Information Technology"
+    },
+    "HUBB": {
+      "name": "HUBBELL INC",
+      "sector": "Industrials"
+    },
+    "WRB": {
+      "name": "WR BERKLEY CORP",
+      "sector": "Financials"
+    },
+    "MOH": {
+      "name": "MOLINA HEALTHCARE INC",
+      "sector": "Health Care"
+    },
+    "CLX": {
+      "name": "CLOROX",
+      "sector": "Consumer Staples"
+    },
+    "BAX": {
+      "name": "BAXTER INTERNATIONAL INC",
+      "sector": "Health Care"
+    },
+    "STX": {
+      "name": "SEAGATE TECHNOLOGY HOLDINGS PLC",
+      "sector": "Information Technology"
+    },
+    "LDOS": {
+      "name": "LEIDOS HOLDINGS INC",
+      "sector": "Industrials"
+    },
+    "PKG": {
+      "name": "PACKAGING CORP OF AMERICA",
+      "sector": "Materials"
+    },
+    "CFG": {
+      "name": "CITIZENS FINANCIAL GROUP INC",
+      "sector": "Financials"
+    },
+    "PFG": {
+      "name": "PRINCIPAL FINANCIAL GROUP INC",
+      "sector": "Financials"
+    },
+    "DG": {
+      "name": "DOLLAR GENERAL CORP",
+      "sector": "Consumer Staples"
+    },
+    "NI": {
+      "name": "NISOURCE INC",
+      "sector": "Utilities"
+    },
+    "SNA": {
+      "name": "SNAP ON INC",
+      "sector": "Industrials"
+    },
+    "NRG": {
+      "name": "NRG ENERGY INC",
+      "sector": "Utilities"
+    },
+    "STLD": {
+      "name": "STEEL DYNAMICS INC",
+      "sector": "Materials"
+    },
+    "EXPD": {
+      "name": "EXPEDITORS INTERNATIONAL OF WASHIN",
+      "sector": "Industrials"
+    },
+    "GPC": {
+      "name": "GENUINE PARTS",
+      "sector": "Consumer Discretionary"
+    },
+    "TER": {
+      "name": "TERADYNE INC",
+      "sector": "Information Technology"
+    },
+    "PODD": {
+      "name": "INSULET CORP",
+      "sector": "Health Care"
+    },
+    "LUV": {
+      "name": "SOUTHWEST AIRLINES",
+      "sector": "Industrials"
+    },
+    "TSN": {
+      "name": "TYSON FOODS INC CLASS A",
+      "sector": "Consumer Staples"
+    },
+    "TPR": {
+      "name": "TAPESTRY INC",
+      "sector": "Consumer Discretionary"
+    },
+    "EL": {
+      "name": "ESTEE LAUDER INC CLASS A",
+      "sector": "Consumer Staples"
+    },
+    "COO": {
+      "name": "COOPER INC",
+      "sector": "Health Care"
+    },
+    "TRMB": {
+      "name": "TRIMBLE INC",
+      "sector": "Information Technology"
+    },
+    "WST": {
+      "name": "WEST PHARMACEUTICAL SERVICES INC",
+      "sector": "Health Care"
+    },
+    "ULTA": {
+      "name": "ULTA BEAUTY INC",
+      "sector": "Consumer Discretionary"
+    },
+    "FDS": {
+      "name": "FACTSET RESEARCH SYSTEMS INC",
+      "sector": "Financials"
+    },
+    "OMC": {
+      "name": "OMNICOM GROUP INC",
+      "sector": "Communication"
+    },
+    "DPZ": {
+      "name": "DOMINOS PIZZA INC",
+      "sector": "Consumer Discretionary"
+    },
+    "MAS": {
+      "name": "MASCO CORP",
+      "sector": "Industrials"
+    },
+    "BALL": {
+      "name": "BALL CORP",
+      "sector": "Materials"
+    },
+    "LNT": {
+      "name": "ALLIANT ENERGY CORP",
+      "sector": "Utilities"
+    },
+    "FFIV": {
+      "name": "F5 INC",
+      "sector": "Information Technology"
+    },
+    "ARE": {
+      "name": "ALEXANDRIA REAL ESTATE EQUITIES RE",
+      "sector": "Real Estate"
+    },
+    "JBL": {
+      "name": "JABIL INC",
+      "sector": "Information Technology"
+    },
+    "APTV": {
+      "name": "APTIV PLC",
+      "sector": "Consumer Discretionary"
+    },
+    "LVS": {
+      "name": "LAS VEGAS SANDS CORP",
+      "sector": "Consumer Discretionary"
+    },
+    "EG": {
+      "name": "EVEREST GROUP LTD",
+      "sector": "Financials"
+    },
+    "KEY": {
+      "name": "KEYCORP",
+      "sector": "Financials"
+    },
+    "BBY": {
+      "name": "BEST BUY INC",
+      "sector": "Consumer Discretionary"
+    },
+    "BLDR": {
+      "name": "BUILDERS FIRSTSOURCE INC",
+      "sector": "Industrials"
+    },
+    "J": {
+      "name": "JACOBS SOLUTIONS INC",
+      "sector": "Industrials"
+    },
+    "L": {
+      "name": "LOEWS CORP",
+      "sector": "Financials"
+    },
+    "GEN": {
+      "name": "GEN DIGITAL INC",
+      "sector": "Information Technology"
+    },
+    "EVRG": {
+      "name": "EVERGY INC",
+      "sector": "Utilities"
+    },
+    "ZBRA": {
+      "name": "ZEBRA TECHNOLOGIES CORP CLASS A",
+      "sector": "Information Technology"
+    },
+    "HOLX": {
+      "name": "HOLOGIC INC",
+      "sector": "Health Care"
+    },
+    "FSLR": {
+      "name": "FIRST SOLAR INC",
+      "sector": "Information Technology"
+    },
+    "AMCR": {
+      "name": "AMCOR PLC",
+      "sector": "Materials"
+    },
+    "AVY": {
+      "name": "AVERY DENNISON CORP",
+      "sector": "Materials"
+    },
+    "PNR": {
+      "name": "PENTAIR",
+      "sector": "Industrials"
+    },
+    "ROL": {
+      "name": "ROLLINS INC",
+      "sector": "Industrials"
+    },
+    "KIM": {
+      "name": "KIMCO REALTY REIT CORP",
+      "sector": "Real Estate"
+    },
+    "WDC": {
+      "name": "WESTERN DIGITAL CORP",
+      "sector": "Information Technology"
+    },
+    "DOC": {
+      "name": "HEALTHPEAK PROPERTIES INC",
+      "sector": "Real Estate"
+    },
+    "RVTY": {
+      "name": "REVVITY INC",
+      "sector": "Health Care"
+    },
+    "IEX": {
+      "name": "IDEX CORP",
+      "sector": "Industrials"
+    },
+    "TXT": {
+      "name": "TEXTRON INC",
+      "sector": "Industrials"
+    },
+    "JKHY": {
+      "name": "JACK HENRY AND ASSOCIATES INC",
+      "sector": "Financials"
+    },
+    "DLTR": {
+      "name": "DOLLAR TREE INC",
+      "sector": "Consumer Staples"
+    },
+    "POOL": {
+      "name": "POOL CORP",
+      "sector": "Consumer Discretionary"
+    },
+    "SWK": {
+      "name": "STANLEY BLACK & DECKER INC",
+      "sector": "Industrials"
+    },
+    "CF": {
+      "name": "CF INDUSTRIES HOLDINGS INC",
+      "sector": "Materials"
+    },
+    "UDR": {
+      "name": "UDR REIT INC",
+      "sector": "Real Estate"
+    },
+    "AKAM": {
+      "name": "AKAMAI TECHNOLOGIES INC",
+      "sector": "Information Technology"
+    },
+    "JBHT": {
+      "name": "JB HUNT TRANSPORT SERVICES INC",
+      "sector": "Industrials"
+    },
+    "CAG": {
+      "name": "CONAGRA BRANDS INC",
+      "sector": "Consumer Staples"
+    },
+    "CPT": {
+      "name": "CAMDEN PROPERTY TRUST REIT",
+      "sector": "Real Estate"
+    },
+    "SJM": {
+      "name": "JM SMUCKER",
+      "sector": "Consumer Staples"
+    },
+    "FOXA": {
+      "name": "FOX CORP CLASS A",
+      "sector": "Communication"
+    },
+    "ALGN": {
+      "name": "ALIGN TECHNOLOGY INC",
+      "sector": "Health Care"
+    },
+    "CHRW": {
+      "name": "CH ROBINSON WORLDWIDE INC",
+      "sector": "Industrials"
+    },
+    "REG": {
+      "name": "REGENCY CENTERS REIT CORP",
+      "sector": "Real Estate"
+    },
+    "MRNA": {
+      "name": "MODERNA INC",
+      "sector": "Health Care"
+    },
+    "JNPR": {
+      "name": "JUNIPER NETWORKS INC",
+      "sector": "Information Technology"
+    },
+    "KMX": {
+      "name": "CARMAX INC",
+      "sector": "Consumer Discretionary"
+    },
+    "NDSN": {
+      "name": "NORDSON CORP",
+      "sector": "Industrials"
+    },
+    "SWKS": {
+      "name": "SKYWORKS SOLUTIONS INC",
+      "sector": "Information Technology"
+    },
+    "VTRS": {
+      "name": "VIATRIS INC",
+      "sector": "Health Care"
+    },
+    "EMN": {
+      "name": "EASTMAN CHEMICAL",
+      "sector": "Materials"
+    },
+    "ALLE": {
+      "name": "ALLEGION PLC",
+      "sector": "Industrials"
+    },
+    "HST": {
+      "name": "HOST HOTELS & RESORTS REIT INC",
+      "sector": "Real Estate"
+    },
+    "INCY": {
+      "name": "INCYTE CORP",
+      "sector": "Health Care"
+    },
+    "EPAM": {
+      "name": "EPAM SYSTEMS INC",
+      "sector": "Information Technology"
+    },
+    "LKQ": {
+      "name": "LKQ CORP",
+      "sector": "Consumer Discretionary"
+    },
+    "ERIE": {
+      "name": "ERIE INDEMNITY CLASS A",
+      "sector": "Financials"
+    },
+    "TAP": {
+      "name": "MOLSON COORS BREWING  CLASS B",
+      "sector": "Consumer Staples"
+    },
+    "SOLV": {
+      "name": "SOLVENTUM CORP",
+      "sector": "Health Care"
+    },
+    "NWSA": {
+      "name": "NEWS CORP CLASS A",
+      "sector": "Communication"
+    },
+    "BG": {
+      "name": "BUNGE GLOBAL SA",
+      "sector": "Consumer Staples"
+    },
+    "GL": {
+      "name": "GLOBE LIFE INC",
+      "sector": "Financials"
+    },
+    "IPG": {
+      "name": "INTERPUBLIC GROUP OF COMPANIES INC",
+      "sector": "Communication"
+    },
+    "AIZ": {
+      "name": "ASSURANT INC",
+      "sector": "Financials"
+    },
+    "PNW": {
+      "name": "PINNACLE WEST CORP",
+      "sector": "Utilities"
+    },
+    "PAYC": {
+      "name": "PAYCOM SOFTWARE INC",
+      "sector": "Industrials"
+    },
+    "TECH": {
+      "name": "BIO TECHNE CORP",
+      "sector": "Health Care"
+    },
+    "UHS": {
+      "name": "UNIVERSAL HEALTH SERVICES INC CLAS",
+      "sector": "Health Care"
+    },
+    "BXP": {
+      "name": "BXP INC",
+      "sector": "Real Estate"
+    },
+    "RL": {
+      "name": "RALPH LAUREN CORP CLASS A",
+      "sector": "Consumer Discretionary"
+    },
+    "HSIC": {
+      "name": "HENRY SCHEIN INC",
+      "sector": "Health Care"
+    },
+    "CRL": {
+      "name": "CHARLES RIVER LABORATORIES INTERNA",
+      "sector": "Health Care"
+    },
+    "ALB": {
+      "name": "ALBEMARLE CORP",
+      "sector": "Materials"
+    },
+    "NCLH": {
+      "name": "NORWEGIAN CRUISE LINE HOLDINGS LTD",
+      "sector": "Consumer Discretionary"
+    },
+    "DAY": {
+      "name": "DAYFORCE INC",
+      "sector": "Industrials"
+    },
+    "HRL": {
+      "name": "HORMEL FOODS CORP",
+      "sector": "Consumer Staples"
+    },
+    "HAS": {
+      "name": "HASBRO INC",
+      "sector": "Consumer Discretionary"
+    },
+    "ENPH": {
+      "name": "ENPHASE ENERGY INC",
+      "sector": "Information Technology"
+    },
+    "AOS": {
+      "name": "A O SMITH CORP",
+      "sector": "Industrials"
+    },
+    "CPB": {
+      "name": "CAMPBELL SOUP",
+      "sector": "Consumer Staples"
+    },
+    "WYNN": {
+      "name": "WYNN RESORTS LTD",
+      "sector": "Consumer Discretionary"
+    },
+    "MTCH": {
+      "name": "MATCH GROUP INC",
+      "sector": "Communication"
+    },
+    "WBA": {
+      "name": "WALGREEN BOOTS ALLIANCE INC",
+      "sector": "Consumer Staples"
+    },
+    "GNRC": {
+      "name": "GENERAC HOLDINGS INC",
+      "sector": "Industrials"
+    },
+    "AES": {
+      "name": "AES CORP",
+      "sector": "Utilities"
+    },
+    "MOS": {
+      "name": "MOSAIC",
+      "sector": "Materials"
+    },
+    "MKTX": {
+      "name": "MARKETAXESS HOLDINGS INC",
+      "sector": "Financials"
+    },
+    "FRT": {
+      "name": "FEDERAL REALTY INVESTMENT TRUST RE",
+      "sector": "Real Estate"
+    },
+    "HII": {
+      "name": "HUNTINGTON INGALLS INDUSTRIES INC",
+      "sector": "Industrials"
+    },
+    "LW": {
+      "name": "LAMB WESTON HOLDINGS INC",
+      "sector": "Consumer Staples"
+    },
+    "MGM": {
+      "name": "MGM RESORTS INTERNATIONAL",
+      "sector": "Consumer Discretionary"
+    },
+    "PARA": {
+      "name": "PARAMOUNT GLOBAL CLASS B",
+      "sector": "Communication"
+    },
+    "IVZ": {
+      "name": "INVESCO LTD",
+      "sector": "Financials"
+    },
+    "APA": {
+      "name": "APA CORP",
+      "sector": "Energy"
+    },
+    "FOX": {
+      "name": "FOX CORP CLASS B",
+      "sector": "Communication"
+    },
+    "BFB": {
+      "name": "BROWN FORMAN CORP CLASS B",
+      "sector": "Consumer Staples"
+    },
+    "DVA": {
+      "name": "DAVITA INC",
+      "sector": "Health Care"
+    },
+    "BWA": {
+      "name": "BORGWARNER INC",
+      "sector": "Consumer Discretionary"
+    },
+    "TFX": {
+      "name": "TELEFLEX INC",
+      "sector": "Health Care"
+    },
+    "BEN": {
+      "name": "FRANKLIN RESOURCES INC",
+      "sector": "Financials"
+    },
+    "MHK": {
+      "name": "MOHAWK INDUSTRIES INC",
+      "sector": "Consumer Discretionary"
+    },
+    "CE": {
+      "name": "CELANESE CORP",
+      "sector": "Materials"
+    },
+    "CZR": {
+      "name": "CAESARS ENTERTAINMENT INC",
+      "sector": "Consumer Discretionary"
+    },
+    "FMC": {
+      "name": "FMC CORP",
+      "sector": "Materials"
+    },
+    "NWS": {
+      "name": "NEWS CORP CLASS B",
+      "sector": "Communication"
+    }
+  }
+}

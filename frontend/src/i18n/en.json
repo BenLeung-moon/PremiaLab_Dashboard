@@ -76,7 +76,8 @@
     "apiLinkText": "Perplexity API Settings",
     "placeholder": "pplx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "language": "Language Settings"
   },
   "navigation": {
     "main": "Main",
@@ -95,6 +96,9 @@
     "cancel": "Cancel"
   },
   "dashboard": {
+    "title": "Portfolio Analysis",
+    "description": "View your portfolio analysis results",
+    "portfolioId": "Portfolio ID",
     "overview": "Portfolio Overview",
     "performance": "Performance",
     "allocation": "Allocation",
@@ -108,7 +112,16 @@
     "assetAllocation": "Asset Allocation",
     "sectorAllocation": "Sector Allocation",
     "geographicAllocation": "Geographic Allocation",
-    "factors": "Factor Exposure"
+    "factors": "Factor Exposure",
+    "tabs": {
+      "performance": "Performance Metrics",
+      "holdings": "Holdings",
+      "allocation": "Asset Allocation",
+      "comparison": "Benchmark Comparison",
+      "factors": "Factor Exposure",
+      "risk": "Risk Metrics",
+      "trends": "Historical Trends"
+    }
   },
   "factors": {
     "value": "Value",
@@ -148,7 +161,24 @@
     "positiveCorrelation": "Positive",
     "negativeCorrelation": "Negative",
     "riskContribution": "Factor Risk Contribution",
-    "riskContributionDescription": "Shows the percentage contribution of each factor to the overall portfolio risk, considering both exposure magnitude and factor correlations."
+    "riskContributionDescription": "Shows the percentage contribution of each factor to the overall portfolio risk, considering both exposure magnitude and factor correlations.",
+    "valueFactor": "Value Factor",
+    "growthFactor": "Growth Factor",
+    "sizeFactor": "Size Factor",
+    "momentumFactor": "Momentum Factor",
+    "qualityFactor": "Quality Factor",
+    "volatilityFactor": "Volatility Factor",
+    "monetaryPolicyFactor": "Monetary Policy Factor",
+    "creditEnvironmentFactor": "Credit Environment Factor",
+    "economicGrowthFactor": "Economic Growth Factor",
+    "inflationFactor": "Inflation Factor",
+    "interestRateChangeFactor": "Interest Rate Change Factor",
+    "energyPricesFactor": "Energy Prices Factor",
+    "styleFactorExposureFactor": "Style Factor Exposure Factor",
+    "macroFactorExposureFactor": "Macro Factor Exposure Factor",
+    "industryFactorExposureFactor": "Industry Factor Exposure Factor",
+    "countryFactorExposureFactor": "Country Factor Exposure Factor",
+    "otherFactorExposureFactor": "Other Factor Exposure Factor"
   },
   "industries": {
     "technology": "Technology",

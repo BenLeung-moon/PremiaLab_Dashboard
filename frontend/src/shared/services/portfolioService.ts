@@ -254,33 +254,18 @@ export const getAvailableStocksWithNames = async (): Promise<{symbol: string, na
  * @param portfolioId 投资组合ID
  * @returns 资产配置数据
  */
-export const getPortfolioAllocation = async (portfolioId: string): Promise<AllocationData> => {
+export const getPortfolioAllocation = async (portfolioId: string): Promise<any> => {
   try {
-    if (TEST_MODE) {
-      // 模拟响应
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return {
-        行业分布: {
-          '信息技术': 55.0,
-          '通信服务': 20.0,
-          '消费者非必需品': 15.0,
-          '其他': 10.0
-        },
-        地区分布: {
-          '美国': 90.0,
-          '欧洲': 5.0,
-          '亚洲': 5.0
-        },
-        市值分布: {
-          '大盘股': 80.0,
-          '中盘股': 15.0,
-          '小盘股': 5.0
-        }
-      };
-    }
-
+    // 直接使用API请求，不使用模拟数据
     const response = await axios.get(`/api/portfolio/${portfolioId}/allocation`);
-    return response.data.allocation;
+    console.log('API Response:', response.data); // 调试用
+    
+    // 确保返回的数据符合前端预期的格式
+    if (response.data && response.data.allocation) {
+      return response.data.allocation;
+    }
+    
+    throw new Error('Invalid response format from API');
   } catch (error) {
     console.error('获取资产配置数据失败:', error);
     throw new Error('无法获取资产配置数据。请稍后重试。');
@@ -292,26 +277,35 @@ export const getPortfolioAllocation = async (portfolioId: string): Promise<Alloc
  * @param portfolioId 投资组合ID
  * @returns 比较数据
  */
-export const getPortfolioComparison = async (portfolioId: string): Promise<ComparisonData> => {
+export const getPortfolioComparison = async (portfolioId: string): Promise<any> => {
   try {
     if (TEST_MODE) {
       // 模拟响应
       await new Promise(resolve => setTimeout(resolve, 500));
       return {
-        总收益率: { 投资组合: 15.2, 基准: 10.5, 超额: 4.7 },
-        年化收益率: { 投资组合: 12.4, 基准: 9.1, 超额: 3.3 },
-        波动率: { 投资组合: 14.2, 基准: 12.7, 差异: 1.5 },
-        夏普比率: { 投资组合: 1.36, 基准: 1.12, 差异: 0.24 },
-        最大回撤: { 投资组合: 8.6, 基准: 11.7, 差异: -3.1 },
-        相关性: 0.89,
-        跟踪误差: 5.2,
-        信息比率: 1.05,
-        胜率: 58.3
+        // 英文键名版本
+        totalReturn: { portfolio: 15.2, benchmark: 10.5, excess: 4.7 },
+        annualizedReturn: { portfolio: 12.4, benchmark: 9.1, excess: 3.3 },
+        volatility: { portfolio: 14.2, benchmark: 12.7, difference: 1.5 },
+        sharpeRatio: { portfolio: 1.36, benchmark: 1.12, difference: 0.24 },
+        maxDrawdown: { portfolio: -8.6, benchmark: -11.7, difference: 3.1 },
+        correlation: 0.89,
+        trackingError: 5.2,
+        informationRatio: 1.05,
+        winRate: 58.3
       };
     }
 
     const response = await axios.get(`/api/portfolio/${portfolioId}/comparison`);
-    return response.data.comparison;
+    console.log('API Response:', response.data); // 调试用
+    
+    // 确保返回的数据有效
+    if (response.data && response.data.comparison) {
+      // 对比数据接口预期结构应该匹配我们定义的ComparisonData接口
+      return response.data.comparison;
+    }
+    
+    throw new Error('Invalid response format from API');
   } catch (error) {
     console.error('获取比较数据失败:', error);
     throw new Error('无法获取比较数据。请稍后重试。');

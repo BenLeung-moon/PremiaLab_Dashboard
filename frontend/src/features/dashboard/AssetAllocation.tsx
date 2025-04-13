@@ -42,8 +42,34 @@ interface AllocationData {
 
 // Render pie chart function
 const renderPieChart = (data: { [key: string]: number }) => {
+  // 添加调试代码
+  console.log('Rendering pie chart with data:', data);
+  
   const total = Object.values(data).reduce((sum, value) => sum + value, 0);
   const items = Object.entries(data).sort((a, b) => b[1] - a[1]); // Sort by percentage in descending order
+  
+  console.log('Pie chart items:', items);
+  console.log('Total value:', total);
+  
+  // 如果数据为空或只有一项，返回一个完整的圆
+  if (items.length === 0) {
+    console.log('No data available for pie chart');
+    return null;
+  }
+  
+  if (items.length === 1) {
+    console.log('Only one item in pie chart data');
+    return (
+      <path
+        d="M 50 50 L 50 10 A 40 40 0 1 1 49.99 10 Z"
+        fill={CHART_COLORS[0]}
+        stroke="#fff"
+        strokeWidth="0.5"
+      >
+        <title>{items[0][0]}: 100.0%</title>
+      </path>
+    );
+  }
   
   let currentAngle = 0;
   
@@ -71,6 +97,8 @@ const renderPieChart = (data: { [key: string]: number }) => {
       `Z`
     ].join(' ');
     
+    console.log(`Pie segment for ${key}: ${percentage.toFixed(1)}%, path: ${pathData}`);
+    
     return (
       <path
         key={key}
@@ -86,7 +114,7 @@ const renderPieChart = (data: { [key: string]: number }) => {
 };
 
 const AssetAllocation: React.FC<AssetAllocationProps> = ({ portfolioId }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [allocation, setAllocation] = useState<AllocationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -97,16 +125,17 @@ const AssetAllocation: React.FC<AssetAllocationProps> = ({ portfolioId }) => {
         setLoading(true);
         const data = await getPortfolioAllocation(portfolioId);
         
-        // Convert the API response to camelCase keys for consistency
-        setAllocation({
-          sectorDistribution: data.行业分布, 
-          regionDistribution: data.地区分布,
-          marketCapDistribution: data.市值分布
-        });
+        // 处理API返回的数据，将其转换为前端所需的格式
+        const allocationData: AllocationData = {
+          sectorDistribution: data.sectorDistribution || {},
+          regionDistribution: data.regionDistribution || {},
+          marketCapDistribution: data.marketCapDistribution || {}
+        };
         
+        setAllocation(allocationData);
         setError(null);
       } catch (err) {
-        setError(t('dashboard.errors.loadAllocationFailed'));
+        setError(language === 'en' ? 'Failed to load allocation data' : '加载资产配置数据失败');
         console.error(err);
       } finally {
         setLoading(false);
@@ -114,7 +143,7 @@ const AssetAllocation: React.FC<AssetAllocationProps> = ({ portfolioId }) => {
     };
 
     fetchAllocation();
-  }, [portfolioId, t]);
+  }, [portfolioId, language]);
 
   if (loading) {
     return (
@@ -135,7 +164,7 @@ const AssetAllocation: React.FC<AssetAllocationProps> = ({ portfolioId }) => {
   if (!allocation) {
     return (
       <div className="bg-gray-50 text-gray-700 p-4 rounded-lg">
-        <p>{t('dashboard.noData')}</p>
+        <p>{language === 'en' ? 'No data available' : '没有可用数据'}</p>
       </div>
     );
   }
@@ -144,14 +173,19 @@ const AssetAllocation: React.FC<AssetAllocationProps> = ({ portfolioId }) => {
     <div className="space-y-8">
       {/* Sector Distribution */}
       <div>
-        <h3 className="text-lg font-medium mb-4">{t('dashboard.sectorDistribution')}</h3>
+        <h3 className="text-lg font-medium mb-4">{language === 'en' ? 'Sector Distribution' : '行业分布'}</h3>
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-[300px]">
             <div className="bg-white p-4 rounded-lg shadow">
               <div className="flex h-64 items-center justify-center">
                 <div className="relative w-full h-full flex items-center justify-center">
                   <svg viewBox="0 0 100 100" className="w-full h-full">
-                    {renderPieChart(allocation.sectorDistribution)}
+                    {Object.keys(allocation.sectorDistribution).length > 0 && 
+                      renderPieChart(allocation.sectorDistribution)}
+                    {Object.keys(allocation.sectorDistribution).length === 0 && 
+                      <text x="50" y="50" textAnchor="middle" dominantBaseline="middle" fontSize="4">
+                        {language === 'en' ? 'No data available' : '没有可用数据'}
+                      </text>}
                   </svg>
                 </div>
               </div>
@@ -170,6 +204,11 @@ const AssetAllocation: React.FC<AssetAllocationProps> = ({ portfolioId }) => {
                     <div className="font-semibold">{percentage.toFixed(1)}%</div>
                   </div>
                 ))}
+                {Object.entries(allocation.sectorDistribution).length === 0 && (
+                  <div className="text-center text-gray-500">
+                    {language === 'en' ? 'No data available' : '没有可用数据'}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -178,14 +217,19 @@ const AssetAllocation: React.FC<AssetAllocationProps> = ({ portfolioId }) => {
 
       {/* Region Distribution */}
       <div>
-        <h3 className="text-lg font-medium mb-4">{t('dashboard.regionDistribution')}</h3>
+        <h3 className="text-lg font-medium mb-4">{language === 'en' ? 'Region Distribution' : '地区分布'}</h3>
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-[300px]">
             <div className="bg-white p-4 rounded-lg shadow">
               <div className="flex h-64 items-center justify-center">
                 <div className="relative w-full h-full flex items-center justify-center">
                   <svg viewBox="0 0 100 100" className="w-full h-full">
-                    {renderPieChart(allocation.regionDistribution)}
+                    {Object.keys(allocation.regionDistribution).length > 0 && 
+                      renderPieChart(allocation.regionDistribution)}
+                    {Object.keys(allocation.regionDistribution).length === 0 && 
+                      <text x="50" y="50" textAnchor="middle" dominantBaseline="middle" fontSize="4">
+                        {language === 'en' ? 'No data available' : '没有可用数据'}
+                      </text>}
                   </svg>
                 </div>
               </div>
@@ -204,6 +248,11 @@ const AssetAllocation: React.FC<AssetAllocationProps> = ({ portfolioId }) => {
                     <div className="font-semibold">{percentage.toFixed(1)}%</div>
                   </div>
                 ))}
+                {Object.entries(allocation.regionDistribution).length === 0 && (
+                  <div className="text-center text-gray-500">
+                    {language === 'en' ? 'No data available' : '没有可用数据'}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -212,14 +261,19 @@ const AssetAllocation: React.FC<AssetAllocationProps> = ({ portfolioId }) => {
 
       {/* Market Cap Distribution */}
       <div>
-        <h3 className="text-lg font-medium mb-4">{t('dashboard.marketCapDistribution')}</h3>
+        <h3 className="text-lg font-medium mb-4">{language === 'en' ? 'Market Cap Distribution' : '市值分布'}</h3>
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-[300px]">
             <div className="bg-white p-4 rounded-lg shadow">
               <div className="flex h-64 items-center justify-center">
                 <div className="relative w-full h-full flex items-center justify-center">
                   <svg viewBox="0 0 100 100" className="w-full h-full">
-                    {renderPieChart(allocation.marketCapDistribution)}
+                    {Object.keys(allocation.marketCapDistribution).length > 0 && 
+                      renderPieChart(allocation.marketCapDistribution)}
+                    {Object.keys(allocation.marketCapDistribution).length === 0 && 
+                      <text x="50" y="50" textAnchor="middle" dominantBaseline="middle" fontSize="4">
+                        {language === 'en' ? 'No data available' : '没有可用数据'}
+                      </text>}
                   </svg>
                 </div>
               </div>
@@ -238,6 +292,11 @@ const AssetAllocation: React.FC<AssetAllocationProps> = ({ portfolioId }) => {
                     <div className="font-semibold">{percentage.toFixed(1)}%</div>
                   </div>
                 ))}
+                {Object.entries(allocation.marketCapDistribution).length === 0 && (
+                  <div className="text-center text-gray-500">
+                    {language === 'en' ? 'No data available' : '没有可用数据'}
+                  </div>
+                )}
               </div>
             </div>
           </div>

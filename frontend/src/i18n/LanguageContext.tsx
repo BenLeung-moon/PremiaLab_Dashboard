@@ -44,15 +44,30 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
 
   // 翻译函数
   const t = (key: string, params?: Record<string, any>): string => {
+    if (!key) return '';
+    
     const keys = key.split('.');
     let value: any = translations[language];
     
+    // 按照层级访问对象
     for (const k of keys) {
-      if (value === undefined) return key;
+      if (!value || typeof value !== 'object') {
+        console.warn(`Translation key not found: ${key}`);
+        return key;
+      }
       value = value[k];
     }
     
-    if (value === undefined) return key;
+    if (value === undefined || value === null) {
+      console.warn(`Translation key not found: ${key}`);
+      return key;
+    }
+    
+    // 如果值不是字符串，可能是结构错误
+    if (typeof value !== 'string') {
+      console.warn(`Translation value is not a string for key: ${key}`);
+      return key;
+    }
     
     // 如果传入了参数，进行字符串替换
     if (params) {

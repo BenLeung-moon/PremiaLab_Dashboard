@@ -5,12 +5,17 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 import random
+import json
+import os
+from pathlib import Path
 from ..utils.market_data import (
     get_portfolio_returns, 
     get_portfolio_factor_exposure, 
     compare_with_benchmark,
     get_asset_allocation
 )
+import requests
+import time
 
 router = APIRouter()
 
@@ -36,12 +41,59 @@ class PortfolioResponse(BaseModel):
 class PortfolioAnalysis(BaseModel):
     performance: Dict[str, Any]
     allocation: Dict[str, Any]
-    risk: Dict[str, Any]
-    comparison: Dict[str, Any]
+    risk: List[Dict[str, Any]]
+    comparison: List[Dict[str, Any]]
     factors: Dict[str, Any]
 
 # 模拟数据库
 portfolios_db = {}
+
+# 创建数据目录
+data_dir = Path("../backend/app/data")
+data_dir.mkdir(exist_ok=True, parents=True)  # 添加parents=True确保中间目录也被创建
+portfolios_file = data_dir / "portfolios.json"
+
+# 加载已存在的投资组合数据
+def load_portfolios():
+    global portfolios_db
+    if portfolios_file.exists():
+        try:
+            with open(portfolios_file, "r") as f:
+                portfolios_data = json.load(f)
+                # 将读取的JSON数据转换为正确的模型格式
+                for port_id, port_data in portfolios_data.items():
+                    if "tickers" in port_data:
+                        port_data["tickers"] = [
+                            Ticker(**ticker) if isinstance(ticker, dict) else ticker
+                            for ticker in port_data["tickers"]
+                        ]
+                portfolios_db = portfolios_data
+        except Exception as e:
+            print(f"Error loading portfolios: {e}")
+            portfolios_db = {}
+    else:
+        portfolios_db = {}
+
+# 保存投资组合数据到文件
+def save_portfolios():
+    try:
+        # 将Ticker对象转换为字典
+        portfolios_to_save = {}
+        for port_id, port_data in portfolios_db.items():
+            portfolios_to_save[port_id] = {**port_data}
+            if "tickers" in portfolios_to_save[port_id]:
+                portfolios_to_save[port_id]["tickers"] = [
+                    ticker.dict() if hasattr(ticker, "dict") else ticker
+                    for ticker in portfolios_to_save[port_id]["tickers"]
+                ]
+        
+        with open(portfolios_file, "w") as f:
+            json.dump(portfolios_to_save, f, indent=2, default=str)
+    except Exception as e:
+        print(f"Error saving portfolios: {e}")
+
+# 初始加载投资组合
+load_portfolios()
 
 # 股票数据库 - 为测试提供一些基本信息
 stocks_db = {
@@ -111,8 +163,94 @@ for symbol, name in stock_name_mapping.items():
             "change": change
         }
 
+# 加载公司信息数据库
+def load_companies_data():
+    companies_file = data_dir / "companies.json"
+    companies_data = {}
+    
+    if companies_file.exists():
+        try:
+            with open(companies_file, "r") as f:
+                data = json.load(f)
+                companies_data = data.get("companies", {})
+        except Exception as e:
+            print(f"Error loading companies data: {e}")
+    
+    return companies_data
+
+# 加载股票映射数据
+def load_stock_mappings():
+    mappings_file = data_dir / "stock_mappings.json"
+    regions = {}
+    market_caps = {}
+    sectors = {}
+    
+    # 默认映射，当文件不存在或加载失败时使用
+    default_regions = {
+        "AAPL": "United States", "MSFT": "United States", "GOOGL": "United States", 
+        "AMZN": "United States", "TSLA": "United States", "META": "United States",
+        "NVDA": "United States", "JPM": "United States", "V": "United States", 
+        "JNJ": "United States", "BABA": "China", "9988.HK": "China", 
+        "TCEHY": "China", "SONY": "Japan", "7203.T": "Japan", 
+        "SAP": "Europe", "SAN": "Europe", "VOD": "Europe"
+    }
+    
+    default_market_caps = {
+        "AAPL": "Large Cap", "MSFT": "Large Cap", "GOOGL": "Large Cap", 
+        "AMZN": "Large Cap", "TSLA": "Large Cap", "META": "Large Cap",
+        "NVDA": "Large Cap", "JPM": "Large Cap", "V": "Large Cap", 
+        "JNJ": "Large Cap", "PG": "Large Cap", "BABA": "Large Cap",
+        "AMD": "Mid Cap", "UBER": "Mid Cap", "SPOT": "Mid Cap", 
+        "ROKU": "Mid Cap", "ZM": "Mid Cap", "TWLO": "Mid Cap",
+        "BYND": "Small Cap", "GRPN": "Small Cap", "GPRO": "Small Cap", 
+        "GME": "Small Cap", "AMC": "Small Cap", "BB": "Small Cap"
+    }
+    
+    default_sectors = {
+        "AAPL": "Technology", "MSFT": "Technology", 
+        "GOOGL": "Communication Services", "AMZN": "Consumer Discretionary",
+        "META": "Communication Services", "TSLA": "Consumer Discretionary",
+        "NVDA": "Technology", "JPM": "Financial Services",
+        "V": "Financial Services", "JNJ": "Healthcare"
+    }
+    
+    if mappings_file.exists():
+        try:
+            with open(mappings_file, "r") as f:
+                data = json.load(f)
+                regions = data.get("regions", {})
+                market_caps = data.get("marketCap", {})
+                sectors = data.get("sectors", {})
+                
+                # 如果从文件加载的数据是空的，使用默认值
+                if not regions:
+                    regions = default_regions
+                if not market_caps:
+                    market_caps = default_market_caps
+                if not sectors:
+                    sectors = default_sectors
+        except Exception as e:
+            print(f"Error loading stock mappings: {e}")
+            # 加载失败，使用默认值
+            regions = default_regions
+            market_caps = default_market_caps
+            sectors = default_sectors
+    else:
+        # 文件不存在，使用默认值
+        regions = default_regions
+        market_caps = default_market_caps
+        sectors = default_sectors
+    
+    return regions, market_caps, sectors
+
+# 加载公司数据
+companies_db = load_companies_data()
+
+# 加载股票映射数据
+region_mappings, market_cap_mappings, sector_mappings = load_stock_mappings()
+
 # 辅助函数：生成模拟历史数据
-def generate_historical_data(tickers, days=30):
+def generate_historical_data(tickers, days=365):
     end_date = datetime.now()
     start_date = end_date - timedelta(days=days)
     dates = pd.date_range(start=start_date, end=end_date, freq='B')
@@ -143,83 +281,245 @@ def generate_historical_data(tickers, days=30):
     
     return pd.DataFrame(historical_data)
 
-# 辅助函数：计算投资组合绩效指标
-def calculate_performance_metrics(historical_data, weights):
+# 获取美国国债收益率
+def get_us_treasury_yield():
+    """获取美国10年期国债收益率
+    
+    使用FRED API获取实时数据，使用本地缓存避免频繁API调用
+    
+    Returns:
+        float: 美国10年期国债收益率，如0.0425表示4.25%
+    """
+    cache_file = data_dir / "treasury_yield_cache.json"
+    # 默认收益率（当API调用失败时使用）
+    default_yield = 0.043  # 4.3%
+    
+    try:
+        # 检查缓存
+        if cache_file.exists():
+            with open(cache_file, "r") as f:
+                cache_data = json.load(f)
+                # 缓存24小时有效
+                if (datetime.now() - datetime.fromisoformat(cache_data["timestamp"])).total_seconds() < 86400:
+                    return cache_data["yield"]
+        
+        # 缓存不存在或已过期，调用API
+        # 这里使用FRED API (需要注册获取API密钥)
+        # FRED API 10年期国债收益率的代码是 DGS10
+        api_key = os.getenv("FRED_API_KEY", "")
+        
+        # 如果没有设置API密钥，使用Yahoo Finance替代方案
+        if not api_key:
+            # 使用Yahoo Finance API获取^TNX (10年期国债收益率)
+            url = "https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            response = requests.get(url, headers=headers)
+            data = response.json()
+            
+            if response.status_code == 200 and "chart" in data and "result" in data["chart"]:
+                # 从返回结果中提取最新收益率，将百分比转换为小数
+                latest_yield = data["chart"]["result"][0]["meta"]["regularMarketPrice"] / 100.0
+            else:
+                # 如果Yahoo Finance API也失败，使用默认值
+                latest_yield = default_yield
+        else:
+            # 使用FRED API
+            url = f"https://api.stlouisfed.org/fred/series/observations?series_id=DGS10&api_key={api_key}&file_type=json&sort_order=desc&limit=1"
+            response = requests.get(url)
+            data = response.json()
+            
+            if response.status_code == 200 and "observations" in data and len(data["observations"]) > 0:
+                # 从返回结果中提取最新收益率，将百分比转换为小数
+                latest_yield = float(data["observations"][0]["value"]) / 100.0
+            else:
+                # 如果API调用失败，使用默认值
+                latest_yield = default_yield
+        
+        # 更新缓存
+        with open(cache_file, "w") as f:
+            json.dump({
+                "yield": latest_yield,
+                "timestamp": datetime.now().isoformat()
+            }, f)
+        
+        return latest_yield
+    
+    except Exception as e:
+        print(f"Error fetching treasury yield: {e}")
+        return default_yield
+
+# 辅助函数：计算统计数据
+def calculate_statistics(historical_data, weights):
     returns = historical_data.pct_change().dropna()
     
     # 投资组合日收益率
     portfolio_returns = np.zeros(len(returns))
-    for i, (symbol, weight) in enumerate(weights.items()):
+    for symbol, weight in weights.items():
         if symbol in returns.columns:
             portfolio_returns += returns[symbol].values * weight
     
-    # 基准收益率 (S&P 500)
-    benchmark_returns = returns['SPY'].values
+    # 基准收益率 (使用SPY作为默认基准)
+    benchmark_symbol = 'SPY'
+    if benchmark_symbol in returns.columns:
+        benchmark_returns = returns[benchmark_symbol].values
+    else:
+        # 如果没有SPY数据，使用第一个可用的股票作为基准
+        for col in returns.columns:
+            if col != list(weights.keys())[0]:  # 避免使用投资组合的第一个股票作为基准
+                benchmark_returns = returns[col].values
+                benchmark_symbol = col
+                break
+        else:
+            # 如果没有其他股票，使用第一个股票
+            benchmark_returns = returns[list(returns.columns)[0]].values
+            benchmark_symbol = list(returns.columns)[0]
     
-    # 计算主要绩效指标
-    total_return = (np.prod(1 + portfolio_returns) - 1) * 100
-    annualized_return = ((1 + total_return / 100) ** (252 / len(portfolio_returns)) - 1) * 100
-    volatility = np.std(portfolio_returns) * np.sqrt(252) * 100
-    sharpe_ratio = annualized_return / volatility if volatility > 0 else 0
+    # 计算累计回报
+    cumulative_returns = np.cumprod(1 + portfolio_returns) - 1
     
-    # 计算最大回撤
-    cumulative_returns = np.cumprod(1 + portfolio_returns)
-    running_max = np.maximum.accumulate(cumulative_returns)
-    drawdowns = (cumulative_returns / running_max - 1) * 100
-    max_drawdown = np.min(drawdowns)
-    
-    # 计算胜率 (相对于基准的表现)
-    win_rate = np.mean(portfolio_returns > benchmark_returns) * 100
-    
-    # 计算月度收益
+    # 月度收益率
+    date_index = historical_data.index
     monthly_returns = []
-    today = datetime.now()
-    for i in range(6):
-        month = today.month - i - 1
-        year = today.year
-        if month <= 0:
-            month += 12
-            year -= 1
-        
-        month_name = ['一月', '二月', '三月', '四月', '五月', '六月', 
-                      '七月', '八月', '九月', '十月', '十一月', '十二月'][month - 1]
-        monthly_returns.append({
-            'month': month_name,
-            'return': random.uniform(-3, 5)  # 模拟月度收益
-        })
     
-    return {
-        'totalReturn': round(total_return, 1),
-        'annualizedReturn': round(annualized_return, 1),
-        'volatility': round(volatility, 1),
-        'sharpeRatio': round(sharpe_ratio, 1),
-        'maxDrawdown': round(max_drawdown, 1),
-        'winRate': round(win_rate, 1),
-        'monthlyReturns': monthly_returns
+    if len(date_index) > 0:
+        current_month = date_index[0].month
+        current_year = date_index[0].year
+        month_start_idx = 0
+        
+        for i, date in enumerate(date_index):
+            if date.month != current_month or date.year != current_year:
+                month_end_idx = i - 1
+                if month_start_idx < len(portfolio_returns) and month_end_idx < len(portfolio_returns):
+                    month_return = round(float((np.prod(1 + portfolio_returns[month_start_idx:month_end_idx+1]) - 1) * 100), 2)
+                    monthly_returns.append({
+                        "date": f"{current_year}-{current_month:02d}",
+                        "return": month_return
+                    })
+                month_start_idx = i
+                current_month = date.month
+                current_year = date.year
+        
+        # 处理最后一个月
+        if month_start_idx < len(portfolio_returns):
+            month_return = round(float((np.prod(1 + portfolio_returns[month_start_idx:]) - 1) * 100), 2)
+            monthly_returns.append({
+                "date": f"{current_year}-{current_month:02d}",
+                "return": month_return
+            })
+    
+    # 获取无风险利率
+    risk_free_rate = get_us_treasury_yield()
+    
+    # 统计数据
+    total_return = round(float(cumulative_returns[-1] * 100), 2) if len(cumulative_returns) > 0 else 0.0
+    annualized_return = round(float(((1 + total_return / 100) ** (252 / len(portfolio_returns)) - 1) * 100), 2) if len(portfolio_returns) > 0 else 0.0
+    volatility = round(float(np.std(portfolio_returns) * np.sqrt(252) * 100), 2)
+    positive_days = int(np.sum(portfolio_returns > 0))
+    negative_days = int(np.sum(portfolio_returns < 0))
+    positive_days_pct = round(float(positive_days / len(portfolio_returns) * 100), 2) if len(portfolio_returns) > 0 else 0.0
+    
+    # 最大回撤
+    peak = np.maximum.accumulate(cumulative_returns + 1) - 1
+    drawdown = (cumulative_returns + 1) / (peak + 1) - 1
+    max_drawdown = round(float(np.min(drawdown) * 100), 2) if len(drawdown) > 0 else 0.0
+    
+    # 夏普比率
+    excess_return = annualized_return - (risk_free_rate * 100)
+    sharpe_ratio = round(float(excess_return / volatility), 2) if volatility > 0 else 0.0
+    
+    # 计算胜率（跑赢基准的天数比例）
+    # 确保数组比较后转为Python原生bool，避免NumPy bool_类型问题
+    win_days = np.sum([bool(x) for x in (portfolio_returns > benchmark_returns)])
+    
+    # 确保分母不为零
+    total_days = len(portfolio_returns)
+    win_rate = round(float(win_days / total_days * 100), 2) if total_days > 0 else 0.0
+    
+    # 收益率分布
+    returns_dist = [round(float(r * 100), 2) for r in portfolio_returns]
+    
+    # 最佳和最差日
+    best_day = round(float(np.max(portfolio_returns) * 100), 2) if len(portfolio_returns) > 0 else 0.0
+    worst_day = round(float(np.min(portfolio_returns) * 100), 2) if len(portfolio_returns) > 0 else 0.0
+    
+    stats = {
+        "totalReturn": total_return,
+        "annualizedReturn": annualized_return,
+        "volatility": volatility,
+        "sharpeRatio": sharpe_ratio,
+        "positiveDays": positive_days,
+        "negativeDays": negative_days,
+        "positiveDaysPercentage": positive_days_pct,
+        "maxDrawdown": max_drawdown,
+        "bestDay": best_day,
+        "worstDay": worst_day,
+        "winRate": win_rate,
+        "monthlyReturns": monthly_returns,
+        "returnDistribution": returns_dist,
+        "cumulativeReturns": [round(float(r * 100), 2) for r in cumulative_returns]
     }
+    
+    return stats
 
 # 辅助函数：计算资产配置指标
 def calculate_allocation(tickers):
     # 按行业统计
     sector_allocation = {}
     for ticker in tickers:
-        sector = stocks_db.get(ticker.symbol, {}).get("sector", "Other")
+        # 首先尝试从companies_db获取行业信息
+        company_info = companies_db.get(ticker.symbol, {})
+        
+        # 如果公司信息中有行业信息，使用它；否则从stock_mappings.json中查找；如果都没有，使用stocks_db；最后默认为Other
+        sector = (company_info.get("sector") or 
+                 sector_mappings.get(ticker.symbol) or 
+                 stocks_db.get(ticker.symbol, {}).get("sector", "Other"))
+        
         if sector in sector_allocation:
             sector_allocation[sector] += ticker.weight * 100
         else:
             sector_allocation[sector] = ticker.weight * 100
     
-    # 按地区统计 (模拟数据)
-    geography_allocation = {
-        "美国": 70,
-        "中国": 15,
-        "欧洲": 10,
-        "其他": 5
-    }
+    # 为未定义的股票填充默认值
+    default_region = "United States"
+    default_market_cap = "Large Cap"
+    
+    # 按地区统计
+    region_allocation = {}
+    for ticker in tickers:
+        # 首先尝试从companies_db获取地区信息，如果没有再从regions_db查找
+        company_info = companies_db.get(ticker.symbol, {})
+        region = (company_info.get("region") or 
+                 region_mappings.get(ticker.symbol, default_region))
+        
+        if region in region_allocation:
+            region_allocation[region] += ticker.weight * 100
+        else:
+            region_allocation[region] = ticker.weight * 100
+    
+    # 按市值统计
+    market_cap_allocation = {}
+    for ticker in tickers:
+        # 首先尝试从companies_db获取市值信息，如果没有再从market_cap_db查找
+        company_info = companies_db.get(ticker.symbol, {})
+        market_cap = (company_info.get("marketCap") or 
+                     market_cap_mappings.get(ticker.symbol, default_market_cap))
+        
+        if market_cap in market_cap_allocation:
+            market_cap_allocation[market_cap] += ticker.weight * 100
+        else:
+            market_cap_allocation[market_cap] = ticker.weight * 100
+    
+    # 四舍五入到小数点后一位
+    sector_allocation = {k: round(v, 1) for k, v in sector_allocation.items()}
+    region_allocation = {k: round(v, 1) for k, v in region_allocation.items()}
+    market_cap_allocation = {k: round(v, 1) for k, v in market_cap_allocation.items()}
     
     return {
-        'sector': [{'type': k, 'percentage': round(v, 1)} for k, v in sector_allocation.items()],
-        'geography': [{'region': k, 'percentage': v} for k, v in geography_allocation.items()]
+        'sector': [{'type': k, 'percentage': v} for k, v in sector_allocation.items()],
+        'geography': [{'region': k, 'percentage': v} for k, v in region_allocation.items()],
+        'marketCap': [{'type': k, 'percentage': v} for k, v in market_cap_allocation.items()]
     }
 
 # 辅助函数：计算风险指标
@@ -228,170 +528,231 @@ def calculate_risk_metrics(historical_data, weights):
     
     # 投资组合日收益率
     portfolio_returns = np.zeros(len(returns))
-    for i, (symbol, weight) in enumerate(weights.items()):
+    for symbol, weight in weights.items():
         if symbol in returns.columns:
             portfolio_returns += returns[symbol].values * weight
     
-    # 基准收益率 (S&P 500)
-    benchmark_returns = returns['SPY'].values
+    # 计算个股风险贡献
+    risk_contribution = []
+    volatility = float(np.std(portfolio_returns) * np.sqrt(252))
     
-    # 计算主要风险指标
-    volatility = np.std(portfolio_returns) * np.sqrt(252) * 100
+    if volatility > 0:
+        for symbol, weight in weights.items():
+            if symbol in returns.columns:
+                # 计算资产收益率
+                asset_returns = returns[symbol].values
+                
+                # 计算资产与投资组合的相关性
+                correlation = float(np.corrcoef(asset_returns, portfolio_returns)[0, 1])
+                
+                # 计算资产波动率
+                asset_volatility = float(np.std(asset_returns) * np.sqrt(252))
+                
+                # 计算风险贡献
+                risk_contrib = float(weight * correlation * asset_volatility / volatility)
+                
+                risk_contribution.append({
+                    "symbol": symbol,
+                    "contribution": round(risk_contrib * 100, 2)
+                })
     
-    # 计算最大回撤
-    cumulative_returns = np.cumprod(1 + portfolio_returns)
-    running_max = np.maximum.accumulate(cumulative_returns)
-    drawdowns = (cumulative_returns / running_max - 1) * 100
-    max_drawdown = np.min(drawdowns)
+    # 排序
+    risk_contribution.sort(key=lambda x: x["contribution"], reverse=True)
+    
+    # 计算VaR (95%)
+    var_95 = round(float(np.percentile(portfolio_returns, 5) * np.sqrt(1) * 100), 2)
+    
+    # 计算CVaR (95%)
+    cvar_95 = round(float(np.mean(portfolio_returns[portfolio_returns <= np.percentile(portfolio_returns, 5)]) * 100), 2)
     
     # 计算下行风险
     downside_returns = portfolio_returns[portfolio_returns < 0]
-    downside_risk = np.std(downside_returns) * np.sqrt(252) * 100 if len(downside_returns) > 0 else 0
+    downside_risk = round(float(np.std(downside_returns) * np.sqrt(252) * 100), 2) if len(downside_returns) > 0 else 0.0
     
-    # 计算贝塔系数
-    covariance = np.cov(portfolio_returns, benchmark_returns)[0, 1]
-    benchmark_variance = np.var(benchmark_returns)
-    beta = covariance / benchmark_variance if benchmark_variance > 0 else 1
+    # 计算索提诺比率
+    risk_free_rate = get_us_treasury_yield()  # 使用美国国债利率
+    annualized_return = round(float(np.mean(portfolio_returns) * 252 * 100), 2)
+    sortino_ratio = round(float((annualized_return - risk_free_rate * 100) / downside_risk), 2) if downside_risk > 0 else 0.0
     
-    # 计算VaR (95%)
-    var_95 = np.percentile(portfolio_returns, 5) * 100
+    # 计算最长回撤持续时间
+    cumulative_returns = np.cumprod(1 + portfolio_returns) - 1
     
-    # 计算夏普比率
-    annualized_return = np.mean(portfolio_returns) * 252 * 100
-    sharpe_ratio = annualized_return / volatility if volatility > 0 else 0
+    if len(cumulative_returns) > 0:
+        peak = np.maximum.accumulate(cumulative_returns)
+        drawdown = (cumulative_returns) / peak - 1
+        
+        in_drawdown = drawdown < 0
+        if np.any(in_drawdown):
+            # 确保in_drawdown是Python布尔列表
+            in_drawdown_list = [bool(x) for x in in_drawdown]
+            
+            # 计算回撤持续时间
+            current_streak = 0
+            max_streak = 0
+            
+            for is_drawdown in in_drawdown_list:
+                if is_drawdown:
+                    current_streak += 1
+                    max_streak = max(max_streak, current_streak)
+                else:
+                    current_streak = 0
+            
+            longest_drawdown_days = int(max_streak)
+        else:
+            longest_drawdown_days = 0
+    else:
+        longest_drawdown_days = 0
     
-    risk_data = [
-        {"name": "波动率", "value": f"{round(volatility, 1)}%", "status": "medium", "percentage": 60},
-        {"name": "最大回撤", "value": f"{round(max_drawdown, 1)}%", "status": "low", "percentage": 40},
-        {"name": "下行风险", "value": f"{round(downside_risk, 1)}%", "status": "medium", "percentage": 55},
-        {"name": "贝塔系数", "value": f"{round(beta, 2)}", "status": "high", "percentage": 75},
-        {"name": "VaR (95%)", "value": f"{round(var_95, 1)}%", "status": "low", "percentage": 30},
-        {"name": "夏普比率", "value": f"{round(sharpe_ratio, 1)}", "status": "medium", "percentage": 65}
-    ]
-    
-    return risk_data
+    return {
+        "riskContribution": risk_contribution,
+        "valueAtRisk": var_95,
+        "conditionalVaR": cvar_95,
+        "downsideRisk": downside_risk,
+        "sortinoRatio": sortino_ratio,
+        "longestDrawdownDays": longest_drawdown_days
+    }
 
-# 辅助函数：计算与基准的比较
+# 辅助函数：计算比较指标
 def calculate_comparison(historical_data, weights):
     returns = historical_data.pct_change().dropna()
     
     # 投资组合日收益率
     portfolio_returns = np.zeros(len(returns))
-    for i, (symbol, weight) in enumerate(weights.items()):
+    for symbol, weight in weights.items():
         if symbol in returns.columns:
             portfolio_returns += returns[symbol].values * weight
     
-    # 基准收益率 (S&P 500)
-    benchmark_returns = returns['SPY'].values
+    # 基准收益率 (使用SPY作为默认基准)
+    benchmark_symbol = 'SPY'
+    if benchmark_symbol in returns.columns:
+        benchmark_returns = returns[benchmark_symbol].values
+    else:
+        # 如果没有SPY数据，使用第一个可用的股票作为基准
+        for col in returns.columns:
+            benchmark_returns = returns[col].values
+            benchmark_symbol = col
+            break
     
-    # 计算主要绩效指标
-    portfolio_total_return = (np.prod(1 + portfolio_returns) - 1) * 100
-    benchmark_total_return = (np.prod(1 + benchmark_returns) - 1) * 100
+    # 计算年化收益率
+    portfolio_annualized_return = round(float(np.mean(portfolio_returns) * 252 * 100), 2)
+    benchmark_annualized_return = round(float(np.mean(benchmark_returns) * 252 * 100), 2)
     
-    portfolio_annualized_return = ((1 + portfolio_total_return / 100) ** (252 / len(portfolio_returns)) - 1) * 100
-    benchmark_annualized_return = ((1 + benchmark_total_return / 100) ** (252 / len(benchmark_returns)) - 1) * 100
-    
-    portfolio_volatility = np.std(portfolio_returns) * np.sqrt(252) * 100
-    benchmark_volatility = np.std(benchmark_returns) * np.sqrt(252) * 100
-    
-    portfolio_sharpe = portfolio_annualized_return / portfolio_volatility if portfolio_volatility > 0 else 0
-    benchmark_sharpe = benchmark_annualized_return / benchmark_volatility if benchmark_volatility > 0 else 0
+    # 计算波动率
+    portfolio_volatility = round(float(np.std(portfolio_returns) * np.sqrt(252) * 100), 2)
+    benchmark_volatility = round(float(np.std(benchmark_returns) * np.sqrt(252) * 100), 2)
     
     # 计算最大回撤
-    portfolio_cumulative = np.cumprod(1 + portfolio_returns)
-    portfolio_running_max = np.maximum.accumulate(portfolio_cumulative)
-    portfolio_drawdowns = (portfolio_cumulative / portfolio_running_max - 1) * 100
-    portfolio_max_drawdown = np.min(portfolio_drawdowns)
+    portfolio_cum_returns = np.cumprod(1 + portfolio_returns)
+    portfolio_peak = np.maximum.accumulate(portfolio_cum_returns)
+    portfolio_drawdown = (portfolio_cum_returns / portfolio_peak - 1) * 100
+    portfolio_max_drawdown = round(float(np.min(portfolio_drawdown)), 2)
     
-    benchmark_cumulative = np.cumprod(1 + benchmark_returns)
-    benchmark_running_max = np.maximum.accumulate(benchmark_cumulative)
-    benchmark_drawdowns = (benchmark_cumulative / benchmark_running_max - 1) * 100
-    benchmark_max_drawdown = np.min(benchmark_drawdowns)
+    benchmark_cum_returns = np.cumprod(1 + benchmark_returns)
+    benchmark_peak = np.maximum.accumulate(benchmark_cum_returns)
+    benchmark_drawdown = (benchmark_cum_returns / benchmark_peak - 1) * 100
+    benchmark_max_drawdown = round(float(np.min(benchmark_drawdown)), 2)
     
     # 计算贝塔系数
-    covariance = np.cov(portfolio_returns, benchmark_returns)[0, 1]
-    benchmark_variance = np.var(benchmark_returns)
-    beta = covariance / benchmark_variance if benchmark_variance > 0 else 1
+    covariance = float(np.cov(portfolio_returns, benchmark_returns)[0, 1])
+    benchmark_variance = float(np.var(benchmark_returns))
+    beta = round(float(covariance / benchmark_variance if benchmark_variance > 0 else 1.0), 2)
     
-    # 计算阿尔法
-    risk_free_rate = 0.01 / 252  # 假设无风险利率为年化1%
-    portfolio_mean_return = np.mean(portfolio_returns)
-    benchmark_mean_return = np.mean(benchmark_returns)
-    alpha = ((portfolio_mean_return - risk_free_rate) - beta * (benchmark_mean_return - risk_free_rate)) * 252 * 100
+    # 计算alpha (Jensen's Alpha)
+    risk_free_rate = get_us_treasury_yield() / 252  # 每日无风险利率
+    expected_return = risk_free_rate + beta * (np.mean(benchmark_returns) - risk_free_rate)
+    alpha = round(float((np.mean(portfolio_returns) - expected_return) * 252 * 100), 2)
     
-    comparison_data = [
-        {
-            "metric": "年化收益率",
-            "portfolio": f"{round(portfolio_annualized_return, 1)}%",
-            "benchmark": f"{round(benchmark_annualized_return, 1)}%",
-            "difference": f"{'+' if portfolio_annualized_return > benchmark_annualized_return else ''}{round(portfolio_annualized_return - benchmark_annualized_return, 1)}%",
-            "positive": portfolio_annualized_return > benchmark_annualized_return
-        },
-        {
-            "metric": "夏普比率",
-            "portfolio": f"{round(portfolio_sharpe, 1)}",
-            "benchmark": f"{round(benchmark_sharpe, 1)}",
-            "difference": f"{'+' if portfolio_sharpe > benchmark_sharpe else ''}{round(portfolio_sharpe - benchmark_sharpe, 1)}",
-            "positive": portfolio_sharpe > benchmark_sharpe
-        },
-        {
-            "metric": "最大回撤",
-            "portfolio": f"{round(portfolio_max_drawdown, 1)}%",
-            "benchmark": f"{round(benchmark_max_drawdown, 1)}%",
-            "difference": f"{'+' if portfolio_max_drawdown > benchmark_max_drawdown else ''}{round(portfolio_max_drawdown - benchmark_max_drawdown, 1)}%",
-            "positive": portfolio_max_drawdown > benchmark_max_drawdown
-        },
-        {
-            "metric": "波动率",
-            "portfolio": f"{round(portfolio_volatility, 1)}%",
-            "benchmark": f"{round(benchmark_volatility, 1)}%",
-            "difference": f"{'+' if portfolio_volatility > benchmark_volatility else ''}{round(portfolio_volatility - benchmark_volatility, 1)}%",
-            "positive": portfolio_volatility < benchmark_volatility
-        },
-        {
-            "metric": "贝塔系数",
-            "portfolio": f"{round(beta, 2)}",
-            "benchmark": "1.00",
-            "difference": f"{'+' if beta > 1 else ''}{round(beta - 1, 2)}",
-            "positive": beta < 1
-        },
-        {
-            "metric": "年化α值",
-            "portfolio": f"{round(alpha, 1)}%",
-            "benchmark": "0.0%",
-            "difference": f"{'+' if alpha > 0 else ''}{round(alpha, 1)}%",
-            "positive": alpha > 0
-        }
-    ]
+    # 计算信息比率
+    tracking_error = round(float(np.std(portfolio_returns - benchmark_returns) * np.sqrt(252) * 100), 2)
+    information_ratio = round(float((portfolio_annualized_return - benchmark_annualized_return) / tracking_error if tracking_error > 0 else 0.0), 2)
+    
+    # 计算相关性
+    correlation = round(float(np.corrcoef(portfolio_returns, benchmark_returns)[0, 1]), 2)
+    
+    # 计算胜率（跑赢基准的天数比例）
+    # 确保数组比较后转为Python原生bool，避免NumPy bool_类型问题
+    win_days = np.sum([bool(x) for x in (portfolio_returns > benchmark_returns)])
+    
+    # 确保分母不为零
+    total_days = len(portfolio_returns)
+    if total_days > 0:
+        win_rate = round(float(win_days / total_days * 100), 2)
+    else:
+        win_rate = 0.0
+    
+    comparison_data = {
+        "portfolioReturn": portfolio_annualized_return,
+        "benchmarkReturn": benchmark_annualized_return,
+        "portfolioVolatility": portfolio_volatility,
+        "benchmarkVolatility": benchmark_volatility,
+        "portfolioMaxDrawdown": portfolio_max_drawdown,
+        "benchmarkMaxDrawdown": benchmark_max_drawdown,
+        "alpha": alpha,
+        "beta": beta,
+        "informationRatio": information_ratio,
+        "correlation": correlation,
+        "winRate": win_rate,
+        "benchmarkSymbol": benchmark_symbol,
+        "outperformance": bool(portfolio_annualized_return > benchmark_annualized_return),
+        "lowerVolatility": bool(portfolio_volatility < benchmark_volatility),
+        "lowerDrawdown": bool(abs(portfolio_max_drawdown) < abs(benchmark_max_drawdown))
+    }
     
     return comparison_data
 
 # 辅助函数：计算因子暴露
-def calculate_factor_exposure():
-    # 模拟数据：风格因子暴露
-    style_factors = [
-        {"name": "value", "exposure": 0.65, "positive": True},
-        {"name": "growth", "exposure": 0.42, "positive": True},
-        {"name": "size", "exposure": -0.28, "positive": False},
-        {"name": "momentum", "exposure": 0.36, "positive": True},
-        {"name": "quality", "exposure": 0.72, "positive": True},
-        {"name": "volatility", "exposure": -0.18, "positive": False}
-    ]
+def calculate_factor_exposure(tickers, benchmark_tickers=None):
+    """
+    计算投资组合的因子暴露度
     
-    # 模拟数据：宏观暴露
-    macro_factors = [
-        {"name": "monetaryPolicy", "exposure": 0.22, "positive": True},
-        {"name": "creditEnvironment", "exposure": 0.31, "positive": True},
-        {"name": "economicGrowth", "exposure": 0.58, "positive": True},
-        {"name": "inflation", "exposure": -0.17, "positive": False},
-        {"name": "interestRateChange", "exposure": -0.25, "positive": False},
-        {"name": "energyPrices", "exposure": 0.12, "positive": True}
-    ]
+    Args:
+        tickers: 投资组合的股票列表
+        benchmark_tickers: 基准投资组合的股票列表，默认为None
+        
+    Returns:
+        Dict: 包含投资组合因子暴露的数据
+    """
+    # 获取股票代码列表
+    ticker_list = [t.symbol for t in tickers]
+    weights = {t.symbol: t.weight for t in tickers}
     
-    return {
-        "styleFactors": style_factors,
-        "macroFactors": macro_factors
-    }
+    # 尝试从utils.market_data导入的函数获取真实的因子暴露数据
+    try:
+        from ..utils.market_data import get_portfolio_factor_exposure
+        # 使用实际函数计算因子暴露
+        factor_exposure_data = get_portfolio_factor_exposure(tickers)
+        
+        # 如果函数返回数据为空或出错，使用备用模拟数据
+        if not factor_exposure_data:
+            raise ValueError("Factor exposure data is empty")
+            
+        return factor_exposure_data
+    except Exception as e:
+        print(f"Error calculating factor exposure: {e}")
+        
+        # 备用方案：使用模拟数据
+        # 风格因子暴露
+        style_factors = [
+            {"name": "Momentum Factor", "portfolio_exposure": 0.68, "benchmark_exposure": 0.45, "difference": 0.23},
+            {"name": "Value Factor", "portfolio_exposure": 0.32, "benchmark_exposure": 0.55, "difference": -0.23},
+            {"name": "Size Factor", "portfolio_exposure": -0.15, "benchmark_exposure": 0.10, "difference": -0.25},
+            {"name": "Volatility Factor", "portfolio_exposure": -0.25, "benchmark_exposure": -0.15, "difference": -0.10},
+            {"name": "Quality Factor", "portfolio_exposure": 0.85, "benchmark_exposure": 0.60, "difference": 0.25}
+        ]
+        
+        # 模拟数据：宏观暴露
+        macro_factors = [
+            {"name": "Economic Growth", "portfolio_exposure": 1.32, "benchmark_exposure": 1.0, "difference": 0.32},
+            {"name": "Inflation", "portfolio_exposure": -0.45, "benchmark_exposure": -0.2, "difference": -0.25},
+            {"name": "Interest Rate Risk", "portfolio_exposure": 0.78, "benchmark_exposure": 0.5, "difference": 0.28},
+            {"name": "Credit Risk", "portfolio_exposure": 0.41, "benchmark_exposure": 0.3, "difference": 0.11},
+            {"name": "Emerging Markets", "portfolio_exposure": 0.66, "benchmark_exposure": 0.4, "difference": 0.26}
+        ]
+        
+        return {
+            "styleFactors": style_factors,
+            "macroFactors": macro_factors
+        }
 
 # API端点：创建投资组合
 @router.post("/portfolios", response_model=PortfolioResponse)
@@ -399,18 +760,21 @@ async def create_portfolio(portfolio: Portfolio):
     # 验证所有权重总和是否接近1
     total_weight = sum(ticker.weight for ticker in portfolio.tickers)
     if abs(total_weight - 1) > 0.01:
-        raise HTTPException(status_code=400, detail=f"权重总和必须为1，当前总和为{total_weight}")
+        raise HTTPException(status_code=400, detail=f"The sum of weights must be 1, current sum is {total_weight}")
     
     # 获取股票的额外信息
     enriched_tickers = []
     for ticker in portfolio.tickers:
+        # 首先尝试从companies_db获取信息
+        company_info = companies_db.get(ticker.symbol, {})
         stock_info = stocks_db.get(ticker.symbol, {})
+        
         enriched_tickers.append(
             Ticker(
                 symbol=ticker.symbol,
                 weight=ticker.weight,
-                name=stock_info.get("name", ticker.symbol),
-                sector=stock_info.get("sector", "Unknown"),
+                name=company_info.get("name") or stock_info.get("name", ticker.symbol),
+                sector=company_info.get("sector") or stock_info.get("sector", "Unknown"),
                 price=stock_info.get("price"),
                 change=stock_info.get("change")
             )
@@ -426,6 +790,10 @@ async def create_portfolio(portfolio: Portfolio):
     }
     
     portfolios_db[portfolio_id] = portfolio_data
+    
+    # 保存到文件
+    save_portfolios()
+    
     return portfolio_data
 
 @router.get("/stocks-data", response_model=Dict[str, Dict[str, Any]])
@@ -445,64 +813,64 @@ async def get_mock_portfolio_analysis():
             "maxDrawdown": -8.5,
             "winRate": 58.2,
             "monthlyReturns": [
-                { "month": "一月", "return": 3.2 },
-                { "month": "二月", "return": -1.8 },
-                { "month": "三月", "return": 2.1 },
-                { "month": "四月", "return": 4.5 },
-                { "month": "五月", "return": -0.7 },
-                { "month": "六月", "return": 2.9 }
+                { "month": "January", "return": 3.2 },
+                { "month": "February", "return": -1.8 },
+                { "month": "March", "return": 2.1 },
+                { "month": "April", "return": 4.5 },
+                { "month": "May", "return": -0.7 },
+                { "month": "June", "return": 2.9 }
             ]
         },
         "allocation": {
             "sector": [
-                { "type": "科技", "percentage": 32.5 },
-                { "type": "医疗健康", "percentage": 15.8 },
-                { "type": "金融", "percentage": 12.3 },
-                { "type": "消费品", "percentage": 10.5 },
-                { "type": "通信服务", "percentage": 8.7 },
-                { "type": "工业", "percentage": 7.9 },
-                { "type": "能源", "percentage": 5.3 },
-                { "type": "材料", "percentage": 4.2 },
-                { "type": "公用事业", "percentage": 2.8 }
+                { "type": "Technology", "percentage": 32.5 },
+                { "type": "Healthcare", "percentage": 15.8 },
+                { "type": "Financials", "percentage": 12.3 },
+                { "type": "Consumer", "percentage": 10.5 },
+                { "type": "Communication", "percentage": 8.7 },
+                { "type": "Industrials", "percentage": 7.9 },
+                { "type": "Energy", "percentage": 5.3 },
+                { "type": "Materials", "percentage": 4.2 },
+                { "type": "Utilities", "percentage": 2.8 }
             ],
             "geography": [
-                { "region": "美国", "percentage": 45.7 },
-                { "region": "中国", "percentage": 21.5 },
-                { "region": "欧洲", "percentage": 15.8 },
-                { "region": "日本", "percentage": 7.3 },
-                { "region": "新兴市场", "percentage": 9.7 }
+                { "region": "United States", "percentage": 45.7 },
+                { "region": "China", "percentage": 21.5 },
+                { "region": "Europe", "percentage": 15.8 },
+                { "region": "Japan", "percentage": 7.3 },
+                { "region": "Emerging Markets", "percentage": 9.7 }
             ]
         },
         "risk": [
-            { "name": "波动率", "value": "12.5%", "status": "medium", "percentage": 60 },
-            { "name": "最大回撤", "value": "-8.5%", "status": "low", "percentage": 40 },
-            { "name": "下行风险", "value": "12.3%", "status": "medium", "percentage": 55 },
-            { "name": "贝塔系数", "value": "0.85", "status": "high", "percentage": 75 },
+            { "name": "Volatility", "value": "12.5%", "status": "medium", "percentage": 60 },
+            { "name": "Max Drawdown", "value": "-8.5%", "status": "low", "percentage": 40 },
+            { "name": "Downside Risk", "value": "12.3%", "status": "medium", "percentage": 55 },
+            { "name": "Beta", "value": "0.85", "status": "high", "percentage": 75 },
             { "name": "VaR (95%)", "value": "-2.8%", "status": "low", "percentage": 30 },
-            { "name": "夏普比率", "value": "1.42", "status": "medium", "percentage": 65 }
+            { "name": "Sharpe Ratio", "value": "1.42", "status": "medium", "percentage": 65 }
         ],
         "comparison": [
-            { "metric": "年化收益率", "portfolio": "12.3%", "benchmark": "10.2%", "difference": "+2.1%", "positive": True },
-            { "metric": "夏普比率", "portfolio": "1.42", "benchmark": "0.9", "difference": "+0.52", "positive": True },
-            { "metric": "最大回撤", "portfolio": "-8.5%", "benchmark": "-18.2%", "difference": "+9.7%", "positive": True },
-            { "metric": "波动率", "portfolio": "12.5%", "benchmark": "16.4%", "difference": "+3.9%", "positive": False },
-            { "metric": "贝塔系数", "portfolio": "0.85", "benchmark": "1.00", "difference": "+0.15", "positive": False },
-            { "metric": "年化α值", "portfolio": "2.1%", "benchmark": "0.0%", "difference": "+2.1%", "positive": True }
+            { "metric": "Annualized Return", "portfolio": "12.3%", "benchmark": "10.2%", "difference": "+2.1%", "positive": True },
+            { "metric": "Sharpe Ratio", "portfolio": "1.42", "benchmark": "0.9", "difference": "+0.52", "positive": True },
+            { "metric": "Max Drawdown", "portfolio": "-8.5%", "benchmark": "-18.2%", "difference": "+9.7%", "positive": True },
+            { "metric": "Volatility", "portfolio": "12.5%", "benchmark": "16.4%", "difference": "+3.9%", "positive": False },
+            { "metric": "Beta", "portfolio": "0.85", "benchmark": "1.00", "difference": "+0.15", "positive": False },
+            { "metric": "Alpha (annualized)", "portfolio": "2.1%", "benchmark": "0.0%", "difference": "+2.1%", "positive": True }
         ],
         "factors": {
             "styleFactors": [
-                { "name": "规模", "exposure": 0.85, "positive": True },
-                { "name": "价值", "exposure": -0.32, "positive": False },
-                { "name": "动量", "exposure": 1.27, "positive": True },
-                { "name": "质量", "exposure": 0.53, "positive": True },
-                { "name": "波动性", "exposure": -0.21, "positive": False }
+                { "name": "Size", "exposure": 0.85, "positive": True },
+                { "name": "Value", "exposure": -0.32, "positive": False },
+                { "name": "Momentum", "exposure": 1.27, "positive": True },
+                { "name": "Quality", "exposure": 0.53, "positive": True },
+                { "name": "Volatility", "exposure": -0.21, "positive": False }
             ],
             "macroFactors": [
-                { "name": "经济增长", "exposure": 1.32, "positive": True },
-                { "name": "通货膨胀", "exposure": -0.45, "positive": False },
-                { "name": "利率风险", "exposure": 0.78, "positive": True },
-                { "name": "信用风险", "exposure": 0.41, "positive": True },
-                { "name": "新兴市场", "exposure": 0.66, "positive": True }
+                { "name": "Economic Growth", "exposure": 1.32, "positive": True },
+                { "name": "Inflation", "exposure": -0.45, "positive": False },
+                { "name": "Interest Rate Risk", "exposure": 0.78, "positive": True },
+                { "name": "Credit Risk", "exposure": 0.41, "positive": True },
+                { "name": "Emerging Markets", "exposure": 0.66, "positive": True }
             ]
         }
     }
@@ -515,13 +883,13 @@ async def get_portfolios():
 @router.get("/portfolios/{portfolio_id}", response_model=PortfolioResponse)
 async def get_portfolio(portfolio_id: str):
     if portfolio_id not in portfolios_db:
-        raise HTTPException(status_code=404, detail="投资组合未找到")
+        raise HTTPException(status_code=404, detail="Portfolio not found")
     return portfolios_db[portfolio_id]
 
 @router.get("/portfolios/{portfolio_id}/analyze", response_model=PortfolioAnalysis)
 async def analyze_portfolio(portfolio_id: str):
     if portfolio_id not in portfolios_db:
-        raise HTTPException(status_code=404, detail="投资组合未找到")
+        raise HTTPException(status_code=404, detail="Portfolio not found")
     
     portfolio = portfolios_db[portfolio_id]
     tickers = portfolio["tickers"]
@@ -533,17 +901,50 @@ async def analyze_portfolio(portfolio_id: str):
     historical_data = generate_historical_data(tickers)
     
     # 计算各个分析指标
-    performance = calculate_performance_metrics(historical_data, weights)
+    performance = calculate_statistics(historical_data, weights)
     allocation = calculate_allocation(tickers)
-    risk = calculate_risk_metrics(historical_data, weights)
-    comparison = calculate_comparison(historical_data, weights)
-    factors = calculate_factor_exposure()
+    
+    # 获取风险指标和比较指标（这些返回字典）
+    risk_data = calculate_risk_metrics(historical_data, weights)
+    comparison_data = calculate_comparison(historical_data, weights)
+    
+    # 转换风险指标为列表格式
+    risk_list = [
+        {"name": "Value at Risk (95%)", "value": f"{risk_data['valueAtRisk']:.2f}%", "status": "medium", "percentage": 50},
+        {"name": "Conditional VaR", "value": f"{risk_data['conditionalVaR']:.2f}%", "status": "medium", "percentage": 55},
+        {"name": "Downside Risk", "value": f"{risk_data['downsideRisk']:.2f}%", "status": "medium", "percentage": 60},
+        {"name": "Sortino Ratio", "value": f"{risk_data['sortinoRatio']:.2f}", "status": "medium", "percentage": 65},
+        {"name": "Longest Drawdown Period", "value": f"{risk_data['longestDrawdownDays']} days", "status": "medium", "percentage": 70}
+    ]
+    
+    # 添加风险贡献（如果有）
+    if risk_data["riskContribution"]:
+        for item in risk_data["riskContribution"][:3]:  # 只包含前三个
+            risk_list.append({
+                "name": f"{item['symbol']} Risk Contribution", 
+                "value": f"{item['contribution']:.2f}%", 
+                "status": "medium", 
+                "percentage": 50
+            })
+    
+    # 转换比较指标为列表格式
+    comparison_list = [
+        {"metric": "Annualized Return", "portfolio": f"{comparison_data['portfolioReturn']:.2f}%", "benchmark": f"{comparison_data['benchmarkReturn']:.2f}%", "difference": f"{comparison_data['portfolioReturn'] - comparison_data['benchmarkReturn']:.2f}%", "positive": comparison_data['outperformance']},
+        {"metric": "Volatility", "portfolio": f"{comparison_data['portfolioVolatility']:.2f}%", "benchmark": f"{comparison_data['benchmarkVolatility']:.2f}%", "difference": f"{comparison_data['benchmarkVolatility'] - comparison_data['portfolioVolatility']:.2f}%", "positive": comparison_data['lowerVolatility']},
+        {"metric": "Max Drawdown", "portfolio": f"{comparison_data['portfolioMaxDrawdown']:.2f}%", "benchmark": f"{comparison_data['benchmarkMaxDrawdown']:.2f}%", "difference": f"{abs(comparison_data['portfolioMaxDrawdown']) - abs(comparison_data['benchmarkMaxDrawdown']):.2f}%", "positive": comparison_data['lowerDrawdown']},
+        {"metric": "Alpha", "portfolio": f"{comparison_data['alpha']:.2f}%", "benchmark": "0.00%", "difference": f"{comparison_data['alpha']:.2f}%", "positive": comparison_data['alpha'] > 0},
+        {"metric": "Beta", "portfolio": f"{comparison_data['beta']:.2f}", "benchmark": "1.00", "difference": f"{comparison_data['beta'] - 1:.2f}", "positive": comparison_data['beta'] < 1},
+        {"metric": "Information Ratio", "portfolio": f"{comparison_data['informationRatio']:.2f}", "benchmark": "0.00", "difference": f"{comparison_data['informationRatio']:.2f}", "positive": comparison_data['informationRatio'] > 0}
+    ]
+    
+    # 获取因子暴露数据
+    factors = calculate_factor_exposure(tickers)
     
     return {
         "performance": performance,
         "allocation": allocation,
-        "risk": risk,
-        "comparison": comparison,
+        "risk": risk_list,
+        "comparison": comparison_list,
         "factors": factors
     }
 
@@ -582,25 +983,44 @@ async def get_portfolio_comparison(portfolio_id: str):
 @router.get("/portfolio/{portfolio_id}/allocation")
 async def get_portfolio_allocation(portfolio_id: str):
     """获取投资组合的资产配置分布"""
-    # 在实际应用中，应该从数据库中获取指定ID的投资组合
-    # 这里为示例，使用一个模拟的投资组合
-    mock_portfolio = {
-        "name": "示例投资组合",
-        "tickers": [
-            {"symbol": "AAPL", "weight": 0.4},
-            {"symbol": "MSFT", "weight": 0.3},
-            {"symbol": "GOOGL", "weight": 0.2},
-            {"symbol": "AMZN", "weight": 0.1}
-        ]
-    }
+    # 检查portfolio_id是否存在
+    if portfolio_id not in portfolios_db:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
     
-    # 使用市场数据工具获取资产配置
-    allocation_result = get_asset_allocation(mock_portfolio)
+    # 获取实际的投资组合数据
+    portfolio = portfolios_db[portfolio_id]
+    tickers = portfolio["tickers"]
+    
+    # 确保tickers是Ticker对象列表
+    if not all(isinstance(t, Ticker) for t in tickers):
+        # 如果不是，创建Ticker对象列表
+        from ..models.portfolio import Ticker as ModelTicker
+        ticker_objects = [
+            ModelTicker(
+                symbol=t["symbol"] if isinstance(t, dict) else t.symbol,
+                weight=t["weight"] if isinstance(t, dict) else t.weight,
+                name=t.get("name", "") if isinstance(t, dict) else getattr(t, "name", ""),
+                sector=t.get("sector", "") if isinstance(t, dict) else getattr(t, "sector", "")
+            )
+            for t in tickers
+        ]
+    else:
+        ticker_objects = tickers
+    
+    # 使用calculate_allocation函数获取资产配置
+    allocation_result = calculate_allocation(ticker_objects)
+    
+    # 转换为前端期望的格式
+    frontend_allocation = {
+        "sectorDistribution": {item["type"]: item["percentage"] for item in allocation_result["sector"]},
+        "regionDistribution": {item["region"]: item["percentage"] for item in allocation_result["geography"]},
+        "marketCapDistribution": {item["type"]: item["percentage"] for item in allocation_result["marketCap"]}
+    }
     
     return {
         "portfolio_id": portfolio_id,
-        "allocation": allocation_result
-    } 
+        "allocation": frontend_allocation
+    }
 
 @router.get("/available-stocks")
 async def get_available_stocks():
@@ -643,7 +1063,6 @@ async def mock_analyze_portfolio(portfolio: Portfolio):
         # 使用实际数据计算各项指标
         from ..utils.market_data import (
             get_portfolio_returns, 
-            get_portfolio_factor_exposure, 
             compare_with_benchmark,
             get_asset_allocation
         )
@@ -673,8 +1092,8 @@ async def mock_analyze_portfolio(portfolio: Portfolio):
                             timeframes_data[time_frame]['benchmarkReturn'] = data['return']['benchmark']
                             timeframes_data[time_frame]['excessReturn'] = data['return']['excess']
         
-        # 计算因子暴露
-        factor_exposure = get_portfolio_factor_exposure(tickers)
+        # 计算因子暴露 - 使用新的实时计算函数
+        factor_exposure = calculate_factor_exposure(tickers)
         
         # 构建响应数据
         response = {
@@ -692,12 +1111,12 @@ async def mock_analyze_portfolio(portfolio: Portfolio):
                     "volatility": comparison_data["volatility"]["portfolio"],
                     "winRate": comparison_data["winRate"],
                     "monthlyReturns": [
-                        {"month": "Jan", "return": 2.3},
-                        {"month": "Feb", "return": -0.7},
-                        {"month": "Mar", "return": 1.5},
-                        {"month": "Apr", "return": 3.2},
+                        {"month": "January", "return": 2.3},
+                        {"month": "February", "return": -0.7},
+                        {"month": "March", "return": 1.5},
+                        {"month": "April", "return": 3.2},
                         {"month": "May", "return": 0.8},
-                        {"month": "Jun", "return": 1.9}
+                        {"month": "June", "return": 1.9}
                     ],
                     "timeFrames": timeframes_data
                 },
@@ -716,7 +1135,7 @@ async def mock_analyze_portfolio(portfolio: Portfolio):
                     {"metric": "Max Drawdown", "portfolio": f"{comparison_data['maxDrawdown']['portfolio']}%", "benchmark": f"{comparison_data['maxDrawdown']['benchmark']}%", "difference": f"{comparison_data['maxDrawdown']['difference']}%", "positive": comparison_data['maxDrawdown']['difference'] > 0},
                     {"metric": "Volatility", "portfolio": f"{comparison_data['volatility']['portfolio']}%", "benchmark": f"{comparison_data['volatility']['benchmark']}%", "difference": f"{comparison_data['volatility']['difference']}%", "positive": comparison_data['volatility']['difference'] < 0},
                     {"metric": "Beta", "portfolio": "0.85", "benchmark": "1.00", "difference": "-0.15", "positive": False},
-                    {"metric": "Alpha", "portfolio": "2.1%", "benchmark": "0.0%", "difference": "+2.1%", "positive": True}
+                    {"metric": "Alpha (annualized)", "portfolio": "2.1%", "benchmark": "0.0%", "difference": "+2.1%", "positive": True}
                 ],
                 "factors": factor_exposure,
                 "timeFrames": comparison_data.get('timeFrames', {})
@@ -731,4 +1150,59 @@ async def mock_analyze_portfolio(portfolio: Portfolio):
 async def get_chat_portfolio_analysis(chat_id: str):
     """获取与聊天相关的投资组合分析数据"""
     # 这里直接返回模拟数据
-    return await get_mock_portfolio_analysis() 
+    return await get_mock_portfolio_analysis()
+
+@router.delete("/portfolios/{portfolio_id}")
+async def delete_portfolio(portfolio_id: str):
+    """删除指定的投资组合"""
+    if portfolio_id not in portfolios_db:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    
+    # 删除投资组合
+    del portfolios_db[portfolio_id]
+    
+    # 保存更改
+    save_portfolios()
+    
+    return {"message": "Portfolio deleted successfully"}
+
+@router.put("/portfolios/{portfolio_id}", response_model=PortfolioResponse)
+async def update_portfolio(portfolio_id: str, portfolio: Portfolio):
+    """更新现有投资组合"""
+    if portfolio_id not in portfolios_db:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    
+    # 验证所有权重总和是否接近1
+    total_weight = sum(ticker.weight for ticker in portfolio.tickers)
+    if abs(total_weight - 1) > 0.01:
+        raise HTTPException(status_code=400, detail=f"The sum of weights must be 1, current sum is {total_weight}")
+    
+    # 获取股票的额外信息
+    enriched_tickers = []
+    for ticker in portfolio.tickers:
+        # 首先尝试从companies_db获取信息
+        company_info = companies_db.get(ticker.symbol, {})
+        stock_info = stocks_db.get(ticker.symbol, {})
+        
+        enriched_tickers.append(
+            Ticker(
+                symbol=ticker.symbol,
+                weight=ticker.weight,
+                name=company_info.get("name") or stock_info.get("name", ticker.symbol),
+                sector=company_info.get("sector") or stock_info.get("sector", "Unknown"),
+                price=stock_info.get("price"),
+                change=stock_info.get("change")
+            )
+        )
+    
+    # 更新投资组合
+    portfolios_db[portfolio_id].update({
+        "name": portfolio.name,
+        "tickers": enriched_tickers,
+        "updated_at": datetime.now().isoformat()
+    })
+    
+    # 保存更改
+    save_portfolios()
+    
+    return portfolios_db[portfolio_id] 

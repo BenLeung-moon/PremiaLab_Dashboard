@@ -4,6 +4,7 @@ import Portfolio from '../models/Portfolio';
 // 模拟数据库
 let portfolios: Portfolio[] = [
   {
+    id: 'port-1',
     name: '科技股组合',
     tickers: [
       { symbol: 'AAPL', weight: 0.25 },
@@ -15,6 +16,7 @@ let portfolios: Portfolio[] = [
     createdAt: new Date()
   },
   {
+    id: 'port-2',
     name: '稳健型投资',
     tickers: [
       { symbol: 'VTI', weight: 0.4 },
@@ -39,13 +41,48 @@ export const getAllPortfolios = (req: Request, res: Response) => {
 export const getPortfolioById = (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const portfolio = portfolios[parseInt(id)];
     
-    if (!portfolio) {
-      return res.status(404).json({ message: '投资组合不存在' });
+    // 首先尝试通过ID查找
+    const portfolio = portfolios.find(p => p.id === id);
+    
+    // 如果没找到，尝试通过索引查找（兼容旧行为）
+    if (!portfolio && !isNaN(parseInt(id))) {
+      const indexedPortfolio = portfolios[parseInt(id)];
+      if (indexedPortfolio) {
+        return res.status(200).json(indexedPortfolio);
+      }
     }
     
-    res.status(200).json(portfolio);
+    // 如果找到了通过ID匹配的投资组合，返回它
+    if (portfolio) {
+      return res.status(200).json(portfolio);
+    }
+    
+    // 处理模拟数据，支持前端演示
+    if (id === 'port-1' || id === 'port-2') {
+      const mockPortfolio = {
+        id: id,
+        name: id === 'port-1' ? '科技股组合' : '多元化投资',
+        tickers: id === 'port-1' ? 
+          [
+            { symbol: 'AAPL', weight: 0.3, name: "Apple Inc.", sector: "Technology" },
+            { symbol: 'MSFT', weight: 0.3, name: "Microsoft Corp.", sector: "Technology" },
+            { symbol: 'GOOGL', weight: 0.2, name: "Alphabet Inc.", sector: "Communication Services" },
+            { symbol: 'AMZN', weight: 0.2, name: "Amazon.com Inc.", sector: "Consumer Discretionary" }
+          ] : 
+          [
+            { symbol: 'SPY', weight: 0.4, name: "SPDR S&P 500 ETF", sector: "ETF" },
+            { symbol: 'QQQ', weight: 0.3, name: "Invesco QQQ Trust", sector: "ETF" },
+            { symbol: 'GLD', weight: 0.2, name: "SPDR Gold Shares", sector: "Commodities" },
+            { symbol: 'VNQ', weight: 0.1, name: "Vanguard Real Estate ETF", sector: "Real Estate" }
+          ],
+        createdAt: new Date()
+      };
+      return res.status(200).json(mockPortfolio);
+    }
+    
+    // 如果仍未找到投资组合，返回404错误
+    return res.status(404).json({ message: '投资组合不存在' });
   } catch (error) {
     res.status(500).json({ message: '服务器错误', error });
   }
@@ -71,6 +108,7 @@ export const createPortfolio = (req: Request, res: Response) => {
     }
     
     const newPortfolio: Portfolio = {
+      id: `port-${portfolios.length + 1}`,
       name,
       tickers,
       createdAt: new Date()
@@ -80,7 +118,7 @@ export const createPortfolio = (req: Request, res: Response) => {
     
     res.status(201).json({
       success: true,
-      id: portfolios.length - 1,
+      id: newPortfolio.id,
       message: '投资组合已成功创建',
       created_at: newPortfolio.createdAt.toISOString(),
       data: newPortfolio
