@@ -9,7 +9,7 @@ import HistoricalTrends from './HistoricalTrends'
 import AssetAllocation from './AssetAllocation'
 import Comparison from './Comparison'
 import PortfolioComposition from './PortfolioComposition'
-import { getPortfolioAnalysis, mockPortfolioAnalysis, PortfolioAnalysis } from '../../services/portfolioService'
+import { getPortfolioAnalysis, PortfolioAnalysis } from '../../services/portfolioService'
 
 const Dashboard = ({ portfolioId = '' }) => {
   const { t, language, setLanguage } = useLanguage()
@@ -22,7 +22,6 @@ const Dashboard = ({ portfolioId = '' }) => {
   const [analysisData, setAnalysisData] = useState<PortfolioAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [useMockData, setUseMockData] = useState(false);
 
   // 获取投资组合分析数据
   useEffect(() => {
@@ -33,13 +32,23 @@ const Dashboard = ({ portfolioId = '' }) => {
       setError('');
       
       try {
-        console.log('Fetching portfolio data, useMockData:', useMockData);
-        const data = useMockData 
-          ? mockPortfolioAnalysis() 
-          : await getPortfolioAnalysis(currentPortfolioId);
+        console.log('Fetching portfolio data for:', currentPortfolioId);
+        const data = await getPortfolioAnalysis(currentPortfolioId);
         
         console.log('API response:', data);
         console.log('Factors data:', data.factors);
+        
+        // 添加更详细的日志
+        if (!data.factors) {
+          console.error('Warning: API response missing factors data');
+        } else {
+          console.log('Factors data structure:', {
+            styleFactors: data.factors.styleFactors || 'missing',
+            industryFactors: data.factors.industryFactors || 'missing',
+            countryFactors: data.factors.countryFactors || 'missing',
+            otherFactors: data.factors.otherFactors || 'missing'
+          });
+        }
         
         setAnalysisData(data);
       } catch (err) {
@@ -51,7 +60,7 @@ const Dashboard = ({ portfolioId = '' }) => {
     };
     
     fetchData();
-  }, [currentPortfolioId, useMockData]);
+  }, [currentPortfolioId]);
 
   // Set portfolioId based on URL params or props
   useEffect(() => {
@@ -86,13 +95,7 @@ const Dashboard = ({ portfolioId = '' }) => {
       <p className="mb-4">{error}</p>
       <div className="flex gap-4">
         <button 
-          onClick={() => setUseMockData(true)}
-          className="px-4 py-2 bg-white text-red-700 border border-red-300 rounded-md hover:bg-red-50"
-        >
-          {language === 'en' ? 'Use Mock Data' : '使用模拟数据'}
-        </button>
-        <button 
-          onClick={() => { setUseMockData(false); setError(''); setLoading(true); }}
+          onClick={() => { setError(''); setLoading(true); fetchData(); }}
           className="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
         >
           {language === 'en' ? 'Try Again' : '重试'}
@@ -100,6 +103,23 @@ const Dashboard = ({ portfolioId = '' }) => {
       </div>
     </div>
   );
+
+  const fetchData = async () => {
+    if (!currentPortfolioId) return;
+    
+    setLoading(true);
+    setError('');
+    
+    try {
+      const data = await getPortfolioAnalysis(currentPortfolioId);
+      setAnalysisData(data);
+    } catch (err) {
+      console.error('Error fetching portfolio data:', err);
+      setError('Failed to load portfolio data. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -153,21 +173,11 @@ const Dashboard = ({ portfolioId = '' }) => {
           )}
         </div>
 
-        {/* 数据源切换 */}
+        {/* 投资组合信息栏 */}
         <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3 flex justify-between items-center">
           <span className="text-blue-700 text-sm">
-            {useMockData 
-              ? (language === 'en' ? 'Using mock data (development mode)' : '使用模拟数据（开发模式）') 
-              : (language === 'en' ? `Analyzing portfolio ID: ${currentPortfolioId}` : `正在分析投资组合 ID: ${currentPortfolioId}`)}
+            {language === 'en' ? `Analyzing portfolio ID: ${currentPortfolioId}` : `正在分析投资组合 ID: ${currentPortfolioId}`}
           </span>
-          <button 
-            onClick={() => setUseMockData(!useMockData)}
-            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200"
-          >
-            {useMockData 
-              ? (language === 'en' ? 'Use Real API' : '使用真实API') 
-              : (language === 'en' ? 'Use Mock Data' : '使用模拟数据')}
-          </button>
         </div>
 
         {/* 错误显示 */}
@@ -203,12 +213,70 @@ const Dashboard = ({ portfolioId = '' }) => {
             
             {activeTab === 'comparison' && <Comparison portfolioId={currentPortfolioId || 'test-portfolio'} />}
             
-            {activeTab === 'performance' && <PerformanceMetrics data={analysisData?.performance} />}
+            {activeTab === 'performance' && (() => {
+              console.log('Rendering PerformanceMetrics with data:', analysisData?.performance);
+              if (!analysisData) {
+                console.warn('analysisData is null or undefined when rendering PerformanceMetrics');
+                return (
+                  <div className="p-4 bg-yellow-50 text-yellow-700 rounded-lg">
+                    {language === 'en' 
+                      ? 'Unable to display performance metrics: No analysis data available.' 
+                      : '无法显示绩效指标：没有分析数据。'}
+                  </div>
+                );
+              }
+              if (!analysisData.performance) {
+                console.warn('analysisData.performance is null or undefined');
+                return (
+                  <div className="p-4 bg-yellow-50 text-yellow-700 rounded-lg">
+                    {language === 'en' 
+                      ? 'Unable to display performance metrics: No performance data in analysis results.' 
+                      : '无法显示绩效指标：分析结果中没有绩效数据。'}
+                  </div>
+                );
+              }
+              return <PerformanceMetrics data={analysisData.performance} />;
+            })()}
             
             {/* Remove the grid wrapper to let components use full width */}
-            {activeTab === 'factors' && <FactorExposure />}
+            {activeTab === 'factors' && (() => {
+              console.log('Rendering FactorExposure component with data:', analysisData?.factors);
+              // 添加一些额外的防御措施和调试信息
+              try {
+                if (!analysisData) {
+                  console.warn('analysisData is null or undefined');
+                  return (
+                    <div className="p-4 bg-yellow-50 text-yellow-700 rounded-lg">
+                      {language === 'en' 
+                        ? 'Unable to display factor exposure: No analysis data available.' 
+                        : '无法显示因子暴露：没有分析数据。'}
+                    </div>
+                  );
+                }
+                if (!analysisData.factors) {
+                  console.warn('analysisData.factors is null or undefined');
+                  return (
+                    <div className="p-4 bg-yellow-50 text-yellow-700 rounded-lg">
+                      {language === 'en' 
+                        ? 'Unable to display factor exposure: No factor data in analysis results.' 
+                        : '无法显示因子暴露：分析结果中没有因子数据。'}
+                    </div>
+                  );
+                }
+                return <FactorExposure factors={analysisData.factors} />;
+              } catch (error) {
+                console.error('Error rendering FactorExposure:', error);
+                return (
+                  <div className="p-4 bg-red-50 text-red-700 rounded-lg">
+                    {language === 'en' 
+                      ? 'An error occurred while displaying factor exposure.' 
+                      : '显示因子暴露时发生错误。'}
+                  </div>
+                );
+              }
+            })()}
             {activeTab === 'risk' && <RiskMetrics data={analysisData?.risk} />}
-            {activeTab === 'trends' && <HistoricalTrends />}
+            {activeTab === 'trends' && <HistoricalTrends data={analysisData?.performance} />}
           </>
         )}
       </div>

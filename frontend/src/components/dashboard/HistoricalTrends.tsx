@@ -1,6 +1,11 @@
-// import React from 'react';
+import React from 'react';
+import { useLanguage } from '../../i18n/LanguageContext';
 
-const HistoricalTrends = () => {
+interface HistoricalTrendsProps {
+  // 可以添加必要的属性
+}
+
+const HistoricalTrends: React.FC<HistoricalTrendsProps> = () => {
   // 假设数据
   const monthlyReturns = [
     { month: '1月', portfolio: 2.1, benchmark: 1.5 },

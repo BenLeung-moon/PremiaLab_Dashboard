@@ -2,10 +2,10 @@ import React from 'react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 interface ComparisonProps {
-  portfolioId: string;
+  portfolioId?: string;
 }
 
-const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
+const Comparison: React.FC<ComparisonProps> = ({ portfolioId = '' }) => {
   const { t } = useLanguage();
   
   // 模拟数据：与标普500和纳斯达克的比较

@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useLanguage } from '../../i18n/LanguageContext';
-import { getPortfolioAnalysis, mockPortfolioAnalysis, PortfolioAnalysis } from '../../services/portfolioService';
-import PerformanceMetrics from './PerformanceMetrics';
+import { useLanguage } from '../../shared/i18n/LanguageContext';
+import { getPortfolioAnalysis, PortfolioAnalysis } from '../../services/portfolioService';
+import { formatNumber, formatPercent } from '../../shared/utils/formatting';
+
+// 导入组件库中的组件
 import AssetAllocation from './AssetAllocation';
 import RiskMetrics from './RiskMetrics';
 import Comparison from './Comparison';
 import FactorExposure from './FactorExposure';
+
+// 直接引入原始组件，不使用features目录中的
+import PerformanceMetrics from './PerformanceMetrics';
 
 // API调用状态
 type ApiStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -23,9 +28,6 @@ const PortfolioAnalyzer: React.FC = () => {
   // 当前选中的分析标签
   const [activeTab, setActiveTab] = useState<string>('performance');
   
-  // 是否使用模拟数据 (用于开发测试)
-  const [useMockData, setUseMockData] = useState<boolean>(false);
-  
   // 加载数据
   useEffect(() => {
     const fetchData = async () => {
@@ -33,11 +35,13 @@ const PortfolioAnalyzer: React.FC = () => {
       
       setApiStatus('loading');
       try {
-        // 根据选择获取真实API数据或模拟数据
-        const data = useMockData 
-          ? mockPortfolioAnalysis() 
-          : await getPortfolioAnalysis(portfolioId);
+        // 获取数据（测试模式由服务层的TEST_MODE控制）
+        console.log('正在获取投资组合分析数据，ID:', portfolioId);
+        const data = await getPortfolioAnalysis(portfolioId);
+        console.log('获取到的数据:', data);
+        console.log('性能指标:', data.performance);
         
+        // 替换性能指标数据的获取方式
         setAnalysisData(data);
         setApiStatus('success');
       } catch (error) {
@@ -48,7 +52,7 @@ const PortfolioAnalyzer: React.FC = () => {
     };
     
     fetchData();
-  }, [portfolioId, useMockData]);
+  }, [portfolioId]);
   
   // 分析标签列表
   const tabs = [
@@ -75,12 +79,6 @@ const PortfolioAnalyzer: React.FC = () => {
       <div className="bg-red-50 text-red-700 p-8 rounded-lg text-center">
         <h3 className="text-lg font-medium mb-2">数据加载错误</h3>
         <p>{errorMessage}</p>
-        <button 
-          onClick={() => setUseMockData(true)}
-          className="mt-4 px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
-        >
-          使用模拟数据
-        </button>
       </div>
     );
   }
@@ -90,31 +88,57 @@ const PortfolioAnalyzer: React.FC = () => {
     return (
       <div className="bg-gray-50 p-8 rounded-lg text-center">
         <p className="text-gray-600">无分析数据可用</p>
-        <button 
-          onClick={() => setUseMockData(true)}
-          className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200"
-        >
-          使用模拟数据
-        </button>
       </div>
     );
   }
   
+  // 创建一个基本的UI来展示从API获取的性能指标
+  const renderPerformanceData = () => {
+    const p = analysisData.performance;
+    
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-6 bg-white p-6 rounded-lg shadow">
+        <div className="space-y-2">
+          <div className="text-sm text-gray-500">总收益</div>
+          <div className="text-2xl font-bold text-gray-900">{formatPercent(p.totalReturn)}</div>
+        </div>
+        
+        <div className="space-y-2">
+          <div className="text-sm text-gray-500">年化收益</div>
+          <div className="text-2xl font-bold text-gray-900">{formatPercent(p.annualizedReturn)}</div>
+        </div>
+        
+        <div className="space-y-2">
+          <div className="text-sm text-gray-500">波动率</div>
+          <div className="text-2xl font-bold text-gray-900">{formatPercent(p.volatility)}</div>
+        </div>
+        
+        <div className="space-y-2">
+          <div className="text-sm text-gray-500">夏普比率</div>
+          <div className="text-2xl font-bold text-gray-900">{formatNumber(p.sharpeRatio)}</div>
+        </div>
+        
+        <div className="space-y-2">
+          <div className="text-sm text-gray-500">最大回撤</div>
+          <div className="text-2xl font-bold text-red-600">{formatPercent(p.maxDrawdown)}</div>
+        </div>
+        
+        <div className="space-y-2">
+          <div className="text-sm text-gray-500">胜率</div>
+          <div className="text-2xl font-bold text-gray-900">{formatPercent(p.winRate)}</div>
+        </div>
+      </div>
+    );
+  };
+  
   return (
     <div className="space-y-6">
-      {/* 数据源标志 */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex justify-between items-center">
-        <span className="text-blue-700 text-sm">
-          {useMockData 
-            ? '当前使用模拟数据 (开发测试模式)' 
-            : `正在分析投资组合 ID: ${portfolioId}`}
-        </span>
-        <button 
-          onClick={() => setUseMockData(!useMockData)}
-          className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200"
-        >
-          {useMockData ? '使用实际计算数据' : '使用模拟数据'}
-        </button>
+      {/* 调试信息 */}
+      <div className="bg-gray-100 p-2 text-xs font-mono overflow-auto">
+        <p>Portfolio ID: {portfolioId}</p>
+        <p>Total Return: {formatPercent(analysisData.performance.totalReturn)}</p>
+        <p>Annualized Return: {formatPercent(analysisData.performance.annualizedReturn)}</p>
+        <p>Sharp Ratio: {formatNumber(analysisData.performance.sharpeRatio)}</p>
       </div>
       
       {/* 分析标签切换 */}
@@ -146,34 +170,28 @@ const PortfolioAnalyzer: React.FC = () => {
         {activeTab === 'allocation' && (
           <div>
             <h2 className="text-xl font-medium mb-4">资产配置分析</h2>
-            <AssetAllocation data={analysisData.allocation} />
+            <AssetAllocation />
           </div>
         )}
         
         {activeTab === 'risk' && (
           <div>
             <h2 className="text-xl font-medium mb-4">风险分析</h2>
-            <RiskMetrics data={analysisData.risk} />
+            <RiskMetrics />
           </div>
         )}
         
         {activeTab === 'comparison' && (
           <div>
             <h2 className="text-xl font-medium mb-4">基准比较</h2>
-            <Comparison data={analysisData.comparison} />
+            <Comparison />
           </div>
         )}
         
         {activeTab === 'factors' && (
           <div>
             <h2 className="text-xl font-medium mb-4">因子分析</h2>
-            {analysisData.factors ? (
-              <FactorExposure data={analysisData.factors} />
-            ) : (
-              <div className="bg-gray-50 p-4 rounded text-center text-gray-500">
-                没有因子数据可用
-              </div>
-            )}
+            <FactorExposure />
           </div>
         )}
       </div>

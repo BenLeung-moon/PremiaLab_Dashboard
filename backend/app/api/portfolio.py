@@ -1205,4 +1205,47 @@ async def update_portfolio(portfolio_id: str, portfolio: Portfolio):
     # 保存更改
     save_portfolios()
     
-    return portfolios_db[portfolio_id] 
+    return portfolios_db[portfolio_id]
+
+@router.get("/test-spy-data")
+async def test_spy_data():
+    """测试YFinance获取SPY数据"""
+    from ..utils.market_data import get_spy_data
+    from datetime import datetime, timedelta
+    
+    # 获取过去5年的SPY数据
+    today = datetime.now()
+    five_years_ago = today - timedelta(days=365*5)
+    
+    try:
+        spy_data = get_spy_data(five_years_ago, today)
+        
+        # 检查数据是否正常获取
+        if not spy_data.empty:
+            # 返回基本统计信息
+            return {
+                "status": "success",
+                "message": "成功获取SPY数据",
+                "data_points": len(spy_data),
+                "date_range": f"{spy_data.index.min()} 至 {spy_data.index.max()}",
+                "recent_values": spy_data.tail(5).to_dict(),
+                "statistics": {
+                    "mean": float(spy_data.mean()),
+                    "min": float(spy_data.min()),
+                    "max": float(spy_data.max()),
+                    "std": float(spy_data.std())
+                }
+            }
+        else:
+            return {
+                "status": "error",
+                "message": "SPY数据为空",
+                "data_points": 0
+            }
+    
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"获取SPY数据失败: {str(e)}",
+            "error": str(e)
+        } 

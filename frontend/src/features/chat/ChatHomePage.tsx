@@ -413,7 +413,7 @@ const ChatHomePage = () => {
           // 解析响应
           try {
             const parsedResponse = JSON.parse(mockResponse);
-            const assistantMessage = { role: 'assistant' as const, content: parsedResponse.response };
+            const assistantMessage = { role: 'assistant' as const, content: filterThinkingChain(parsedResponse.response) };
             
             // 更新当前显示的消息
             setMessages(prev => [...prev, assistantMessage]);
@@ -428,7 +428,7 @@ const ChatHomePage = () => {
               setExtractedPortfolio(parsedResponse.portfolio);
             }
           } catch {
-            const assistantMessage = { role: 'assistant' as const, content: mockResponse };
+            const assistantMessage = { role: 'assistant' as const, content: filterThinkingChain(mockResponse) };
             
             // 更新当前显示的消息
             setMessages(prev => [...prev, assistantMessage]);
@@ -466,13 +466,17 @@ const ChatHomePage = () => {
 
         // 调用Perplexity API，使用当前语言控制系统提示
         const systemPrompt = language === 'zh' 
-          ? `你是一个投资组合分析助手。如果用户想要创建或提到特定的投资组合（包含股票代码和权重），
-              提取这些信息并格式化为JSON。总是将权重归一化为小数（总和为1）。
+          ? `你是一个投资组合分析助手。请始终返回JSON格式的回复，所有回复必须是有效的JSON。
+              如果用户想要创建或提到特定的投资组合（包含股票代码和权重），提取这些信息并包含在JSON中。
+              
+              重要限制：只推荐标普500指数成分股。标普500指数包含美国500家领先的上市公司，如AAPL(苹果)、MSFT(微软)、GOOGL(谷歌)、AMZN(亚马逊)、
+              META(Meta/Facebook)、NVDA(英伟达)、TSLA(特斯拉)、JPM(摩根大通)、JNJ(强生)、V(Visa)等。
+              如果用户提到非标普500成分股的股票，请礼貌建议他们使用标普500成分股替代。
               
               用户请求示例：
               "帮我创建一个投资组合：40% AAPL，30% MSFT，20% GOOGL，10% AMZN"
               
-              你应该返回：
+              你必须严格按照以下JSON格式返回，不要添加任何其他文本或代码块标记：
               {
                 "response": "我已为您创建了一个科技股投资组合，包括苹果、微软、谷歌和亚马逊。这是一个比较集中的投资组合，专注于大型科技公司。您可以点击"发送到仪表板"按钮查看详细分析。",
                 "portfolio": {
@@ -486,17 +490,35 @@ const ChatHomePage = () => {
                 }
               }
               
-              如果用户没有提供明确的投资组合信息，只返回普通回答，不包含portfolio字段：
+              重要提示：
+              1. 返回的JSON必须包含"response"字段，该字段是对用户的文本回复。
+              2. 如果用户提供了投资组合信息，必须包含"portfolio"字段。
+              3. portfolio必须包含"name"和"tickers"两个字段。
+              4. tickers必须是一个数组，每个元素包含"symbol"和"weight"字段。
+              5. weight必须是0到1之间的小数（不是百分比），所有weight总和必须等于1。
+              6. 只返回纯JSON格式，不要包含任何其他文本、解释或代码块标记(如\`\`\`)。
+              7. 只包含标普500指数成分股，不要使用其他股票。
+              8. 如果用户要求对冲风险，更推荐多元化配置，包括不同行业的股票。
+              
+              如果用户没有提供明确的投资组合信息，仍然必须以JSON格式回复，但不包含portfolio字段：
               {
                 "response": "您的回答..."
-              }`
-          : `You are a portfolio analysis assistant. If the user wants to create or mentions a specific portfolio (including stock symbols and weights),
-              extract this information and format it as JSON. Always normalize weights as decimals (sum to 1).
+              }
+              
+              永远只返回纯JSON，不要在JSON前后添加任何文本或标记符号。`
+          : `You are a portfolio analysis assistant. You must ALWAYS return your response as valid JSON format.
+              If the user wants to create or mentions a specific portfolio (including stock symbols and weights),
+              extract this information and include it in your JSON response.
+              
+              Important limitation: Only recommend stocks from the S&P 500 index. The S&P 500 includes 500 leading publicly traded companies in the US, 
+              such as AAPL(Apple), MSFT(Microsoft), GOOGL(Google), AMZN(Amazon), META(Meta/Facebook), NVDA(NVIDIA), TSLA(Tesla), 
+              JPM(JPMorgan Chase), JNJ(Johnson & Johnson), V(Visa), etc.
+              If the user mentions stocks not in the S&P 500, politely suggest S&P 500 alternatives.
               
               Example user request:
               "Help me create a portfolio: 40% AAPL, 30% MSFT, 20% GOOGL, 10% AMZN"
               
-              You should return:
+              You must strictly follow this JSON format, without adding any other text or code block markers:
               {
                 "response": "I've created a tech stock portfolio for you, including Apple, Microsoft, Google, and Amazon. This is a concentrated portfolio focused on large tech companies. You can click the 'Send to Dashboard' button to see a detailed analysis.",
                 "portfolio": {
@@ -510,15 +532,27 @@ const ChatHomePage = () => {
                 }
               }
               
-              If the user does not provide clear portfolio information, only return a regular answer without the portfolio field:
+              Critical requirements:
+              1. The returned JSON must include a "response" field, which is the text reply to the user.
+              2. If the user provides portfolio information, it must include a "portfolio" field.
+              3. The portfolio must have both "name" and "tickers" fields.
+              4. tickers must be an array where each element has "symbol" and "weight" fields.
+              5. weight must be a decimal between 0 and 1 (not percentage), and all weights must sum to 1.
+              6. Return ONLY pure JSON format, do not include any other text or code block markers (like \`\`\`).
+              7. Only include S&P 500 index constituent stocks, do not use other stocks.
+              8. If the user asks for risk hedging, recommend diversification across different sectors.
+              
+              If the user does not provide clear portfolio information, you must still respond in JSON format, but without the portfolio field:
               {
                 "response": "Your answer..."
-              }`;
+              }
+              
+              Always return ONLY pure JSON with no text or markers before or after the JSON.`;
 
         const response = await axios.post(
           'https://api.perplexity.ai/chat/completions',
           {
-            model: 'sonar-small-chat',
+            model: 'r1-1776',
             messages: [
               {
                 role: 'system',
@@ -535,19 +569,61 @@ const ChatHomePage = () => {
               'Authorization': `Bearer ${apiKey}`,
               'Content-Type': 'application/json'
             },
-            timeout: 20000, // 20秒超时
+            timeout: 60000, // 60秒超时
             maxContentLength: 5 * 1024 * 1024 // 5MB内容限制
           }
         );
 
         // 解析响应
         const aiMessage = response.data.choices[0].message.content;
+        
+        // 过滤AI响应中的思考链
+        const filteredAiMessage = filterThinkingChain(aiMessage);
+        
         let parsedResponse: { response: string; portfolio?: Portfolio | null } = { response: '' };
         
         try {
-          parsedResponse = JSON.parse(aiMessage);
+          // 尝试解析JSON响应
+          parsedResponse = JSON.parse(filteredAiMessage);
           
-          const assistantMessage = { role: 'assistant' as const, content: parsedResponse.response };
+          // 确保portfolio字段的结构正确
+          if (parsedResponse.portfolio) {
+            // 验证portfolio的格式
+            if (!parsedResponse.portfolio.name || !Array.isArray(parsedResponse.portfolio.tickers)) {
+              console.warn('API返回的portfolio格式不正确:', parsedResponse.portfolio);
+              // 添加日志以便调试
+              console.log('收到的原始响应:', aiMessage);
+              
+              // 尝试修复格式问题
+              if (typeof parsedResponse.portfolio === 'object') {
+                if (!parsedResponse.portfolio.name) {
+                  parsedResponse.portfolio.name = '投资组合' + new Date().toISOString().slice(0, 10);
+                }
+                if (!Array.isArray(parsedResponse.portfolio.tickers)) {
+                  parsedResponse.portfolio.tickers = [];
+                }
+              } else {
+                // 如果portfolio不是对象，设置为null
+                parsedResponse.portfolio = null;
+              }
+            } else {
+              // 确保权重是小数形式，总和为1
+              const tickers = parsedResponse.portfolio.tickers;
+              const totalWeight = tickers.reduce((sum, ticker) => sum + ticker.weight, 0);
+              
+              // 如果总权重不接近1，可能需要归一化处理
+              if (Math.abs(totalWeight - 1) > 0.01 && Math.abs(totalWeight - 100) < 1) {
+                console.log('正在归一化portfolio权重，当前总权重:', totalWeight);
+                // 可能权重是百分比形式(1-100)而不是小数形式(0-1)
+                parsedResponse.portfolio.tickers = tickers.map(ticker => ({
+                  ...ticker,
+                  weight: ticker.weight / 100
+                }));
+              }
+            }
+          }
+          
+          const assistantMessage = { role: 'assistant' as const, content: filterThinkingChain(parsedResponse.response || filteredAiMessage) };
           
           // 更新当前显示的消息
           setMessages(prev => [...prev, assistantMessage]);
@@ -560,24 +636,51 @@ const ChatHomePage = () => {
           
           // 提取投资组合信息
           if (parsedResponse.portfolio) {
+            console.log('成功提取投资组合:', parsedResponse.portfolio);
             setExtractedPortfolio(parsedResponse.portfolio);
           } else {
             setExtractedPortfolio(null);
           }
         } catch (parseError) {
-          // 如果解析失败，直接显示原始回复
-          const assistantMessage = { role: 'assistant' as const, content: aiMessage };
+          console.error('解析API响应失败:', parseError);
+          console.log('原始响应内容:', aiMessage);
           
-          // 更新当前显示的消息
+          // 尝试从响应中提取JSON部分
+          const jsonMatch = aiMessage.match(/{[\s\S]*}/);
+          if (jsonMatch) {
+            try {
+              // 解析JSON并创建合适的响应
+              const extractedJson = JSON.parse(jsonMatch[0]);
+              
+              // 更新已解析的响应
+              parsedResponse.response = extractedJson.response;
+              
+              if (extractedJson.portfolio) {
+                // 友好响应文本
+                parsedResponse.response = "我已为您创建了投资组合。点击\"发送到仪表板\"按钮查看详细分析。";
+                parsedResponse.portfolio = extractedJson.portfolio;
+              }
+            } catch (e) {
+              console.error('提取JSON失败:', e);
+            }
+          } else if (aiMessage.includes("portfolio")) {
+            // 尝试提取投资组合数据的备用逻辑
+            parsedResponse.portfolio = extractedJson.portfolio;
+          }
+          
+          // 创建最终的助手消息，使用过滤后的内容
+          const assistantMessage = { role: 'assistant' as const, content: filterThinkingChain(parsedResponse.response || aiMessage) };
           setMessages(prev => [...prev, assistantMessage]);
-          
-          // 同时更新存储的对话消息
           setConversationMessages(prev => ({
             ...prev,
             [activeConversationId]: [...(prev[activeConversationId] || []), assistantMessage]
           }));
           
-          setExtractedPortfolio(null);
+          if (parsedResponse.portfolio) {
+            setExtractedPortfolio(parsedResponse.portfolio);
+          } else {
+            setExtractedPortfolio(null);
+          }
         }
       }
     } catch (error) {
@@ -648,6 +751,38 @@ const ChatHomePage = () => {
     try {
       setIsLoading(true);
       
+      // 添加对投资组合数据的验证
+      if (!extractedPortfolio.name || !Array.isArray(extractedPortfolio.tickers) || extractedPortfolio.tickers.length === 0) {
+        console.error('投资组合数据不完整:', extractedPortfolio);
+        throw new Error('投资组合数据不完整，请检查名称和股票列表');
+      }
+      
+      // 确保所有股票都有权重，且权重总和接近1
+      const tickers = extractedPortfolio.tickers;
+      const totalWeight = tickers.reduce((sum, ticker) => sum + ticker.weight, 0);
+      
+      // 如果总权重远离1，进行归一化
+      if (Math.abs(totalWeight - 1) > 0.01) {
+        console.log('正在归一化投资组合权重，当前总权重:', totalWeight);
+        if (Math.abs(totalWeight - 100) < 1) {
+          // 如果总权重接近100，可能是百分比格式，转换为小数
+          extractedPortfolio.tickers = tickers.map(ticker => ({
+            ...ticker,
+            weight: ticker.weight / 100
+          }));
+        } else if (totalWeight > 0) {
+          // 如果总权重不接近100但大于0，则归一化
+          extractedPortfolio.tickers = tickers.map(ticker => ({
+            ...ticker,
+            weight: ticker.weight / totalWeight
+          }));
+        } else {
+          throw new Error('投资组合权重总和异常，请检查股票权重');
+        }
+      }
+      
+      console.log('发送到后端的投资组合数据:', extractedPortfolio);
+      
       // 使用服务发送投资组合，传递当前语言
       const response = await submitPortfolio(extractedPortfolio, language);
       const portfolioId = response.id || 'test-123';
@@ -685,10 +820,17 @@ const ChatHomePage = () => {
       setExtractedPortfolio(null);
     } catch (error) {
       console.error('发送投资组合失败:', error);
+      
+      // 错误消息处理，提供更具体的错误信息
+      let errorContent = t('portfolio.error');
+      if (error instanceof Error) {
+        errorContent = `${t('portfolio.error')} - ${error.message}`;
+      }
+      
       // 添加错误消息
       const errorMessage = { 
         role: 'system' as const, 
-        content: t('portfolio.error')
+        content: errorContent
       };
       setMessages(prev => [...prev, errorMessage]);
       setConversationMessages(prev => ({
@@ -1039,6 +1181,12 @@ const ChatHomePage = () => {
       validatePortfolioId();
     }
   }, [activeConversationId, conversationPortfolios]);
+
+  // 过滤思考链函数 - 移除<think>...</think>标签中的内容
+  const filterThinkingChain = (content: string): string => {
+    // 使用正则表达式移除<think>...</think>之间的内容
+    return content.replace(/<think>[\s\S]*?<\/think>/g, '');
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -1465,7 +1613,7 @@ const ChatHomePage = () => {
                             : 'bg-gray-100 text-gray-800'
                       } ${message.content.includes('投资组合分析') ? 'whitespace-pre-line' : ''}`}
                     >
-                      {message.content}
+                      {filterThinkingChain(message.content)}
                     </div>
                   </div>
                 ))}

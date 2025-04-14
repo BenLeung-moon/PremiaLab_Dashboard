@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getPortfolioComparison } from '../../shared/services/portfolioService';
 import { useLanguage } from '../../shared/i18n/LanguageContext';
+import { formatNumber, formatPercent } from '../../shared/utils/formatting';
 
 interface ComparisonProps {
   portfolioId: string;
@@ -34,6 +35,7 @@ const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
   const [comparison, setComparison] = useState<ComparisonData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [benchmarkMissing, setBenchmarkMissing] = useState(false);
 
   useEffect(() => {
     const fetchComparison = async () => {
@@ -42,6 +44,22 @@ const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
         const data = await getPortfolioComparison(portfolioId);
         console.log("Received comparison data:", data); // 调试用
         setComparison(data);
+        
+        // 检查基准数据是否全部为0
+        const benchmarkValues = [
+          data.totalReturn?.benchmark || data.总收益率?.基准 || 0,
+          data.annualizedReturn?.benchmark || data.年化收益率?.基准 || 0,
+          data.volatility?.benchmark || data.波动率?.基准 || 0,
+          data.sharpeRatio?.benchmark || data.夏普比率?.基准 || 0,
+        ];
+        
+        console.log("Benchmark values:", benchmarkValues); // 添加详细日志
+        
+        const allZeros = benchmarkValues.every(value => value === 0);
+        console.log("Are all benchmark values zero?", allZeros);
+        
+        setBenchmarkMissing(allZeros);
+        
         setError(null);
       } catch (err) {
         setError(language === 'en' ? 'Failed to load comparison data' : '无法加载对比数据');
@@ -125,6 +143,29 @@ const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
 
   return (
     <div className="space-y-8">
+      {/* 基准数据缺失警告 */}
+      {benchmarkMissing && (
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-lg mb-4">
+          <div className="flex items-start">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <p className="font-medium">
+                {language === 'en' 
+                  ? 'Benchmark data is missing or incomplete'
+                  : '基准数据缺失或不完整'}
+              </p>
+              <p className="text-sm mt-1">
+                {language === 'en'
+                  ? 'The comparison might not be accurate. Please contact the administrator to fix the benchmark data.'
+                  : '比较可能不准确。请联系管理员修复基准数据。'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 主要对比指标 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* 总收益率 */}
@@ -134,7 +175,7 @@ const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
           </h3>
           <div className="flex items-baseline">
             <div className="text-2xl font-bold">
-              {getValue(totalReturn, 'portfolio', '投资组合')}%
+              {formatPercent(getValue(totalReturn, 'portfolio', '投资组合'))}
             </div>
             <div
               className={`ml-2 text-sm ${
@@ -146,11 +187,11 @@ const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
               }`}
             >
               {getValueIcon(getValue(totalReturn, 'excess', '超额'))}{' '}
-              {Math.abs(getValue(totalReturn, 'excess', '超额'))}% {language === 'en' ? 'vs Benchmark' : 'vs 基准'}
+              {Math.abs(getValue(totalReturn, 'excess', '超额')).toFixed(2)}% {language === 'en' ? 'vs Benchmark' : 'vs 基准'}
             </div>
           </div>
           <div className="mt-4 text-xs text-gray-500">
-            {language === 'en' ? 'Benchmark' : '基准'}: {getValue(totalReturn, 'benchmark', '基准')}%
+            {language === 'en' ? 'Benchmark' : '基准'}: {formatPercent(getValue(totalReturn, 'benchmark', '基准'))}
           </div>
         </div>
 
@@ -161,7 +202,7 @@ const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
           </h3>
           <div className="flex items-baseline">
             <div className="text-2xl font-bold">
-              {getValue(annualizedReturn, 'portfolio', '投资组合')}%
+              {formatPercent(getValue(annualizedReturn, 'portfolio', '投资组合'))}
             </div>
             <div
               className={`ml-2 text-sm ${getValueColor(
@@ -169,11 +210,11 @@ const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
               )}`}
             >
               {getValueIcon(getValue(annualizedReturn, 'excess', '超额'))}{' '}
-              {Math.abs(getValue(annualizedReturn, 'excess', '超额'))}% {language === 'en' ? 'vs Benchmark' : 'vs 基准'}
+              {Math.abs(getValue(annualizedReturn, 'excess', '超额')).toFixed(2)}% {language === 'en' ? 'vs Benchmark' : 'vs 基准'}
             </div>
           </div>
           <div className="mt-4 text-xs text-gray-500">
-            {language === 'en' ? 'Benchmark' : '基准'}: {getValue(annualizedReturn, 'benchmark', '基准')}%
+            {language === 'en' ? 'Benchmark' : '基准'}: {formatPercent(getValue(annualizedReturn, 'benchmark', '基准'))}
           </div>
         </div>
 
@@ -184,7 +225,7 @@ const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
           </h3>
           <div className="flex items-baseline">
             <div className="text-2xl font-bold">
-              {getValue(sharpeRatio, 'portfolio', '投资组合')}
+              {formatNumber(getValue(sharpeRatio, 'portfolio', '投资组合'))}
             </div>
             <div
               className={`ml-2 text-sm ${getValueColor(
@@ -192,11 +233,11 @@ const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
               )}`}
             >
               {getValueIcon(getValue(sharpeRatio, 'difference', '差异'))}{' '}
-              {Math.abs(getValue(sharpeRatio, 'difference', '差异'))} {language === 'en' ? 'vs Benchmark' : 'vs 基准'}
+              {Math.abs(getValue(sharpeRatio, 'difference', '差异')).toFixed(2)} {language === 'en' ? 'vs Benchmark' : 'vs 基准'}
             </div>
           </div>
           <div className="mt-4 text-xs text-gray-500">
-            {language === 'en' ? 'Benchmark' : '基准'}: {getValue(sharpeRatio, 'benchmark', '基准')}
+            {language === 'en' ? 'Benchmark' : '基准'}: {formatNumber(getValue(sharpeRatio, 'benchmark', '基准'))}
           </div>
         </div>
 
@@ -207,23 +248,19 @@ const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
           </h3>
           <div className="flex items-baseline">
             <div className="text-2xl font-bold">
-              {getValue(volatility, 'portfolio', '投资组合')}%
+              {formatPercent(getValue(volatility, 'portfolio', '投资组合'))}
             </div>
             <div
-              className={`ml-2 text-sm ${
-                getValue(volatility, 'difference', '差异') < 0
-                  ? 'text-green-600'
-                  : getValue(volatility, 'difference', '差异') > 0
-                  ? 'text-red-600'
-                  : 'text-gray-500'
-              }`}
+              className={`ml-2 text-sm ${getValueColor(
+                getValue(volatility, 'difference', '差异') * -1
+              )}`}
             >
-              {getValueIcon(getValue(volatility, 'difference', '差异'))}{' '}
-              {Math.abs(getValue(volatility, 'difference', '差异'))}% {language === 'en' ? 'vs Benchmark' : 'vs 基准'}
+              {getValueIcon(getValue(volatility, 'difference', '差异') * -1)}{' '}
+              {Math.abs(getValue(volatility, 'difference', '差异')).toFixed(2)}% {language === 'en' ? 'vs Benchmark' : 'vs 基准'}
             </div>
           </div>
           <div className="mt-4 text-xs text-gray-500">
-            {language === 'en' ? 'Benchmark' : '基准'}: {getValue(volatility, 'benchmark', '基准')}%
+            {language === 'en' ? 'Benchmark' : '基准'}: {formatPercent(getValue(volatility, 'benchmark', '基准'))}
           </div>
         </div>
 
@@ -234,23 +271,19 @@ const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
           </h3>
           <div className="flex items-baseline">
             <div className="text-2xl font-bold">
-              {getValue(maxDrawdown, 'portfolio', '投资组合')}%
+              {formatPercent(getValue(maxDrawdown, 'portfolio', '投资组合'))}
             </div>
             <div
-              className={`ml-2 text-sm ${
-                getValue(maxDrawdown, 'difference', '差异') < 0
-                  ? 'text-green-600'
-                  : getValue(maxDrawdown, 'difference', '差异') > 0
-                  ? 'text-red-600'
-                  : 'text-gray-500'
-              }`}
+              className={`ml-2 text-sm ${getValueColor(
+                getValue(maxDrawdown, 'difference', '差异') * -1
+              )}`}
             >
-              {getValueIcon(getValue(maxDrawdown, 'difference', '差异'))}{' '}
-              {Math.abs(getValue(maxDrawdown, 'difference', '差异'))}% {language === 'en' ? 'vs Benchmark' : 'vs 基准'}
+              {getValueIcon(getValue(maxDrawdown, 'difference', '差异') * -1)}{' '}
+              {Math.abs(getValue(maxDrawdown, 'difference', '差异')).toFixed(2)}% {language === 'en' ? 'vs Benchmark' : 'vs 基准'}
             </div>
           </div>
           <div className="mt-4 text-xs text-gray-500">
-            {language === 'en' ? 'Benchmark' : '基准'}: {getValue(maxDrawdown, 'benchmark', '基准')}%
+            {language === 'en' ? 'Benchmark' : '基准'}: {formatPercent(getValue(maxDrawdown, 'benchmark', '基准'))}
           </div>
         </div>
 
@@ -259,7 +292,7 @@ const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
           <h3 className="text-sm text-gray-500 mb-1">
             {language === 'en' ? 'Win Rate' : '胜率'}
           </h3>
-          <div className="text-2xl font-bold">{winRate}%</div>
+          <div className="text-2xl font-bold">{formatPercent(winRate)}</div>
           <div className="mt-4 text-xs text-gray-500">
             {language === 'en' ? 'Percentage of days outperforming benchmark' : '超过基准的交易日比例'}
           </div>
@@ -292,7 +325,7 @@ const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
                   {language === 'en' ? 'Correlation' : '相关性'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold">
-                  {correlation}
+                  {formatNumber(correlation)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {language === 'en' ? 'Correlation coefficient between portfolio and benchmark' : '投资组合与基准的相关系数'}
@@ -303,7 +336,7 @@ const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
                   {language === 'en' ? 'Tracking Error' : '跟踪误差'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold">
-                  {trackingError}%
+                  {formatPercent(trackingError)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {language === 'en' ? 'Standard deviation of portfolio returns relative to benchmark' : '投资组合与基准回报的标准差'}
@@ -314,10 +347,21 @@ const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
                   {language === 'en' ? 'Information Ratio' : '信息比率'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold">
-                  {informationRatio}
+                  {formatNumber(informationRatio)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {language === 'en' ? 'Excess return per unit of tracking error' : '每单位跟踪误差带来的超额收益'}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {language === 'en' ? 'Win Rate' : '胜率'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold">
+                  {formatPercent(winRate)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {language === 'en' ? 'Percentage of days outperforming benchmark' : '超过基准的天数百分比'}
                 </td>
               </tr>
             </tbody>

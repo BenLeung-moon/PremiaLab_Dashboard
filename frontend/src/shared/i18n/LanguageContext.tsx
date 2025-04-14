@@ -169,10 +169,29 @@ interface LanguageProviderProps {
 }
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
-  // 从localStorage获取保存的语言设置，默认为中文
+  // 从localStorage获取保存的语言设置，或使用浏览器语言
   const [language, setLanguage] = useState<Language>(() => {
     const savedLanguage = localStorage.getItem('language') as Language;
-    return savedLanguage && ['en', 'zh'].includes(savedLanguage) ? savedLanguage : 'zh';
+    
+    // 如果已有保存的语言设置且有效，则使用它
+    if (savedLanguage && ['en', 'zh'].includes(savedLanguage)) {
+      console.log('Using saved language setting:', savedLanguage);
+      return savedLanguage;
+    }
+    
+    // 否则尝试获取浏览器语言
+    const browserLang = navigator.language.toLowerCase();
+    console.log('Detected browser language:', browserLang);
+    
+    // 检查浏览器语言是否为中文
+    if (browserLang.startsWith('zh')) {
+      console.log('Setting default language to Chinese based on browser language');
+      return 'zh';
+    }
+    
+    // 默认使用英文
+    console.log('Setting default language to English');
+    return 'en';
   });
   
   // 语言变化时保存到localStorage

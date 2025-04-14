@@ -212,5 +212,574 @@
         "change": null
       }
     ]
+  },
+  "port-11": {
+    "id": "port-11",
+    "name": "Trade War Hedge Portfolio",
+    "created_at": "2025-04-14T09:57:15.558938",
+    "tickers": [
+      {
+        "symbol": "JNJ",
+        "weight": 0.2,
+        "name": "JOHNSON & JOHNSON",
+        "sector": "Health Care",
+        "price": 151.14,
+        "change": 0.0015
+      },
+      {
+        "symbol": "NEE",
+        "weight": 0.2,
+        "name": "NEXTERA ENERGY INC",
+        "sector": "Utilities",
+        "price": null,
+        "change": null
+      },
+      {
+        "symbol": "PG",
+        "weight": 0.2,
+        "name": "PROCTER & GAMBLE",
+        "sector": "Consumer Staples",
+        "price": 399.39,
+        "change": 0.0452
+      },
+      {
+        "symbol": "LMT",
+        "weight": 0.2,
+        "name": "LOCKHEED MARTIN CORP",
+        "sector": "Industrials",
+        "price": null,
+        "change": null
+      },
+      {
+        "symbol": "MSFT",
+        "weight": 0.2,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": 402.28,
+        "change": -0.0056
+      }
+    ]
+  },
+  "port-12": {
+    "id": "port-12",
+    "name": "a",
+    "created_at": "2025-04-14T10:04:39.889754",
+    "tickers": [
+      {
+        "symbol": "MSFT",
+        "weight": 1.0,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": 402.28,
+        "change": -0.0056
+      }
+    ]
+  },
+  "port-13": {
+    "id": "port-13",
+    "name": "a",
+    "created_at": "2025-04-14T10:04:40.734349",
+    "tickers": [
+      {
+        "symbol": "MSFT",
+        "weight": 1.0,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": 402.28,
+        "change": -0.0056
+      }
+    ]
+  },
+  "port-14": {
+    "id": "port-14",
+    "name": "bb",
+    "created_at": "2025-04-14T10:05:33.820822",
+    "tickers": [
+      {
+        "symbol": "BRK-B",
+        "weight": 1.0,
+        "name": "Berkshire Hathaway Inc. Class B",
+        "sector": "Communication Services",
+        "price": 62.04,
+        "change": 0.0437
+      }
+    ]
+  },
+  "port-15": {
+    "id": "port-15",
+    "name": "bb",
+    "created_at": "2025-04-14T10:05:34.815022",
+    "tickers": [
+      {
+        "symbol": "BRK-B",
+        "weight": 1.0,
+        "name": "Berkshire Hathaway Inc. Class B",
+        "sector": "Communication Services",
+        "price": 62.04,
+        "change": 0.0437
+      }
+    ]
+  },
+  "port-16": {
+    "id": "port-16",
+    "name": "a",
+    "created_at": "2025-04-14T10:16:02.729827",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": 173.57,
+        "change": 0.0123
+      }
+    ]
+  },
+  "port-17": {
+    "id": "port-17",
+    "name": "a",
+    "created_at": "2025-04-14T10:16:03.778248",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": 173.57,
+        "change": 0.0123
+      }
+    ]
+  },
+  "port-18": {
+    "id": "port-18",
+    "name": "a",
+    "created_at": "2025-04-14T10:22:26.493196",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": 173.57,
+        "change": 0.0123
+      }
+    ]
+  },
+  "port-19": {
+    "id": "port-19",
+    "name": "a",
+    "created_at": "2025-04-14T10:22:27.390949",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": 173.57,
+        "change": 0.0123
+      }
+    ]
+  },
+  "port-20": {
+    "id": "port-20",
+    "name": "a",
+    "created_at": "2025-04-14T10:58:57.349924",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": 173.57,
+        "change": 0.0123
+      }
+    ]
+  },
+  "port-21": {
+    "id": "port-21",
+    "name": "a",
+    "created_at": "2025-04-14T10:58:58.644496",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": 173.57,
+        "change": 0.0123
+      }
+    ]
+  },
+  "port-22": {
+    "id": "port-22",
+    "name": "Test Portfolio",
+    "created_at": "2025-04-14T11:01:59.846355",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 0.5,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": 173.57,
+        "change": 0.0123
+      },
+      {
+        "symbol": "MSFT",
+        "weight": 0.5,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": 402.28,
+        "change": -0.0056
+      }
+    ]
+  },
+  "port-23": {
+    "id": "port-23",
+    "name": "Low-Risk Diversified Portfolio",
+    "created_at": "2025-04-14T11:45:00.268364",
+    "tickers": [
+      {
+        "symbol": "JNJ",
+        "weight": 0.2,
+        "name": "JOHNSON & JOHNSON",
+        "sector": "Health Care",
+        "price": 151.14,
+        "change": 0.0015
+      },
+      {
+        "symbol": "PG",
+        "weight": 0.2,
+        "name": "PROCTER & GAMBLE",
+        "sector": "Consumer Staples",
+        "price": 486.44,
+        "change": 0.0458
+      },
+      {
+        "symbol": "DUK",
+        "weight": 0.2,
+        "name": "DUKE ENERGY CORP",
+        "sector": "Utilities",
+        "price": null,
+        "change": null
+      },
+      {
+        "symbol": "JPM",
+        "weight": 0.2,
+        "name": "JPMORGAN CHASE & CO",
+        "sector": "Financials",
+        "price": 196.46,
+        "change": -0.0067
+      },
+      {
+        "symbol": "MSFT",
+        "weight": 0.2,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": 402.28,
+        "change": -0.0056
+      }
+    ]
+  },
+  "port-24": {
+    "id": "port-24",
+    "name": "a",
+    "created_at": "2025-04-14T11:49:03.496660",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": 173.57,
+        "change": 0.0123
+      }
+    ]
+  },
+  "port-25": {
+    "id": "port-25",
+    "name": "a",
+    "created_at": "2025-04-14T11:49:04.287746",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": 173.57,
+        "change": 0.0123
+      }
+    ]
+  },
+  "port-26": {
+    "id": "port-26",
+    "name": "Trade War Hedged Portfolio",
+    "created_at": "2025-04-14T11:52:57.572020",
+    "tickers": [
+      {
+        "symbol": "JNJ",
+        "weight": 0.2,
+        "name": "JOHNSON & JOHNSON",
+        "sector": "Health Care",
+        "price": 151.14,
+        "change": 0.0015
+      },
+      {
+        "symbol": "NEE",
+        "weight": 0.2,
+        "name": "NEXTERA ENERGY INC",
+        "sector": "Utilities",
+        "price": null,
+        "change": null
+      },
+      {
+        "symbol": "PG",
+        "weight": 0.2,
+        "name": "PROCTER & GAMBLE",
+        "sector": "Consumer Staples",
+        "price": 426.48,
+        "change": -0.0251
+      },
+      {
+        "symbol": "JPM",
+        "weight": 0.2,
+        "name": "JPMORGAN CHASE & CO",
+        "sector": "Financials",
+        "price": 196.46,
+        "change": -0.0067
+      },
+      {
+        "symbol": "MSFT",
+        "weight": 0.2,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": 402.28,
+        "change": -0.0056
+      }
+    ]
+  },
+  "port-27": {
+    "id": "port-27",
+    "name": "Low-Risk Diversified Portfolio",
+    "created_at": "2025-04-14T13:12:10.723540",
+    "tickers": [
+      {
+        "symbol": "JPM",
+        "weight": 0.25,
+        "name": "JPMORGAN CHASE & CO",
+        "sector": "Financials",
+        "price": 196.46,
+        "change": -0.0067
+      },
+      {
+        "symbol": "PG",
+        "weight": 0.2,
+        "name": "PROCTER & GAMBLE",
+        "sector": "Consumer Staples",
+        "price": 490.69,
+        "change": 0.0018
+      },
+      {
+        "symbol": "JNJ",
+        "weight": 0.2,
+        "name": "JOHNSON & JOHNSON",
+        "sector": "Health Care",
+        "price": 151.14,
+        "change": 0.0015
+      },
+      {
+        "symbol": "DUK",
+        "weight": 0.2,
+        "name": "DUKE ENERGY CORP",
+        "sector": "Utilities",
+        "price": null,
+        "change": null
+      },
+      {
+        "symbol": "MSFT",
+        "weight": 0.15,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": 402.28,
+        "change": -0.0056
+      }
+    ]
+  },
+  "port-28": {
+    "id": "port-28",
+    "name": "Diversified S&P 500 Portfolio",
+    "created_at": "2025-04-14T13:12:51.279345",
+    "tickers": [
+      {
+        "symbol": "MSFT",
+        "weight": 0.15,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": 402.28,
+        "change": -0.0056
+      },
+      {
+        "symbol": "JNJ",
+        "weight": 0.15,
+        "name": "JOHNSON & JOHNSON",
+        "sector": "Health Care",
+        "price": 151.14,
+        "change": 0.0015
+      },
+      {
+        "symbol": "JPM",
+        "weight": 0.15,
+        "name": "JPMORGAN CHASE & CO",
+        "sector": "Financials",
+        "price": 196.46,
+        "change": -0.0067
+      },
+      {
+        "symbol": "AMZN",
+        "weight": 0.15,
+        "name": "AMAZON COM INC",
+        "sector": "Consumer Discretionary",
+        "price": 178.08,
+        "change": 0.0212
+      },
+      {
+        "symbol": "HON",
+        "weight": 0.1,
+        "name": "HONEYWELL INTERNATIONAL INC",
+        "sector": "Industrials",
+        "price": null,
+        "change": null
+      },
+      {
+        "symbol": "NEE",
+        "weight": 0.1,
+        "name": "NEXTERA ENERGY INC",
+        "sector": "Utilities",
+        "price": null,
+        "change": null
+      },
+      {
+        "symbol": "V",
+        "weight": 0.1,
+        "name": "VISA INC CLASS A",
+        "sector": "Financials",
+        "price": 275.96,
+        "change": 0.0021
+      },
+      {
+        "symbol": "PG",
+        "weight": 0.1,
+        "name": "PROCTER & GAMBLE",
+        "sector": "Consumer Staples",
+        "price": 490.69,
+        "change": 0.0018
+      }
+    ]
+  },
+  "port-29": {
+    "id": "port-29",
+    "name": "Diversified Core Portfolio",
+    "created_at": "2025-04-14T13:56:00.219209",
+    "tickers": [
+      {
+        "symbol": "MSFT",
+        "weight": 0.25,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": 402.28,
+        "change": -0.0056
+      },
+      {
+        "symbol": "JNJ",
+        "weight": 0.2,
+        "name": "JOHNSON & JOHNSON",
+        "sector": "Health Care",
+        "price": 151.14,
+        "change": 0.0015
+      },
+      {
+        "symbol": "JPM",
+        "weight": 0.2,
+        "name": "JPMORGAN CHASE & CO",
+        "sector": "Financials",
+        "price": 196.46,
+        "change": -0.0067
+      },
+      {
+        "symbol": "PG",
+        "weight": 0.2,
+        "name": "PROCTER & GAMBLE",
+        "sector": "Consumer Staples",
+        "price": 490.69,
+        "change": 0.0018
+      },
+      {
+        "symbol": "UNH",
+        "weight": 0.15,
+        "name": "UNITEDHEALTH GROUP INC",
+        "sector": "Health Care",
+        "price": 206.56,
+        "change": 0.0323
+      }
+    ]
+  },
+  "port-30": {
+    "id": "port-30",
+    "name": "All in Apple",
+    "created_at": "2025-04-14T13:58:20.086159",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": 173.57,
+        "change": 0.0123
+      }
+    ]
+  },
+  "port-31": {
+    "id": "port-31",
+    "name": "All in Apple",
+    "created_at": "2025-04-14T13:58:21.276757",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": 173.57,
+        "change": 0.0123
+      }
+    ]
+  },
+  "port-32": {
+    "id": "port-32",
+    "name": "All in Apple",
+    "created_at": "2025-04-14T14:04:07.286423",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": 173.57,
+        "change": 0.0123
+      }
+    ]
+  },
+  "port-33": {
+    "id": "port-33",
+    "name": "All in Apple",
+    "created_at": "2025-04-14T14:04:08.615723",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": 173.57,
+        "change": 0.0123
+      }
+    ]
   }
 }

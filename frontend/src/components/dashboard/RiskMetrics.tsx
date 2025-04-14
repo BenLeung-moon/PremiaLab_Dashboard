@@ -1,7 +1,11 @@
 import React from 'react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
-const RiskMetrics: React.FC = () => {
+interface RiskMetricsProps {
+  // 可以添加必要的属性
+}
+
+const RiskMetrics: React.FC<RiskMetricsProps> = () => {
   const { t } = useLanguage();
   
   // 模拟数据：风险指标

@@ -281,6 +281,7 @@ export const getPortfolioComparison = async (portfolioId: string): Promise<any> 
   try {
     if (TEST_MODE) {
       // 模拟响应
+      console.log('使用模拟的比较数据(TEST_MODE=true)');
       await new Promise(resolve => setTimeout(resolve, 500));
       return {
         // 英文键名版本
@@ -296,13 +297,28 @@ export const getPortfolioComparison = async (portfolioId: string): Promise<any> 
       };
     }
 
+    console.log(`发送请求获取投资组合 ${portfolioId} 的比较数据`);
     const response = await axios.get(`/api/portfolio/${portfolioId}/comparison`);
-    console.log('API Response:', response.data); // 调试用
+    console.log('API Response full data:', response.data); // 详细调试用
     
     // 确保返回的数据有效
     if (response.data && response.data.comparison) {
       // 对比数据接口预期结构应该匹配我们定义的ComparisonData接口
-      return response.data.comparison;
+      const comparisonData = response.data.comparison;
+      console.log('处理后的比较数据:', comparisonData);
+      
+      // 检查benchmark数据是否有效
+      const benchmarkExists = 
+        (comparisonData.totalReturn?.benchmark !== undefined && comparisonData.totalReturn?.benchmark !== 0) ||
+        (comparisonData.annualizedReturn?.benchmark !== undefined && comparisonData.annualizedReturn?.benchmark !== 0);
+      
+      console.log('Benchmark数据是否存在:', benchmarkExists);
+      
+      return comparisonData;
+    } else if (response.data) {
+      // 如果数据存在但不是预期格式，尝试直接返回
+      console.log('API响应不包含comparison字段，直接返回整个数据');
+      return response.data;
     }
     
     throw new Error('Invalid response format from API');

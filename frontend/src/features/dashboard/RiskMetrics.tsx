@@ -12,15 +12,15 @@ const RiskMetrics: React.FC<RiskMetricsProps> = ({ data }) => {
   const defaultRiskMetrics = [
     { 
       name: 'Volatility', 
-      value: '8.5%', 
-      benchmark: '10.2%', 
+      value: '14.5%', 
+      benchmark: '16.2%', 
       status: 'good',
       percentage: 60
     },
     { 
       name: 'Downside Risk', 
-      value: '6.2%', 
-      benchmark: '8.4%', 
+      value: '9.8%', 
+      benchmark: '12.4%', 
       status: 'good',
       percentage: 40
     },
@@ -37,6 +37,34 @@ const RiskMetrics: React.FC<RiskMetricsProps> = ({ data }) => {
       benchmark: '1.00', 
       status: 'neutral',
       percentage: 75
+    },
+    { 
+      name: 'Maximum Drawdown', 
+      value: '7.7%', 
+      benchmark: '10.3%', 
+      status: 'good',
+      percentage: 55
+    },
+    { 
+      name: 'Tracking Error', 
+      value: '3.8%', 
+      benchmark: '0.0%', 
+      status: 'neutral',
+      percentage: 65
+    },
+    { 
+      name: 'Information Ratio', 
+      value: '1.42', 
+      benchmark: '0.0', 
+      status: 'good',
+      percentage: 85
+    },
+    { 
+      name: 'Sortino Ratio', 
+      value: '1.95', 
+      benchmark: '1.48', 
+      status: 'good',
+      percentage: 90
     },
   ];
 
