@@ -48,9 +48,14 @@ class PortfolioAnalysis(BaseModel):
 # 模拟数据库
 portfolios_db = {}
 
-# 创建数据目录
-data_dir = Path("../backend/app/data")
-data_dir.mkdir(exist_ok=True, parents=True)  # 添加parents=True确保中间目录也被创建
+# 创建数据目录 - 使用更可靠的路径定义
+current_file = Path(__file__)
+app_dir = current_file.parent.parent  # backend/app/
+data_dir = app_dir / "data"
+data_dir.mkdir(exist_ok=True, parents=True)
+# 创建缓存目录
+cache_dir = data_dir / "cache"
+cache_dir.mkdir(exist_ok=True)  # 确保缓存目录存在
 portfolios_file = data_dir / "portfolios.json"
 
 # 加载已存在的投资组合数据
@@ -290,7 +295,7 @@ def get_us_treasury_yield():
     Returns:
         float: 美国10年期国债收益率，如0.0425表示4.25%
     """
-    cache_file = data_dir / "treasury_yield_cache.json"
+    cache_file = cache_dir / "treasury_yield_cache.json"
     # 默认收益率（当API调用失败时使用）
     default_yield = 0.043  # 4.3%
     

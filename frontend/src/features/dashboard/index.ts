@@ -1,7 +1,8 @@
 export { default as Dashboard } from './Dashboard';
-export { default as PerformanceMetrics } from './PerformanceMetrics';
-export { default as RiskMetrics } from './RiskMetrics';
-export { default as FactorExposure } from './FactorExposure';
-export { default as HistoricalTrends } from './HistoricalTrends';
-export { default as AssetAllocation } from './AssetAllocation';
-export { default as Comparison } from './Comparison'; 
+export { default as PerformanceMetrics } from './components/PerformanceMetrics';
+export { default as RiskMetrics } from './components/RiskMetrics';
+export { default as FactorExposure } from './components/FactorExposure';
+export { default as HistoricalTrends } from './components/HistoricalTrends';
+export { default as AssetAllocation } from './components/AssetAllocation';
+export { default as Comparison } from './components/Comparison';
+export { default as PortfolioComposition } from './components/PortfolioComposition'; 

@@ -10,13 +10,20 @@ from pathlib import Path
 import os
 import yfinance as yf
 from datetime import datetime, timedelta
+import json
 
 # 数据路径
 DATA_DIR = Path(os.path.dirname(os.path.dirname(__file__))) / "data"
+# 缓存目录
+CACHE_DIR = DATA_DIR / "cache"
+CACHE_DIR.mkdir(exist_ok=True)  # 确保缓存目录存在
 STATIC_DATA_PATH = DATA_DIR / "Static_Data.xlsx"
 PRICE_HISTORY_PATH = DATA_DIR / "Constituent_Price_History.csv"
 FACTOR_EXPOSURES_PATH = DATA_DIR / "Factor_Exposures.xlsx"
 FACTOR_COVARIANCE_PATH = DATA_DIR / "Factor_Covariance_Matrix.xlsx"
+
+# 缓存文件路径
+SPY_CACHE_FILE = CACHE_DIR / "spy_data_cache.json"
 
 # 缓存数据
 _static_data = None
@@ -44,10 +51,32 @@ def get_spy_data(start_date, end_date):
     
     now = datetime.now()
     
-    # 如果缓存存在且未过期，使用缓存
+    # 检查内存缓存是否存在且未过期
     if _spy_data_cache is not None and _spy_cache_expiry and _spy_cache_expiry > now:
-        print("使用SPY数据缓存")
+        print("使用SPY数据内存缓存")
         return _spy_data_cache
+    
+    # 检查文件缓存
+    if SPY_CACHE_FILE.exists():
+        try:
+            with open(SPY_CACHE_FILE, "r") as f:
+                cache_data = json.load(f)
+                cache_expiry = datetime.fromisoformat(cache_data["expiry"])
+                
+                if cache_expiry > now:
+                    print("使用SPY数据文件缓存")
+                    # 将JSON数据转换回pandas Series
+                    dates = pd.to_datetime(cache_data["dates"])
+                    values = cache_data["values"]
+                    spy_data = pd.Series(values, index=dates)
+                    
+                    # 更新内存缓存
+                    _spy_data_cache = spy_data
+                    _spy_cache_expiry = cache_expiry
+                    
+                    return spy_data
+        except Exception as e:
+            print(f"读取SPY缓存文件失败: {e}")
     
     # 否则，从YFinance获取新数据
     try:
@@ -61,9 +90,22 @@ def get_spy_data(start_date, end_date):
         # 修复:移除时区信息，以便与投资组合数据兼容
         spy_data.index = spy_data.index.tz_localize(None)
         
-        # 更新缓存
+        # 更新内存缓存
         _spy_data_cache = spy_data
         _spy_cache_expiry = now + timedelta(seconds=SPY_CACHE_DURATION)
+        
+        # 保存到文件缓存
+        try:
+            cache_data = {
+                "dates": [date.isoformat() for date in spy_data.index],
+                "values": spy_data.tolist(),
+                "expiry": _spy_cache_expiry.isoformat()
+            }
+            with open(SPY_CACHE_FILE, "w") as f:
+                json.dump(cache_data, f)
+            print("SPY数据已保存到文件缓存")
+        except Exception as e:
+            print(f"保存SPY缓存文件失败: {e}")
         
         print(f"成功获取SPY数据: {len(spy_data)}条记录")
         return spy_data
@@ -72,7 +114,7 @@ def get_spy_data(start_date, end_date):
         print(f"从YFinance获取SPY数据失败: {e}")
         # 如果出错但有旧的缓存，返回旧缓存
         if _spy_data_cache is not None:
-            print("使用过期的SPY数据缓存")
+            print("使用过期的SPY数据内存缓存")
             return _spy_data_cache
         
         # 否则返回空的Series

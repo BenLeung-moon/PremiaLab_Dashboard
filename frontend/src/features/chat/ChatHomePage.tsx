@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { submitPortfolio } from '../../services/portfolioService';
-import { getAvailableStocksWithNames, stockNameMapping, getPortfolio } from '../../shared/services/portfolioService';
+import { submitPortfolio, getAvailableStocksWithNames, stockNameMapping, getPortfolio } from '../../shared/services/portfolioService';
 import { useLanguage } from '../../shared/i18n/LanguageContext';
 import LanguageSwitcher from '../../shared/components/LanguageSwitcher';
 import { encryptData, decryptData } from '../../shared/utils/encryption';
