@@ -36,9 +36,9 @@ premialab-portfolio-ai/
 │   │   │   │   └── ChatBar.tsx
 │   │   │   │
 │   │   │   └── portfolio/   # Portfolio management features
-│   │   │       ├── components/ # Portfolio components
-│   │   │       │   └── ManualPortfolioBuilder.tsx
-│   │   │       └── PortfolioInput.tsx
+│   │   │       └── components/ # Portfolio components
+│   │   │           ├── ManualPortfolioBuilder.tsx
+│   │   │           └── PortfolioInput.tsx
 │   │   │
 │   │   ├── shared/          # Shared utilities
 │   │   │   ├── i18n/        # Internationalization
@@ -182,9 +182,9 @@ premialab-portfolio-ai/
 │   │   │   │   └── ChatBar.tsx
 │   │   │   │
 │   │   │   └── portfolio/   # 投资组合功能
-│   │   │       ├── components/ # 投资组合组件
-│   │   │       │   └── ManualPortfolioBuilder.tsx
-│   │   │       └── PortfolioInput.tsx
+│   │   │       └── components/ # 投资组合组件
+│   │   │           ├── ManualPortfolioBuilder.tsx
+│   │   │           └── PortfolioInput.tsx
 │   │   │
 │   │   ├── shared/          # 共享工具
 │   │   │   ├── i18n/        # 国际化
