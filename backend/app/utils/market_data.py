@@ -17,10 +17,10 @@ DATA_DIR = Path(os.path.dirname(os.path.dirname(__file__))) / "data"
 # 缓存目录
 CACHE_DIR = DATA_DIR / "cache"
 CACHE_DIR.mkdir(exist_ok=True)  # 确保缓存目录存在
-STATIC_DATA_PATH = DATA_DIR / "Static_Data.xlsx"
+STATIC_DATA_PATH = DATA_DIR / "Static_Data.csv"
 PRICE_HISTORY_PATH = DATA_DIR / "Constituent_Price_History.csv"
-FACTOR_EXPOSURES_PATH = DATA_DIR / "Factor_Exposures.xlsx"
-FACTOR_COVARIANCE_PATH = DATA_DIR / "Factor_Covariance_Matrix.xlsx"
+FACTOR_EXPOSURES_PATH = DATA_DIR / "Factor_Exposures.csv"
+FACTOR_COVARIANCE_PATH = DATA_DIR / "Factor_Covariance_Matrix.csv"
 
 # 缓存文件路径
 SPY_CACHE_FILE = CACHE_DIR / "spy_data_cache.json"
@@ -125,7 +125,7 @@ def get_static_data():
     """获取股票静态数据"""
     global _static_data
     if _static_data is None:
-        _static_data = pd.read_excel(STATIC_DATA_PATH)
+        _static_data = pd.read_csv(STATIC_DATA_PATH)
         # 设置索引以便于查找
         _static_data.set_index('ticker', inplace=True)
     return _static_data
@@ -333,9 +333,9 @@ def get_portfolio_factor_exposure(tickers):
     
     try:
         # 检查数据文件是否存在
-        print(f"Factor_Exposures.xlsx exists: {os.path.exists(FACTOR_EXPOSURES_PATH)}")
-        print(f"Factor_Covariance_Matrix.xlsx exists: {os.path.exists(FACTOR_COVARIANCE_PATH)}")
-        print(f"Static_Data.xlsx exists: {os.path.exists(STATIC_DATA_PATH)}")
+        print(f"Factor_Exposures.csv exists: {os.path.exists(FACTOR_EXPOSURES_PATH)}")
+        print(f"Factor_Covariance_Matrix.csv exists: {os.path.exists(FACTOR_COVARIANCE_PATH)}")
+        print(f"Static_Data.csv exists: {os.path.exists(STATIC_DATA_PATH)}")
         
         # 获取股票静态数据，用于行业信息
         static_data = get_static_data()
@@ -362,26 +362,26 @@ def get_portfolio_factor_exposure(tickers):
         
         if _factor_exposures is None:
             try:
-                _factor_exposures = pd.read_excel(FACTOR_EXPOSURES_PATH)
+                _factor_exposures = pd.read_csv(FACTOR_EXPOSURES_PATH)
                 _factor_exposures.set_index('Ticker', inplace=True)
                 print(f"Successfully loaded {FACTOR_EXPOSURES_PATH}, shape: {_factor_exposures.shape}")
                 print(f"Columns: {_factor_exposures.columns.tolist()[:5]}...")
                 print(f"Index sample: {_factor_exposures.index.tolist()[:5]}...")
             except Exception as e:
-                print(f"Error loading Factor_Exposures.xlsx: {e}")
+                print(f"Error loading Factor_Exposures.csv: {e}")
                 # 无法读取因子暴露数据，返回模拟数据
                 return get_mock_factor_exposure()
         
         # 加载因子协方差矩阵 - 用于计算因子间相关性
         if _factor_covariance is None:
             try:
-                _factor_covariance = pd.read_excel(FACTOR_COVARIANCE_PATH)
+                _factor_covariance = pd.read_csv(FACTOR_COVARIANCE_PATH)
                 # 将第一列设为索引
                 if 'Factor' in _factor_covariance.columns:
                     _factor_covariance.set_index('Factor', inplace=True)
                 print(f"Successfully loaded {FACTOR_COVARIANCE_PATH}, shape: {_factor_covariance.shape}")
             except Exception as e:
-                print(f"Error loading Factor_Covariance_Matrix.xlsx: {e}")
+                print(f"Error loading Factor_Covariance_Matrix.csv: {e}")
                 # 无法读取因子协方差数据，但可以继续使用暴露数据
         
         # 获取数据中所有可用的因子列
