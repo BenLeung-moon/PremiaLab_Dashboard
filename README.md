@@ -55,10 +55,27 @@ premialab-portfolio-ai/
 │
 ├── backend/                 # Backend code (Python + FastAPI)
 │   ├── app/                 # Application code
-│   │   ├── api/             # API routes
+│   │   ├── api/             # API endpoints
+│   │   │   ├── routes/      # Route handlers by domain
+│   │   │   │   ├── portfolio.py     # Portfolio routes
+│   │   │   │   ├── stocks.py        # Stocks data routes
+│   │   │   │   └── analysis.py      # Analysis routes
+│   │   │   └── router.py    # Main API router
+│   │   │
 │   │   ├── models/          # Data models
+│   │   │   └── portfolio.py # Portfolio-related models
+│   │   │
 │   │   ├── services/        # Business logic
-│   │   └── main.py          # Entry point
+│   │   │   ├── portfolio_service.py  # Portfolio operations
+│   │   │   ├── stocks_service.py     # Stock data operations
+│   │   │   └── analysis_service.py   # Analysis operations
+│   │   │
+│   │   ├── utils/           # Utility functions
+│   │   │   └── market_data.py # Market data functions
+│   │   │
+│   │   ├── data/            # Data storage
+│   │   └── main.py          # Application entry point
+│   │
 │   └── requirements.txt     # Python dependencies
 │
 ├── README.md                # Project documentation
@@ -80,10 +97,10 @@ premialab-portfolio-ai/
 
 **Backend:**
 - Python with FastAPI
-- SQLAlchemy for ORM
 - Pydantic for data validation
 - Pandas for data processing
 - NumPy for numerical operations
+- JSON file-based data persistence
 
 ### Quick Start
 
@@ -144,9 +161,17 @@ VITE_API_URL=http://localhost:8000
 
 Backend (.env):
 ```
-DATABASE_URL=postgresql://user:password@localhost:5432/dbname
-SECRET_KEY=your_secret_key
+PORT=8000
+ENVIRONMENT=development
 ```
+
+### API Documentation
+
+Once the backend is running, you can access the Swagger UI API documentation at:
+http://localhost:8000/docs
+
+The ReDoc documentation is available at:
+http://localhost:8000/redoc
 
 ## 中文
 
@@ -201,10 +226,27 @@ premialab-portfolio-ai/
 │
 ├── backend/                 # 后端代码 (Python + FastAPI)
 │   ├── app/                 # 应用代码
-│   │   ├── api/             # API路由
+│   │   ├── api/             # API端点
+│   │   │   ├── routes/      # 按领域划分的路由处理器
+│   │   │   │   ├── portfolio.py     # 投资组合路由
+│   │   │   │   ├── stocks.py        # 股票数据路由
+│   │   │   │   └── analysis.py      # 分析路由
+│   │   │   └── router.py    # 主API路由器
+│   │   │
 │   │   ├── models/          # 数据模型
+│   │   │   └── portfolio.py # 投资组合相关模型
+│   │   │
 │   │   ├── services/        # 业务逻辑
-│   │   └── main.py          # 入口文件
+│   │   │   ├── portfolio_service.py  # 投资组合操作
+│   │   │   ├── stocks_service.py     # 股票数据操作
+│   │   │   └── analysis_service.py   # 分析操作
+│   │   │
+│   │   ├── utils/           # 工具函数
+│   │   │   └── market_data.py # 市场数据函数
+│   │   │
+│   │   ├── data/            # 数据存储
+│   │   └── main.py          # 应用入口
+│   │
 │   └── requirements.txt     # Python依赖
 │
 ├── README.md                # 项目说明
@@ -226,10 +268,10 @@ premialab-portfolio-ai/
 
 **后端:**
 - Python + FastAPI
-- SQLAlchemy ORM
 - Pydantic 数据验证
 - Pandas 数据处理
 - NumPy 数值计算
+- JSON文件数据持久化
 
 ### 快速开始
 
@@ -290,9 +332,17 @@ VITE_API_URL=http://localhost:8000
 
 后端 (.env):
 ```
-DATABASE_URL=postgresql://user:password@localhost:5432/dbname
-SECRET_KEY=your_secret_key
+PORT=8000
+ENVIRONMENT=development
 ```
+
+### API文档
+
+后端运行后，您可以访问Swagger UI API文档：
+http://localhost:8000/docs
+
+ReDoc文档可在以下位置访问：
+http://localhost:8000/redoc
 
 ## License
 
