@@ -69,7 +69,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data }) => {
   // 添加状态来存储处理后的数据
   const [processedData, setProcessedData] = useState<PerformanceData | undefined>(undefined);
   
-  // 添加详细的调试日志
+  // 添加更详细的调试日志
   useEffect(() => {
     console.log('PerformanceMetrics 组件收到数据:', data);
     console.log('数据类型:', typeof data);
@@ -80,6 +80,16 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data }) => {
       if (data.timeFrames) {
         console.log('timeFrames 结构:', Object.keys(data.timeFrames));
       }
+      
+      // 添加更多详细的调试
+      console.log('annualizedReturn:', data.annualizedReturn);
+      console.log('volatility:', data.volatility);
+      console.log('sharpeRatio:', data.sharpeRatio);
+      console.log('maxDrawdown:', data.maxDrawdown);
+      console.log('winRate:', data.winRate);
+      console.log('monthlyReturns:', data.monthlyReturns);
+    } else {
+      console.error('PerformanceMetrics 组件未收到有效数据');
     }
   }, [data]);
   
@@ -347,6 +357,9 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data }) => {
       valueType: 'percent'
     }
   ];
+  
+  // 添加调试日志显示最终的指标数据
+  console.log('最终计算的指标数据:', metrics);
   
   // 时间段选项
   const timeFrameOptions = [

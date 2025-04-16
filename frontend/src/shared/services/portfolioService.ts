@@ -518,14 +518,17 @@ export const getAvailableStocksWithNames = async (): Promise<{symbol: string, na
  */
 export const getPortfolioAllocation = async (portfolioId: string): Promise<any> => {
   try {
-    // 直接使用API请求，不使用模拟数据
-    const apiUrl = TEST_MODE ? `http://localhost:3001/api/portfolio/${portfolioId}/allocation` : `/api/portfolio/${portfolioId}/allocation`;
-    const response = await axios.get(apiUrl);
-    console.log('API Response:', response.data); // 调试用
+    if (TEST_MODE) {
+      // 如果测试模式，返回模拟数据
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return mockPortfolioAnalysis().allocation;
+    }
     
-    // 确保返回的数据符合前端预期的格式
-    if (response.data && response.data.allocation) {
-      return response.data.allocation;
+    // 使用analyze接口获取完整数据，然后提取allocation部分
+    const analysisData = await getPortfolioAnalysis(portfolioId);
+    
+    if (analysisData && analysisData.allocation) {
+      return analysisData.allocation;
     }
     
     throw new Error('Invalid response format from API');
@@ -560,29 +563,36 @@ export const getPortfolioComparison = async (portfolioId: string): Promise<any> 
       };
     }
 
-    console.log(`发送请求获取投资组合 ${portfolioId} 的比较数据`);
-    const apiUrl = `/api/portfolio/${portfolioId}/comparison`;
-    const response = await axios.get(apiUrl);
-    console.log('API Response full data:', response.data); // 详细调试用
+    // 使用analyze接口获取完整数据，然后提取comparison部分
+    const analysisData = await getPortfolioAnalysis(portfolioId);
     
-    // 确保返回的数据有效
-    if (response.data && response.data.comparison) {
-      // 对比数据接口预期结构应该匹配我们定义的ComparisonData接口
-      const comparisonData = response.data.comparison;
-      console.log('处理后的比较数据:', comparisonData);
-      
-      // 检查benchmark数据是否有效
-      const benchmarkExists = 
-        (comparisonData.totalReturn?.benchmark !== undefined && comparisonData.totalReturn?.benchmark !== 0) ||
-        (comparisonData.annualizedReturn?.benchmark !== undefined && comparisonData.annualizedReturn?.benchmark !== 0);
-      
-      console.log('Benchmark数据是否存在:', benchmarkExists);
-      
-      return comparisonData;
-    } else if (response.data) {
-      // 如果数据存在但不是预期格式，尝试直接返回
-      console.log('API响应不包含comparison字段，直接返回整个数据');
-      return response.data;
+    // 从完整分析数据中提取比较数据
+    if (analysisData) {
+      // 尝试提取格式化过的比较字典
+      if (analysisData.comparison) {
+        // 检查是否是数组格式（旧版API）
+        if (Array.isArray(analysisData.comparison)) {
+          // 转换数组格式为字典格式，以便前端使用
+          const comparisonList = analysisData.comparison;
+          const comparisonData: any = {};
+
+          comparisonList.forEach(item => {
+            const metricKey = item.metric.toLowerCase().replace(/\s+/g, '');
+            comparisonData[metricKey] = {
+              portfolio: parseFloat(item.portfolio),
+              benchmark: parseFloat(item.benchmark),
+              difference: parseFloat(item.difference)
+            };
+          });
+
+          return comparisonData;
+        } else {
+          // 已经是字典格式
+          return analysisData.comparison;
+        }
+      }
+      // 如果没有专门的comparison字段，返回空对象
+      return {};
     }
     
     throw new Error('Invalid response format from API');
@@ -761,34 +771,10 @@ export const getPortfolioAnalysis = async (portfolioId: string): Promise<Portfol
       return mockPortfolioAnalysis();
     }
     
-    // 实际生产环境下从API获取数据
-    try {
-      const response = await axios.get(`/api/portfolio/${portfolioId}/analysis`);
-      console.log('API Response:', response.data);
-      return response.data;
-    } catch (apiError) {
-      console.error('API请求失败，尝试组合多个请求:', apiError);
-      
-      // 如果单一API请求失败，尝试通过组合多个请求构建完整数据
-      const promises = [
-        getPortfolio(portfolioId).catch(() => ({})),
-        getPortfolioAllocation(portfolioId).catch(() => ({})),
-        getPortfolioComparison(portfolioId).catch(() => ({}))
-      ];
-      
-      const [portfolioData, allocationData, comparisonData] = await Promise.all(promises);
-      
-      // 构建综合的分析结果
-      return {
-        id: portfolioId,
-        name: portfolioData.name || 'Portfolio',
-        performance: portfolioData.performance || {},
-        risk: portfolioData.risk || [],
-        factors: portfolioData.factors || {},
-        allocation: allocationData || {},
-        comparison: comparisonData || {}
-      };
-    }
+    // 使用统一的analyze接口
+    const response = await axios.get(`/api/portfolios/${portfolioId}/analyze`);
+    console.log('API Response:', response.data);
+    return response.data;
   } catch (error) {
     console.error(`获取投资组合 ${portfolioId} 分析数据失败:`, error);
     throw new Error('无法获取投资组合分析数据。请检查连接或稍后重试。');

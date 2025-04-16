@@ -945,86 +945,32 @@ async def analyze_portfolio(portfolio_id: str):
     # 获取因子暴露数据
     factors = calculate_factor_exposure(tickers)
     
+    # 将独立的比较数据也添加为单独的字段，以便前端可以直接访问
+    comparison_dict = {
+        "totalReturn": {"portfolio": comparison_data['portfolioReturn'], "benchmark": comparison_data['benchmarkReturn'], "excess": comparison_data['portfolioReturn'] - comparison_data['benchmarkReturn']},
+        "annualizedReturn": {"portfolio": comparison_data['portfolioReturn'], "benchmark": comparison_data['benchmarkReturn'], "excess": comparison_data['portfolioReturn'] - comparison_data['benchmarkReturn']},
+        "volatility": {"portfolio": comparison_data['portfolioVolatility'], "benchmark": comparison_data['benchmarkVolatility'], "difference": comparison_data['benchmarkVolatility'] - comparison_data['portfolioVolatility']},
+        "sharpeRatio": {"portfolio": performance.get('sharpeRatio', 0), "benchmark": comparison_data.get('benchmarkSharpeRatio', 0), "difference": performance.get('sharpeRatio', 0) - comparison_data.get('benchmarkSharpeRatio', 0)},
+        "maxDrawdown": {"portfolio": comparison_data['portfolioMaxDrawdown'], "benchmark": comparison_data['benchmarkMaxDrawdown'], "difference": abs(comparison_data['portfolioMaxDrawdown']) - abs(comparison_data['benchmarkMaxDrawdown'])},
+        "correlation": comparison_data.get('correlation', 0),
+        "trackingError": comparison_data.get('trackingError', 0),
+        "informationRatio": comparison_data['informationRatio'],
+        "winRate": comparison_data.get('winRate', 0)
+    }
+    
+    # 转换资产配置为前端期望的格式
+    allocation_dict = {
+        "sectorDistribution": {item["type"]: item["percentage"] for item in allocation["sector"]},
+        "regionDistribution": {item["region"]: item["percentage"] for item in allocation["geography"]},
+        "marketCapDistribution": {item["type"]: item["percentage"] for item in allocation["marketCap"]}
+    }
+    
     return {
         "performance": performance,
-        "allocation": allocation,
+        "allocation": allocation_dict,
         "risk": risk_list,
         "comparison": comparison_list,
         "factors": factors
-    }
-
-@router.get("/portfolio/{portfolio_id}/comparison")
-async def get_portfolio_comparison(portfolio_id: str):
-    """获取投资组合与基准的比较结果"""
-    # 在实际应用中，应该从数据库中获取指定ID的投资组合
-    # 这里为示例，使用一个模拟的投资组合
-    mock_portfolio = {
-        "name": "示例投资组合",
-        "tickers": [
-            {"symbol": "AAPL", "weight": 0.4},
-            {"symbol": "MSFT", "weight": 0.3},
-            {"symbol": "GOOGL", "weight": 0.2},
-            {"symbol": "AMZN", "weight": 0.1}
-        ]
-    }
-    
-    # 将字典转换为Ticker对象列表
-    tickers = [
-        Ticker(
-            symbol=t["symbol"],
-            weight=t["weight"]
-        )
-        for t in mock_portfolio["tickers"]
-    ]
-    
-    # 使用市场数据工具进行比较
-    comparison_result = compare_with_benchmark(tickers)
-    
-    return {
-        "portfolio_id": portfolio_id,
-        "comparison": comparison_result
-    }
-
-@router.get("/portfolio/{portfolio_id}/allocation")
-async def get_portfolio_allocation(portfolio_id: str):
-    """获取投资组合的资产配置分布"""
-    # 检查portfolio_id是否存在
-    if portfolio_id not in portfolios_db:
-        raise HTTPException(status_code=404, detail="Portfolio not found")
-    
-    # 获取实际的投资组合数据
-    portfolio = portfolios_db[portfolio_id]
-    tickers = portfolio["tickers"]
-    
-    # 确保tickers是Ticker对象列表
-    if not all(isinstance(t, Ticker) for t in tickers):
-        # 如果不是，创建Ticker对象列表
-        from ..models.portfolio import Ticker as ModelTicker
-        ticker_objects = [
-            ModelTicker(
-                symbol=t["symbol"] if isinstance(t, dict) else t.symbol,
-                weight=t["weight"] if isinstance(t, dict) else t.weight,
-                name=t.get("name", "") if isinstance(t, dict) else getattr(t, "name", ""),
-                sector=t.get("sector", "") if isinstance(t, dict) else getattr(t, "sector", "")
-            )
-            for t in tickers
-        ]
-    else:
-        ticker_objects = tickers
-    
-    # 使用calculate_allocation函数获取资产配置
-    allocation_result = calculate_allocation(ticker_objects)
-    
-    # 转换为前端期望的格式
-    frontend_allocation = {
-        "sectorDistribution": {item["type"]: item["percentage"] for item in allocation_result["sector"]},
-        "regionDistribution": {item["region"]: item["percentage"] for item in allocation_result["geography"]},
-        "marketCapDistribution": {item["type"]: item["percentage"] for item in allocation_result["marketCap"]}
-    }
-    
-    return {
-        "portfolio_id": portfolio_id,
-        "allocation": frontend_allocation
     }
 
 @router.get("/available-stocks")

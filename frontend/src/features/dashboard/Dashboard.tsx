@@ -36,6 +36,21 @@ const Dashboard = ({ portfolioId = '' }) => {
         const data = await getPortfolioAnalysis(currentPortfolioId);
         
         console.log('API response:', data);
+        console.log('Performance data:', data.performance);
+        
+        if (!data.performance) {
+          console.error('Warning: API response is missing performance data');
+        } else {
+          console.log('Performance data details:', {
+            totalReturn: data.performance.totalReturn || 'missing',
+            annualizedReturn: data.performance.annualizedReturn || 'missing',
+            volatility: data.performance.volatility || 'missing',
+            sharpeRatio: data.performance.sharpeRatio || 'missing',
+            winRate: data.performance.winRate || 'missing',
+            timeFrames: data.performance.timeFrames ? 'present' : 'missing'
+          });
+        }
+        
         console.log('Factors data:', data.factors);
         
         // 添加更详细的日志

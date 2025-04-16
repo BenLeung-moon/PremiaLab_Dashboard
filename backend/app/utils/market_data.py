@@ -38,7 +38,7 @@ SPY_CACHE_DURATION = 3600  # 1小时
 
 def get_spy_data(start_date, end_date):
     """
-    从YFinance获取SPY数据
+    获取SPY数据，优先使用本地SPX数据，如本地无数据则从YFinance获取
     
     参数:
         start_date: 起始日期
@@ -78,7 +78,53 @@ def get_spy_data(start_date, end_date):
         except Exception as e:
             print(f"读取SPY缓存文件失败: {e}")
     
-    # 否则，从YFinance获取新数据
+    # 首先尝试从本地价格历史文件获取SPX数据
+    try:
+        print(f"尝试从本地文件获取SPX数据")
+        df = pd.read_csv(PRICE_HISTORY_PATH)
+        
+        # 将日期列转换为日期类型
+        df['date'] = pd.to_datetime(df['date'])
+        
+        # 过滤SPX数据
+        spx_data = df[df['code'] == 'SPX']
+        
+        # 过滤日期范围
+        if start_date:
+            spx_data = spx_data[spx_data['date'] >= pd.to_datetime(start_date)]
+        if end_date:
+            spx_data = spx_data[spx_data['date'] <= pd.to_datetime(end_date)]
+        
+        # 检查是否获取到SPX数据
+        if not spx_data.empty:
+            # 转换为Series格式
+            spy_data = pd.Series(spx_data['value'].values, index=spx_data['date'])
+            
+            # 更新内存缓存
+            _spy_data_cache = spy_data
+            _spy_cache_expiry = now + timedelta(seconds=SPY_CACHE_DURATION)
+            
+            # 保存到文件缓存
+            try:
+                cache_data = {
+                    "dates": [date.isoformat() for date in spy_data.index],
+                    "values": spy_data.tolist(),
+                    "expiry": _spy_cache_expiry.isoformat()
+                }
+                with open(SPY_CACHE_FILE, "w") as f:
+                    json.dump(cache_data, f)
+                print("SPX数据已保存到文件缓存")
+            except Exception as e:
+                print(f"保存SPY缓存文件失败: {e}")
+            
+            print(f"成功获取SPX数据: {len(spy_data)}条记录")
+            return spy_data
+        else:
+            print("本地文件中未找到SPX数据，尝试从YFinance获取SPY数据")
+    except Exception as e:
+        print(f"从本地文件获取SPX数据失败: {e}")
+    
+    # 如果本地SPX数据获取失败，则从YFinance获取SPY数据
     try:
         print(f"从YFinance获取SPY数据，起始日期: {start_date}, 结束日期: {end_date}")
         spy = yf.Ticker("SPY")
