@@ -13,6 +13,9 @@ A modern portfolio analysis assistant powered by AI, providing intelligent inves
 - 🌐 Multi-language support (English/Chinese)
 - 🔄 Seamless integration with financial data sources
 - 🔍 In-depth portfolio performance analysis
+- 📈 SPX benchmark comparisons for portfolio evaluation
+- ⏱️ Time-frame based historical trend analysis (YTD, 1Y, 3Y, 5Y)
+- 🔄 Robust data handling with fallback mechanisms
 
 ### Project Structure
 
@@ -184,6 +187,9 @@ http://localhost:8000/redoc
 - 🌐 多语言支持（中文/英文）
 - 🔄 与金融数据源的无缝集成
 - 🔍 深入的投资组合绩效分析
+- 📈 使用SPX作为基准进行投资组合评估
+- ⏱️ 基于时间框架的历史趋势分析（年初至今、1年、3年、5年）
+- 🔄 健壮的数据处理机制和备用解决方案
 
 ### 项目结构
 

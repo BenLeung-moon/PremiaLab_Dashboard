@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
-from typing import List, Dict, Any
+from fastapi import APIRouter, HTTPException, Query
+from typing import List, Dict, Any, Optional
 from datetime import datetime
+import logging
 from ...models.portfolio import Portfolio, PortfolioInDB, PortfolioResponse, PortfolioAnalysis
 from ...services.portfolio_service import (
     create_portfolio_service,
@@ -10,6 +11,9 @@ from ...services.portfolio_service import (
     delete_portfolio_service
 )
 from ...services.analysis_service import analyze_portfolio_service
+
+# 设置日志
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -65,9 +69,13 @@ async def delete_portfolio(portfolio_id: str):
 
 # 添加向后兼容的分析端点
 @router.get("/{portfolio_id}/analyze", response_model=PortfolioAnalysis)
-async def analyze_portfolio_compatibility(portfolio_id: str):
+async def analyze_portfolio_compatibility(
+    portfolio_id: str, 
+    period: Optional[str] = Query("5year", description="Time period (ytd, 1year, 3year, 5year)")
+):
     """Analyze a portfolio (backward compatibility endpoint)"""
-    analysis = await analyze_portfolio_service(portfolio_id)
+    logger.info(f"Portfolio analysis requested for {portfolio_id} with period: {period}")
+    analysis = await analyze_portfolio_service(portfolio_id, period)
     if not analysis:
         raise HTTPException(status_code=404, detail="Portfolio not found or analysis failed")
     return analysis 

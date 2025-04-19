@@ -1,56 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../shared/i18n/LanguageContext';
 import { formatNumber, formatPercent } from '../../../shared/utils/formatting';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-} from 'chart.js';
-import { Line } from 'react-chartjs-2';
 import { PerformanceData, PerformanceTimeFrame } from '../../../shared/services/portfolioService';
-
-// 注册Chart.js组件
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
-
-// 定义图表数据类型
-interface ChartData {
-  labels: string[];
-  datasets: {
-    label: string;
-    data: number[];
-    borderColor: string;
-    backgroundColor: string;
-    tension: number;
-    fill: boolean;
-    pointRadius: number;
-    pointHoverRadius: number;
-    pointBackgroundColor: string;
-    pointBorderColor: string;
-    pointBorderWidth: number;
-  }[];
-}
-
-// 添加TimeFrame类型定义
-type TimeFrame = 'ytd' | 'oneYear' | 'threeYear' | 'fiveYear' | 'tenYear';
-
-interface PerformanceMetricsProps {
-  data?: PerformanceData;
-}
 
 // 定义指标数据类型
 interface MetricData {
@@ -60,6 +11,13 @@ interface MetricData {
   change: number;
   suffix: string;
   valueType?: 'percent' | 'number'; // 添加valueType属性
+}
+
+// 添加TimeFrame类型定义
+type TimeFrame = 'ytd' | 'oneYear' | 'threeYear' | 'fiveYear' | 'tenYear';
+
+interface PerformanceMetricsProps {
+  data?: PerformanceData;
 }
 
 const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data }) => {
@@ -213,20 +171,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data }) => {
     sharpeRatio: 1.75,
     maxDrawdown: -7.73,
     winRate: 49.62,
-    monthlyReturns: [
-      { month: '2023-01', portfolio: 3.2, benchmark: 2.1 },
-      { month: '2023-02', portfolio: -1.8, benchmark: -2.4 },
-      { month: '2023-03', portfolio: 2.5, benchmark: 1.9 },
-      { month: '2023-04', portfolio: 1.7, benchmark: 0.7 },
-      { month: '2023-05', portfolio: -0.9, benchmark: -1.5 },
-      { month: '2023-06', portfolio: 4.2, benchmark: 3.3 },
-      { month: '2023-07', portfolio: 2.1, benchmark: 1.8 },
-      { month: '2023-08', portfolio: -2.3, benchmark: -3.1 },
-      { month: '2023-09', portfolio: 0.5, benchmark: -0.2 },
-      { month: '2023-10', portfolio: 3.8, benchmark: 2.9 },
-      { month: '2023-11', portfolio: 1.2, benchmark: 0.6 },
-      { month: '2023-12', portfolio: 2.7, benchmark: 2.1 },
-    ],
+    monthlyReturns: [],
     timeFrames: {
       ytd: {
         return: 8.35,
@@ -369,114 +314,6 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data }) => {
     { id: 'fiveYear', label: t('dashboard.timeframes.fiveYear') },
   ];
 
-  // 生成月度收益图表数据
-  const monthLabels = language === 'en' 
-    ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    : ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
-  
-  // 从API数据中提取月度收益数据，如果没有则使用默认值
-  const portfolioMonthlyData = Array(12).fill(0);
-  const benchmarkMonthlyData = Array(12).fill(0);
-  
-  // 如果有月度收益数据，填充数组
-  if (performanceData.monthlyReturns && performanceData.monthlyReturns.length > 0) {
-    performanceData.monthlyReturns.forEach((item, index) => {
-      if (index < 12) {
-        portfolioMonthlyData[index] = item.return;
-        // 假设基准收益率比投资组合低一些
-        benchmarkMonthlyData[index] = item.return * 0.8;
-      }
-    });
-  }
-
-  // 图表数据
-  const chartData: ChartData = {
-    labels: monthLabels,
-    datasets: [
-      {
-        label: t('dashboard.portfolioReturn'),
-        data: portfolioMonthlyData,
-        borderColor: '#1E3A8A',
-        backgroundColor: 'rgba(30, 58, 138, 0.1)',
-        tension: 0.4,
-        fill: true,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        pointBackgroundColor: '#1E3A8A',
-        pointBorderColor: '#FFFFFF',
-        pointBorderWidth: 2
-      },
-      {
-        label: t('dashboard.benchmark'),
-        data: benchmarkMonthlyData,
-        borderColor: '#A3BFFA',
-        backgroundColor: 'rgba(163, 191, 250, 0.1)',
-        tension: 0.4,
-        fill: true,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        pointBackgroundColor: '#A3BFFA',
-        pointBorderColor: '#FFFFFF',
-        pointBorderWidth: 2
-      }
-    ]
-  };
-
-  // 图表配置
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-        labels: {
-          color: '#1E3A8A',
-          font: {
-            size: 12,
-            weight: '500' as any // 修复TypeScript类型错误
-          }
-        }
-      },
-      tooltip: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        titleColor: '#1E3A8A',
-        bodyColor: '#1E3A8A',
-        borderColor: '#A3BFFA',
-        borderWidth: 1,
-        padding: 10,
-        displayColors: true,
-        boxPadding: 4,
-        callbacks: {
-          label: function(context: any) {
-            return `${context.dataset.label}: ${context.parsed.y}%`;
-          }
-        }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        grid: {
-          color: 'rgba(163, 191, 250, 0.1)'
-        },
-        ticks: {
-          color: '#1E3A8A',
-          callback: function(value: any) {
-            return value + '%';
-          }
-        }
-      },
-      x: {
-        grid: {
-          display: false
-        },
-        ticks: {
-          color: '#1E3A8A'
-        }
-      }
-    }
-  };
-
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 max-w-full mx-auto">
       {/* 时间段选择器 */}
@@ -531,23 +368,6 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data }) => {
             )}
           </div>
         ))}
-      </div>
-
-      {/* 绩效对比图表卡片 */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden mt-6 w-full">
-        {/* 图表标题 */}
-        <div className="bg-blue-800 p-3">
-          <h3 className="text-white text-lg font-medium">
-            {t('dashboard.performanceMetrics.performanceVsBenchmark')}
-          </h3>
-        </div>
-        
-        {/* 图表区域 */}
-        <div className="p-4">
-          <div className="h-80">
-            <Line data={chartData} options={chartOptions} />
-          </div>
-        </div>
       </div>
     </div>
   );

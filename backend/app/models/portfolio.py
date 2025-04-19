@@ -89,4 +89,14 @@ class PortfolioAnalysis(BaseModel):
     allocation: Dict[str, Any]
     risk: List[Dict[str, Any]]
     comparison: List[Dict[str, Any]]
-    factors: Dict[str, Any] 
+    factors: Dict[str, Any]
+    historical_trends: Optional[Dict[str, Any]] = None
+
+class TickerData(BaseModel):
+    symbol: str
+    name: Optional[str] = None
+    weight: float  # 0-1表示权重
+    sector: Optional[str] = None
+    industry: Optional[str] = None
+    country: Optional[str] = None
+    exchange: Optional[str] = None 

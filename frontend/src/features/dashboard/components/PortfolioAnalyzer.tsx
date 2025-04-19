@@ -10,7 +10,8 @@ import {
   RiskMetrics, 
   Comparison, 
   FactorExposure,
-  PerformanceMetrics 
+  PerformanceMetrics,
+  HistoricalTrends
 } from '../';
 
 // API调用状态
@@ -60,7 +61,8 @@ const PortfolioAnalyzer: React.FC = () => {
     { id: 'allocation', label: t('dashboard.allocation') },
     { id: 'risk', label: t('dashboard.risk') },
     { id: 'comparison', label: t('dashboard.comparison') },
-    { id: 'factors', label: '因子暴露' }
+    { id: 'factors', label: '因子暴露' },
+    { id: 'trends', label: '历史趋势' }
   ];
   
   // 渲染加载状态
@@ -192,6 +194,16 @@ const PortfolioAnalyzer: React.FC = () => {
           <div>
             <h2 className="text-xl font-medium mb-4">因子分析</h2>
             <FactorExposure factors={analysisData.factors} />
+          </div>
+        )}
+        
+        {activeTab === 'trends' && (
+          <div>
+            <h2 className="text-xl font-medium mb-4">历史趋势</h2>
+            <HistoricalTrends 
+              portfolioId={portfolioId} 
+              historicalTrends={analysisData.historical_trends}
+            />
           </div>
         )}
       </div>

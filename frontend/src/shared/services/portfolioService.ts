@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // 设置为true表示使用模拟数据，设置为false表示连接真实后端
 const TEST_MODE = false;
-const API_URL = '/api/portfolios';
+const API_URL = '/api';
 
 // 接口定义
 export interface Ticker {
@@ -185,6 +185,7 @@ export interface PortfolioAnalysis {
   factors?: FactorsData;
   allocation?: AllocationData;
   comparison?: ComparisonData | ComparisonData[];
+  historical_trends?: HistoricalTrendsData;
 }
 
 // 合并的股票名称映射（英文+中文）
@@ -309,7 +310,7 @@ export const submitPortfolio = async (portfolio: Portfolio, language?: string): 
     
     // 添加当前语言查询参数
     const queryParams = language ? `?lang=${language}` : '';
-    const apiUrl = TEST_MODE ? `http://localhost:3001/api/portfolios${queryParams}` : `${API_URL}${queryParams}`;
+    const apiUrl = TEST_MODE ? `http://localhost:3001/api/portfolios${queryParams}` : `${API_URL}/portfolios${queryParams}`;
     console.log('发送请求到:', apiUrl);
     
     if (TEST_MODE) {
@@ -410,7 +411,7 @@ export const getPortfolios = async (): Promise<Portfolio[]> => {
       ];
     }
 
-    const response = await axios.get(API_URL);
+    const response = await axios.get(API_URL + '/portfolios');
     return response.data;
   } catch (error) {
     console.error('Failed to fetch portfolios:', error);
@@ -428,7 +429,7 @@ export const getPortfolioList = getPortfolios;
  */
 export const createPortfolio = async (portfolio: Portfolio): Promise<Portfolio> => {
   try {
-    const apiUrl = TEST_MODE ? `http://localhost:3001/api/portfolios` : API_URL;
+    const apiUrl = TEST_MODE ? `http://localhost:3001/api/portfolios` : `${API_URL}/portfolios`;
     const response = await axios.post(apiUrl, portfolio);
     return response.data;
   } catch (error) {
@@ -464,7 +465,7 @@ export const getPortfolio = async (portfolioId: string): Promise<any> => {
       };
     }
 
-    const apiUrl = TEST_MODE ? `http://localhost:3001/api/portfolios/${portfolioId}` : `${API_URL}/${portfolioId}`;
+    const apiUrl = TEST_MODE ? `http://localhost:3001/api/portfolios/${portfolioId}` : `${API_URL}/portfolios/${portfolioId}`;
     const response = await axios.get(apiUrl);
     return response.data;
   } catch (error) {
@@ -752,6 +753,24 @@ export const mockPortfolioAnalysis = (): PortfolioAnalysis => {
         { name: 'volatility', contribution: 10.3 }
       ],
       hasCorrelationData: true
+    },
+    historical_trends: {
+      monthlyReturns: [
+        { month: '一月', return: 3.2, benchmark: 3.0 },
+        { month: '二月', return: -1.8, benchmark: -1.5 },
+        { month: '三月', return: 2.1, benchmark: 1.9 },
+        { month: '四月', return: 4.5, benchmark: 4.2 },
+        { month: '五月', return: -0.7, benchmark: -0.5 },
+        { month: '六月', return: 2.9, benchmark: 2.7 }
+      ],
+      cumulativeReturns: [
+        { month: '一月', portfolio: 3.2, benchmark: 3.2 },
+        { month: '二月', portfolio: 1.4, benchmark: 1.4 },
+        { month: '三月', portfolio: 3.5, benchmark: 3.5 },
+        { month: '四月', portfolio: 8.0, benchmark: 8.0 },
+        { month: '五月', portfolio: 7.3, benchmark: 7.3 },
+        { month: '六月', portfolio: 10.2, benchmark: 10.2 }
+      ]
     }
   };
 };
@@ -796,4 +815,132 @@ export const getPortfolioAnalysis = async (portfolioId: string): Promise<Portfol
     }
     throw new Error('无法获取投资组合分析数据。请检查连接或稍后重试。');
   }
+};
+
+// 历史趋势数据接口
+export interface HistoricalTrendsData {
+  monthlyReturns: MonthlyReturn[];
+  cumulativeReturns: CumulativeReturn[];
+}
+
+export interface MonthlyReturn {
+  month: string;
+  return: number;
+  benchmark: number;
+}
+
+export interface CumulativeReturn {
+  month: string;
+  portfolio: number;
+  benchmark: number;
+}
+
+/**
+ * 获取投资组合历史趋势数据
+ */
+export const getPortfolioHistoricalTrends = async (
+  portfolioId: string,
+  period: 'ytd' | '1year' | '3year' | '5year' = '5year',
+  testMode = TEST_MODE,
+  language = 'en'
+): Promise<HistoricalTrendsData | null> => {
+  try {
+    console.log(`获取投资组合 ${portfolioId} 的历史趋势数据，周期: ${period}`);
+    
+    if (testMode) {
+      console.log('测试模式: 返回模拟的历史趋势数据');
+      // 生成模拟数据并根据period过滤
+      const mockData = generateMockHistoricalTrends(period);
+      return mockData;
+    }
+    
+    // 请求API，明确包含period参数
+    const response = await axios.get(`${API_URL}/portfolios/${portfolioId}/analyze`, {
+      params: { period, lang: language }
+    });
+    
+    // 从完整的分析数据中提取历史趋势部分
+    if (response.data && response.data.historical_trends) {
+      console.log(`成功获取 ${portfolioId} 的历史趋势数据`);
+      return response.data.historical_trends;
+    }
+    
+    console.warn(`投资组合 ${portfolioId} 的分析数据中没有历史趋势数据`);
+    return null;
+  } catch (error) {
+    console.error(`获取投资组合 ${portfolioId} 历史趋势数据失败:`, error);
+    if (axios.isAxiosError(error)) {
+      console.error('网络错误详情:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+        url: error.config?.url,
+        method: error.config?.method
+      });
+    }
+    return null;
+  }
+};
+
+/**
+ * 生成模拟的历史趋势数据
+ */
+const generateMockHistoricalTrends = (period: 'ytd' | '1year' | '3year' | '5year'): HistoricalTrendsData => {
+  const now = new Date();
+  let monthsToGenerate = 60; // 默认5年
+  
+  switch(period) {
+    case 'ytd':
+      // 当前年份的月份数
+      monthsToGenerate = now.getMonth() + 1;
+      break;
+    case '1year':
+      monthsToGenerate = 12;
+      break;
+    case '3year':
+      monthsToGenerate = 36;
+      break;
+    case '5year':
+      monthsToGenerate = 60;
+      break;
+  }
+  
+  const monthlyReturns: MonthlyReturn[] = [];
+  const cumulativeReturns: CumulativeReturn[] = [];
+  
+  let cumulativePortfolio = 100;
+  let cumulativeBenchmark = 100;
+  
+  // 从当前月份往前生成数据
+  for (let i = 0; i < monthsToGenerate; i++) {
+    const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
+    
+    // 生成合理的随机收益率 (-10% 到 15%)
+    const portfolioReturn = parseFloat((Math.random() * 25 - 10).toFixed(2));
+    // 基准收益率与投资组合有一定相关性，但通常略低
+    const benchmarkReturn = parseFloat((portfolioReturn * 0.8 + (Math.random() * 6 - 3)).toFixed(2));
+    
+    monthlyReturns.unshift({
+      month: monthStr,
+      return: portfolioReturn,
+      benchmark: benchmarkReturn
+    });
+    
+    // 更新累计收益
+    cumulativePortfolio *= (1 + portfolioReturn / 100);
+    cumulativeBenchmark *= (1 + benchmarkReturn / 100);
+    
+    cumulativeReturns.unshift({
+      month: monthStr,
+      portfolio: parseFloat((cumulativePortfolio - 100).toFixed(2)),
+      benchmark: parseFloat((cumulativeBenchmark - 100).toFixed(2))
+    });
+  }
+  
+  return {
+    monthlyReturns: monthlyReturns.sort((a, b) => a.month.localeCompare(b.month)),
+    cumulativeReturns: cumulativeReturns.sort((a, b) => a.month.localeCompare(b.month))
+  };
 }; 
