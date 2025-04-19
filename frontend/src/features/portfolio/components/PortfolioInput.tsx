@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { submitPortfolio } from '../../../shared/services/portfolioService';
+import { StockSearch } from '../../../shared/components/StockSearch';
+import { StockInfo } from '../../../shared/hooks/useStockSearch';
 
 interface Ticker {
   symbol: string;
   weight: number;
+  info?: StockInfo | null;
 }
 
 const PortfolioInput = () => {
-  const [tickers, setTickers] = useState<Ticker[]>([{ symbol: '', weight: 0 }]);
+  const [tickers, setTickers] = useState<Ticker[]>([{ symbol: '', weight: 0, info: null }]);
   const [portfolioName, setPortfolioName] = useState('');
   const [status, setStatus] = useState<{ type: 'success' | 'error' | 'none', message: string }>({ 
     type: 'none', 
@@ -16,7 +19,7 @@ const PortfolioInput = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const addTicker = () => {
-    setTickers([...tickers, { symbol: '', weight: 0 }]);
+    setTickers([...tickers, { symbol: '', weight: 0, info: null }]);
   };
 
   const removeTicker = (index: number) => {
@@ -25,10 +28,22 @@ const PortfolioInput = () => {
     setTickers(newTickers);
   };
 
-  const updateTicker = (index: number, field: keyof Ticker, value: string | number) => {
+  const updateTickerWeight = (index: number, value: number) => {
     const newTickers = [...tickers];
-    newTickers[index] = { ...newTickers[index], [field]: value };
+    newTickers[index] = { ...newTickers[index], weight: value };
     setTickers(newTickers);
+  };
+
+  const handleStockSelect = (index: number, stock: StockInfo | null) => {
+    if (stock) {
+      const newTickers = [...tickers];
+      newTickers[index] = { 
+        ...newTickers[index], 
+        symbol: stock.symbol,
+        info: stock
+      };
+      setTickers(newTickers);
+    }
   };
 
   const validatePortfolio = () => {
@@ -77,7 +92,7 @@ const PortfolioInput = () => {
       
       // 重置表单
       setPortfolioName('');
-      setTickers([{ symbol: '', weight: 0 }]);
+      setTickers([{ symbol: '', weight: 0, info: null }]);
       
     } catch (error) {
       console.error('提交失败:', error);
@@ -118,12 +133,11 @@ const PortfolioInput = () => {
           {tickers.map((ticker, index) => (
             <div key={index} className="flex space-x-3">
               <div className="flex-1">
-                <input
-                  type="text"
-                  value={ticker.symbol}
-                  onChange={(e) => updateTicker(index, 'symbol', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                <StockSearch 
+                  value={ticker.info}
+                  onChange={(stock) => handleStockSelect(index, stock)}
                   placeholder="股票代码 (例如: AAPL)"
+                  label=""
                 />
               </div>
               <div className="flex-1">
@@ -131,7 +145,7 @@ const PortfolioInput = () => {
                   <input
                     type="number"
                     value={ticker.weight}
-                    onChange={(e) => updateTicker(index, 'weight', parseFloat(e.target.value) || 0)}
+                    onChange={(e) => updateTickerWeight(index, parseFloat(e.target.value) || 0)}
                     step="0.01"
                     min="0"
                     max="100"

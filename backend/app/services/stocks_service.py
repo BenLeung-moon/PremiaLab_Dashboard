@@ -3,97 +3,207 @@ Stocks Service - Handles business logic for stock-related operations
 """
 import json
 import random
+import pandas as pd
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+from datetime import datetime
+import logging
+
+# 设置日志
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Data path
 DATA_DIR = Path(__file__).parent.parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
-STOCKS_FILE = DATA_DIR / "stocks.json"
+COMPANIES_FILE = DATA_DIR / "companies.json"
+PRICE_HISTORY_FILE = DATA_DIR / "Constituent_Price_History.csv"
+STOCK_MAPPING_FILE = DATA_DIR / "stock_mappings.json"
 
-# Stock data
+# Stock data cache
 _stocks_cache = {}
+_price_history_cache = {}
+_stock_name_mapping_cache = {}
 
-# Default stocks to use if no data is available
-DEFAULT_STOCKS = {
-    "AAPL": {"name": "Apple Inc.", "sector": "Technology", "price": 173.57, "change": 0.0123},
-    "MSFT": {"name": "Microsoft Corp.", "sector": "Technology", "price": 402.28, "change": -0.0056},
-    "GOOGL": {"name": "Alphabet Inc.", "sector": "Communication Services", "price": 147.68, "change": 0.0034},
-    "AMZN": {"name": "Amazon.com Inc.", "sector": "Consumer Discretionary", "price": 178.08, "change": 0.0212},
-    "TSLA": {"name": "Tesla, Inc.", "sector": "Consumer Discretionary", "price": 197.42, "change": -0.0145},
-    "META": {"name": "Meta Platforms, Inc.", "sector": "Communication Services", "price": 481.73, "change": 0.0078},
-    "NVDA": {"name": "NVIDIA Corporation", "sector": "Technology", "price": 922.28, "change": 0.0345},
-    "JPM": {"name": "JPMorgan Chase & Co.", "sector": "Financial Services", "price": 196.46, "change": -0.0067},
-    "V": {"name": "Visa Inc.", "sector": "Financial Services", "price": 275.96, "change": 0.0021},
-    "JNJ": {"name": "Johnson & Johnson", "sector": "Healthcare", "price": 151.14, "change": 0.0015},
-}
+def _load_stock_name_mapping() -> Dict[str, Dict[str, str]]:
+    """Load stock name mapping (English/Chinese) from file"""
+    global _stock_name_mapping_cache
+    
+    if _stock_name_mapping_cache:
+        return _stock_name_mapping_cache
+    
+    # 尝试从映射文件加载
+    if STOCK_MAPPING_FILE.exists():
+        try:
+            with open(STOCK_MAPPING_FILE, "r", encoding="utf-8") as f:
+                mappings = json.load(f)
+                
+                # 确保所有必要的映射字段存在
+                if "names" not in mappings:
+                    mappings["names"] = {}
+                if "chinese_names" not in mappings:
+                    mappings["chinese_names"] = {}  
+                if "display_names" not in mappings:
+                    mappings["display_names"] = {}
+                
+                _stock_name_mapping_cache = mappings
+                logger.info(f"Loaded {len(mappings.get('display_names', {}))} stock name mappings")
+                return mappings
+        except Exception as e:
+            logger.error(f"Error loading stock mappings: {e}")
+            _stock_name_mapping_cache = {"names": {}, "chinese_names": {}, "display_names": {}}
+    else:
+        logger.warning(f"Stock mapping file not found: {STOCK_MAPPING_FILE}")
+        _stock_name_mapping_cache = {"names": {}, "chinese_names": {}, "display_names": {}}
+    
+    return _stock_name_mapping_cache
 
-def _load_stocks() -> Dict[str, Dict[str, Any]]:
-    """Load stocks data from file or generate if not available"""
+def _get_stock_names(ticker: str) -> Dict[str, str]:
+    """Get all name variants for a stock ticker"""
+    mappings = _load_stock_name_mapping()
+    
+    # 默认值
+    english_name = ""
+    chinese_name = ""
+    display_name = ""
+    
+    # 获取不同类型的名称
+    if "names" in mappings and ticker in mappings["names"]:
+        english_name = mappings["names"][ticker]
+    
+    if "chinese_names" in mappings and ticker in mappings["chinese_names"]:
+        chinese_name = mappings["chinese_names"][ticker]
+    
+    if "display_names" in mappings and ticker in mappings["display_names"]:
+        display_name = mappings["display_names"][ticker]
+    
+    # 如果没有显示名称但有其他名称，尝试创建
+    if not display_name:
+        if english_name and chinese_name:
+            display_name = f"{english_name} / {chinese_name}"
+        elif english_name:
+            display_name = english_name
+        elif chinese_name:
+            display_name = chinese_name
+    
+    # 最后的回退
+    if not display_name:
+        display_name = ticker
+    
+    return {
+        "english_name": english_name,
+        "chinese_name": chinese_name,
+        "display_name": display_name
+    }
+
+def _load_companies() -> Dict[str, Dict[str, Any]]:
+    """Load company information from companies.json file"""
     global _stocks_cache
     
     if _stocks_cache:
         return _stocks_cache
     
-    if STOCKS_FILE.exists():
+    if COMPANIES_FILE.exists():
         try:
-            with open(STOCKS_FILE, "r") as f:
-                _stocks_cache = json.load(f)
+            with open(COMPANIES_FILE, "r") as f:
+                data = json.load(f)
+                # Extract companies from the JSON structure
+                _stocks_cache = data.get("companies", {})
         except Exception as e:
-            print(f"Error loading stocks: {e}")
-            _stocks_cache = _generate_stocks_data()
+            logger.error(f"Error loading companies: {e}")
+            _stocks_cache = {}
     else:
-        _stocks_cache = _generate_stocks_data()
-        _save_stocks()
+        logger.warning(f"Companies file not found: {COMPANIES_FILE}")
+        _stocks_cache = {}
     
     return _stocks_cache
 
-def _save_stocks() -> bool:
-    """Save stocks data to file"""
-    try:
-        with open(STOCKS_FILE, "w") as f:
-            json.dump(_stocks_cache, f, indent=2)
-        return True
-    except Exception as e:
-        print(f"Error saving stocks: {e}")
-        return False
-
-def _generate_stocks_data() -> Dict[str, Dict[str, Any]]:
-    """Generate mock stocks data"""
-    stocks = DEFAULT_STOCKS.copy()
+def _load_price_history(ticker: Optional[str] = None) -> Dict[str, List[Dict[str, Any]]]:
+    """Load price history data from CSV file
     
-    # Add more mock stocks
-    for i in range(50):
-        symbol = f"STOCK{i+1}"
-        sector_choice = random.choice([
-            "Technology", "Healthcare", "Financial Services", 
-            "Consumer Discretionary", "Communication Services", 
-            "Industrials", "Energy", "Materials", "Utilities"
-        ])
-        price = round(random.uniform(10, 500), 2)
-        change = round(random.uniform(-0.05, 0.05), 4)
+    Args:
+        ticker: Optional ticker to filter data by
         
-        stocks[symbol] = {
-            "name": f"Mock Stock {i+1}",
-            "sector": sector_choice,
-            "price": price,
-            "change": change
+    Returns:
+        Dictionary with tickers as keys and list of price data as values
+    """
+    global _price_history_cache
+    
+    if ticker and ticker in _price_history_cache:
+        return {ticker: _price_history_cache[ticker]}
+    
+    if not _price_history_cache and PRICE_HISTORY_FILE.exists():
+        try:
+            # Read the CSV file
+            # Use chunksize for large files
+            chunk_size = 10000
+            chunks = pd.read_csv(PRICE_HISTORY_FILE, chunksize=chunk_size)
+            
+            price_data = {}
+            for chunk in chunks:
+                # Process each chunk
+                for code, group in chunk.groupby('code'):
+                    if code not in price_data:
+                        price_data[code] = []
+                    
+                    # Sort by date
+                    group = group.sort_values('date', ascending=False)
+                    
+                    # Convert to dictionary
+                    records = group.to_dict('records')
+                    price_data[code].extend(records)
+            
+            _price_history_cache = price_data
+        except Exception as e:
+            logger.error(f"Error loading price history: {e}")
+            _price_history_cache = {}
+    
+    if ticker:
+        return {ticker: _price_history_cache.get(ticker, [])}
+    
+    return _price_history_cache
+
+def _get_latest_price(ticker: str) -> Dict[str, Any]:
+    """Get the latest price data for a ticker"""
+    prices = _load_price_history(ticker).get(ticker, [])
+    
+    if prices:
+        latest = prices[0]  # Assuming prices are sorted by date
+        return {
+            "price": float(latest.get("PRC", 0.0)),
+            "date": latest.get("date")
         }
     
-    return stocks
+    return {"price": 0.0, "date": None}
 
 async def get_available_stocks_service() -> List[Dict[str, Any]]:
     """Get list of available stocks formatted for frontend"""
-    stocks = _load_stocks()
+    companies = _load_companies()
     
     result = []
-    for symbol, data in stocks.items():
+    for symbol, data in companies.items():
+        # Get latest price
+        price_data = _get_latest_price(symbol)
+        
+        # Calculate change (mock data for now)
+        # In a real implementation, you'd compare with previous day's price
+        change = round(random.uniform(-0.05, 0.05), 4)
+        
+        # Get stock names
+        names = _get_stock_names(symbol)
+        
         result.append({
             "symbol": symbol,
-            "name": data.get("name", f"Unknown ({symbol})"),
+            "name": names["display_name"],
+            "englishName": names["english_name"] or data.get("name", ""),
+            "chineseName": names["chinese_name"],
             "sector": data.get("sector", "Other"),
-            "price": data.get("price", 0.0),
-            "change": data.get("change", 0.0)
+            "industry": data.get("industry", "Other"),
+            "region": data.get("region", "Unknown"),
+            "marketCap": data.get("marketCap", "Unknown"),
+            "description": data.get("description", ""),
+            "price": price_data.get("price", 0.0),
+            "change": change
         })
     
     # Sort by symbol
@@ -102,5 +212,87 @@ async def get_available_stocks_service() -> List[Dict[str, Any]]:
     return result
 
 async def get_stocks_data_service() -> Dict[str, Dict[str, Any]]:
-    """Get all stock data"""
-    return _load_stocks() 
+    """Get all stock data with company info"""
+    companies = _load_companies()
+    
+    # Enhance company data with price information
+    enhanced_data = {}
+    for symbol, data in companies.items():
+        price_data = _get_latest_price(symbol)
+        
+        # Get stock names
+        names = _get_stock_names(symbol)
+        
+        # Create enhanced data structure
+        enhanced_data[symbol] = {
+            **data,
+            "displayName": names["display_name"],
+            "englishName": names["english_name"] or data.get("name", ""),
+            "chineseName": names["chinese_name"],
+            "price": price_data.get("price", 0.0),
+            "last_updated": price_data.get("date"),
+            "change": round(random.uniform(-0.05, 0.05), 4)  # Mock data for now
+        }
+    
+    return enhanced_data
+
+async def get_stock_history_service(ticker: str, days: int = 30) -> List[Dict[str, Any]]:
+    """Get historical price data for a specific stock
+    
+    Args:
+        ticker: Stock ticker symbol
+        days: Number of days of history to return
+        
+    Returns:
+        List of price data points
+    """
+    price_data = _load_price_history(ticker).get(ticker, [])
+    
+    # Limit to requested number of days
+    return price_data[:min(days, len(price_data))]
+
+async def get_stock_name_mapping_service() -> Dict[str, Dict[str, str]]:
+    """Get bilingual stock name mapping
+    
+    Returns:
+        Dictionary with mappings for names, chinese_names, and display_names
+    """
+    return _load_stock_name_mapping()
+
+async def get_stock_info_service(ticker: str) -> Dict[str, Any]:
+    """Get detailed information for a specific stock
+    
+    Args:
+        ticker: Stock symbol
+        
+    Returns:
+        Dictionary with company information and price data
+    """
+    companies = _load_companies()
+    
+    # Get company data
+    company_data = companies.get(ticker, {})
+    if not company_data:
+        return {"error": f"Stock {ticker} not found"}
+    
+    # Get latest price
+    price_data = _get_latest_price(ticker)
+    
+    # Get stock names
+    names = _get_stock_names(ticker)
+    
+    # Combine all data
+    return {
+        "symbol": ticker,
+        "name": names["display_name"],
+        "englishName": names["english_name"] or company_data.get("name", ""),
+        "chineseName": names["chinese_name"],
+        "sector": company_data.get("sector", "Other"),
+        "industry": company_data.get("industry", "Other"),
+        "region": company_data.get("region", "Unknown"),
+        "marketCap": company_data.get("marketCap", "Unknown"),
+        "description": company_data.get("description", ""),
+        "price": price_data.get("price", 0.0),
+        "last_updated": price_data.get("date"),
+        "change": round(random.uniform(-0.05, 0.05), 4)  # Mock data for now
+    } 

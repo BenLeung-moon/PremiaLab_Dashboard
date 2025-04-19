@@ -7,8 +7,14 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
 import random
 from pathlib import Path
+import logging
 from ..models.portfolio import Portfolio, PortfolioAnalysis
 from .portfolio_service import get_portfolio_service
+from .stocks_service import get_stock_history_service
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Data path
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -16,17 +22,23 @@ DATA_DIR.mkdir(exist_ok=True)
 
 async def analyze_portfolio_service(portfolio_id: str) -> Optional[PortfolioAnalysis]:
     """Analyze a specific portfolio by ID"""
+    logger.info(f"Analyzing portfolio with ID: {portfolio_id}")
+    
     # Get portfolio
     portfolio_response = await get_portfolio_service(portfolio_id)
     if not portfolio_response:
         # 尝试检查是否有"port-"前缀
+        logger.warning(f"Portfolio {portfolio_id} not found, trying with 'port-' prefix")
         if not portfolio_id.startswith("port-"):
             # 如果没有前缀，尝试使用前缀版本
             port_id = f"port-{portfolio_id}"
             portfolio_response = await get_portfolio_service(port_id)
         
         if not portfolio_response:
+            logger.error(f"Portfolio not found with ID {portfolio_id}")
             return None
+    
+    logger.info(f"Portfolio found: {portfolio_response.name}, with {len(portfolio_response.tickers)} tickers")
     
     # Convert to Portfolio object for analysis
     portfolio = Portfolio(
@@ -34,11 +46,44 @@ async def analyze_portfolio_service(portfolio_id: str) -> Optional[PortfolioAnal
         tickers=portfolio_response.tickers
     )
     
-    # Return mock analysis
-    return await mock_analyze_portfolio_service(portfolio)
+    # Return analysis
+    logger.info(f"Generating analysis for portfolio {portfolio_id}")
+    return await analyze_portfolio(portfolio)
+
+async def analyze_portfolio(portfolio: Portfolio) -> PortfolioAnalysis:
+    """Generate analysis for a portfolio using real price data"""
+    # Extract tickers and weights
+    tickers = [t.symbol for t in portfolio.tickers]
+    weights = [t.weight for t in portfolio.tickers]
+    
+    # Get historical data
+    historical_data = await _get_historical_data(tickers)
+    
+    # Calculate performance metrics
+    performance = _calculate_statistics(historical_data, weights)
+    
+    # Calculate allocation
+    allocation = _calculate_allocation(portfolio.tickers)
+    
+    # Calculate risk metrics
+    risk = _calculate_risk_metrics(historical_data, weights)
+    
+    # Calculate comparison with benchmarks
+    comparison = _calculate_comparison(historical_data, weights)
+    
+    # Calculate factor exposure
+    factors = _calculate_factor_exposure(portfolio.tickers)
+    
+    return PortfolioAnalysis(
+        performance=performance,
+        allocation=allocation,
+        risk=risk,
+        comparison=comparison,
+        factors=factors
+    )
 
 async def mock_analyze_portfolio_service(portfolio: Portfolio) -> PortfolioAnalysis:
-    """Generate mock analysis for a portfolio"""
+    """Generate mock analysis for a portfolio (fallback if real data is not available)"""
     # Extract tickers and weights
     tickers = [t.symbol for t in portfolio.tickers]
     weights = [t.weight for t in portfolio.tickers]
@@ -68,6 +113,46 @@ async def mock_analyze_portfolio_service(portfolio: Portfolio) -> PortfolioAnaly
         comparison=comparison,
         factors=factors
     )
+
+async def _get_historical_data(tickers, days=365):
+    """Get real historical price data for tickers"""
+    logger.info(f"Getting historical data for {len(tickers)} tickers over {days} days")
+    
+    # Create empty DataFrame to store results
+    data = pd.DataFrame()
+    
+    for ticker in tickers:
+        try:
+            # Get historical data for this ticker
+            ticker_history = await get_stock_history_service(ticker, days)
+            
+            if not ticker_history:
+                logger.warning(f"No historical data found for {ticker}, using mock data")
+                continue
+                
+            # Convert to DataFrame
+            ticker_df = pd.DataFrame(ticker_history)
+            
+            # Set date as index and convert to datetime
+            ticker_df['date'] = pd.to_datetime(ticker_df['date'])
+            ticker_df = ticker_df.set_index('date')
+            
+            # Extract just the price column and name it by the ticker
+            if 'PRC' in ticker_df.columns:
+                prices = ticker_df['PRC']
+                data[ticker] = prices
+        except Exception as e:
+            logger.error(f"Error getting data for {ticker}: {e}")
+    
+    # If we have no data, generate mock data
+    if data.empty:
+        logger.warning("No historical data found for any tickers, using mock data")
+        return _generate_historical_data(tickers, days)
+        
+    # Sort index by date
+    data = data.sort_index()
+    
+    return data
 
 def _generate_historical_data(tickers, days=365):
     """Generate mock historical price data for tickers"""

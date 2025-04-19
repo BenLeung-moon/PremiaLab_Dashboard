@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../shared/i18n/LanguageContext';
+import { StockSearch } from '../../../shared/components/StockSearch';
+import { StockInfo } from '../../../shared/hooks/useStockSearch';
 
 interface Stock {
   symbol: string;
   weight: number;
+  info?: StockInfo | null;
 }
 
 interface Portfolio {
@@ -25,7 +28,7 @@ const ManualPortfolioBuilder: React.FC<ManualPortfolioBuilderProps> = ({
   const { t } = useLanguage();
   const [portfolioName, setPortfolioName] = useState(t('portfolio.defaultName'));
   const [stocks, setStocks] = useState<Stock[]>([
-    { symbol: '', weight: 100 }
+    { symbol: '', weight: 100, info: null }
   ]);
   const [stockSuggestions, setStockSuggestions] = useState<{symbol: string, name: string}[]>([]);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
@@ -44,7 +47,7 @@ const ManualPortfolioBuilder: React.FC<ManualPortfolioBuilderProps> = ({
     }));
     
     // 添加新股票
-    setStocks([...updatedStocks, {symbol: '', weight: newWeight}]);
+    setStocks([...updatedStocks, {symbol: '', weight: newWeight, info: null}]);
   };
 
   // 移除股票
@@ -81,33 +84,17 @@ const ManualPortfolioBuilder: React.FC<ManualPortfolioBuilderProps> = ({
     setStocks(newStocks);
   };
 
-  // 处理股票代码联想
-  const handleStockSymbolChange = (index: number, value: string) => {
-    updateStock(index, 'symbol', value);
-    setFocusedStockIndex(index);
-    
-    if (value.trim() && availableStocks.length > 0) {
-      const suggestions = availableStocks
-        .filter(stock => 
-          stock.symbol.toLowerCase().includes(value.toLowerCase()) || 
-          (stock.name && stock.name.toLowerCase().includes(value.toLowerCase()))
-        )
-        .slice(0, 5); // 限制建议数量
-      
-      setStockSuggestions(suggestions);
-      setActiveSuggestionIndex(-1);
-    } else {
-      setStockSuggestions([]);
+  // 处理股票选择
+  const handleStockSelect = (index: number, stockInfo: StockInfo | null) => {
+    if (stockInfo) {
+      const newStocks = [...stocks];
+      newStocks[index] = { 
+        ...newStocks[index], 
+        symbol: stockInfo.symbol,
+        info: stockInfo
+      };
+      setStocks(newStocks);
     }
-  };
-
-  // 选择股票建议
-  const selectStockSuggestion = (stock: {symbol: string, name: string}) => {
-    if (focusedStockIndex >= 0) {
-      updateStock(focusedStockIndex, 'symbol', stock.symbol);
-    }
-    setStockSuggestions([]);
-    setActiveSuggestionIndex(-1);
   };
 
   // 验证并提交
@@ -159,7 +146,15 @@ const ManualPortfolioBuilder: React.FC<ManualPortfolioBuilderProps> = ({
       );
     } else if (e.key === 'Enter' && activeSuggestionIndex >= 0) {
       e.preventDefault();
-      selectStockSuggestion(stockSuggestions[activeSuggestionIndex]);
+      // 转换为StockInfo类型以匹配handleStockSelect的参数类型
+      const suggestion = stockSuggestions[activeSuggestionIndex];
+      const stockInfo: StockInfo = {
+        symbol: suggestion.symbol,
+        name: suggestion.name,
+        englishName: suggestion.name,
+        chineseName: ''
+      };
+      handleStockSelect(index, stockInfo);
     } else if (e.key === 'Escape') {
       setStockSuggestions([]);
     }
@@ -203,42 +198,21 @@ const ManualPortfolioBuilder: React.FC<ManualPortfolioBuilderProps> = ({
         
         <div className="space-y-3">
           {stocks.map((stock, index) => (
-            <div key={index} className="relative flex space-x-2">
+            <div key={index} className="flex space-x-2">
               <div className="flex-1">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={stock.symbol}
-                    onChange={(e) => handleStockSymbolChange(index, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(e, index)}
-                    onBlur={() => setTimeout(() => setStockSuggestions([]), 100)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder={t('portfolio.symbolPlaceholder')}
-                  />
-                  
-                  {/* 股票联想下拉菜单 */}
-                  {stockSuggestions.length > 0 && focusedStockIndex === index && (
-                    <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
-                      {stockSuggestions.map((suggestion, i) => (
-                        <li
-                          key={suggestion.symbol}
-                          className={`px-3 py-2 cursor-pointer ${i === activeSuggestionIndex ? 'bg-blue-50' : 'hover:bg-gray-100'}`}
-                          onClick={() => selectStockSuggestion(suggestion)}
-                        >
-                          <div className="font-medium">{suggestion.symbol}</div>
-                          {suggestion.name && <div className="text-xs text-gray-500">{suggestion.name}</div>}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                <StockSearch
+                  value={stock.info}
+                  onChange={(selectedStock) => handleStockSelect(index, selectedStock)}
+                  placeholder={t('portfolio.symbolPlaceholder')}
+                  label=""
+                />
               </div>
               <div className="w-32">
                 <div className="relative">
                   <input
                     type="number"
                     value={stock.weight}
-                    onChange={(e) => updateStock(index, 'weight', e.target.value)}
+                    onChange={(e) => updateStock(index, 'weight', parseFloat(e.target.value) || 0)}
                     step="0.1"
                     min="0"
                     max="100"

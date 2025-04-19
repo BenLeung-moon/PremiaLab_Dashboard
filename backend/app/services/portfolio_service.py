@@ -5,7 +5,12 @@ import json
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
+import logging
 from ..models.portfolio import Portfolio, PortfolioResponse, Ticker
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Data path
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -104,10 +109,12 @@ async def get_portfolio_service(portfolio_id: str) -> Optional[PortfolioResponse
 
 async def create_portfolio_service(portfolio: Portfolio) -> PortfolioResponse:
     """Create a new portfolio"""
+    logger.info(f"Creating new portfolio: {portfolio.name}")
     portfolios = _load_portfolios()
     
-    # Generate new ID
-    new_id = str(len(portfolios) + 1)
+    # Generate new ID with port- prefix
+    new_id = f"port-{len(portfolios) + 1}"
+    logger.info(f"Generated portfolio ID: {new_id}")
     
     # Create portfolio data
     portfolio_data = {
@@ -118,12 +125,21 @@ async def create_portfolio_service(portfolio: Portfolio) -> PortfolioResponse:
         "tickers": [ticker.dict() for ticker in portfolio.tickers]
     }
     
+    # Log ticker info
+    logger.info(f"Portfolio contains {len(portfolio.tickers)} tickers:")
+    for ticker in portfolio.tickers:
+        logger.info(f"  - {ticker.symbol}: {ticker.weight}")
+    
     # Save to cache
     portfolios[new_id] = portfolio_data
     _portfolios_cache = portfolios
     
     # Save to file
-    _save_portfolios()
+    save_result = _save_portfolios()
+    if save_result:
+        logger.info(f"Portfolio {new_id} saved successfully")
+    else:
+        logger.error(f"Failed to save portfolio {new_id}")
     
     return _portfolio_to_response(portfolio_data)
 

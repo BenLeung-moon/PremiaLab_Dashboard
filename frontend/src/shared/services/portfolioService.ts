@@ -772,11 +772,28 @@ export const getPortfolioAnalysis = async (portfolioId: string): Promise<Portfol
     }
     
     // 使用统一的analyze接口
+    console.log(`发送请求到: /api/portfolios/${portfolioId}/analyze`);
     const response = await axios.get(`/api/portfolios/${portfolioId}/analyze`);
     console.log('API Response:', response.data);
+    
+    if (!response.data || !response.data.performance) {
+      console.error('API返回数据格式不正确:', response.data);
+      throw new Error('API返回数据格式不正确');
+    }
+    
     return response.data;
   } catch (error) {
     console.error(`获取投资组合 ${portfolioId} 分析数据失败:`, error);
+    if (axios.isAxiosError(error)) {
+      console.error('网络错误详情:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+        url: error.config?.url,
+        method: error.config?.method
+      });
+    }
     throw new Error('无法获取投资组合分析数据。请检查连接或稍后重试。');
   }
 }; 

@@ -42,6 +42,30 @@ class PortfolioResponse(BaseModel):
     name: str = Field(..., description="Portfolio name")
     created_at: str = Field(..., description="Creation time ISO format")
     tickers: List[Ticker] = Field(..., description="List of stocks")
+    
+    # Convert to expected frontend format
+    @property
+    def portfolio(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "created_at": self.created_at,
+            "tickers": self.tickers
+        }
+        
+    class Config:
+        orm_mode = True
+        schema_extra = {
+            "example": {
+                "id": "port-123",
+                "name": "My Portfolio",
+                "created_at": "2023-01-01T00:00:00",
+                "tickers": [
+                    {"symbol": "AAPL", "weight": 0.5},
+                    {"symbol": "MSFT", "weight": 0.5}
+                ]
+            }
+        }
 
 class PerformanceMetrics(BaseModel):
     portfolio_id: str

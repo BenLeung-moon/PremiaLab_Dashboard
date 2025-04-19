@@ -5,6 +5,8 @@ import { submitPortfolio, getAvailableStocksWithNames, stockNameMapping, getPort
 import { useLanguage } from '../../shared/i18n/LanguageContext';
 import LanguageSwitcher from '../../shared/components/LanguageSwitcher';
 import { encryptData, decryptData } from '../../shared/utils/encryption';
+import { StockSearch } from '../../shared/components/StockSearch';
+import { StockInfo } from '../../shared/hooks/useStockSearch';
 
 // 添加内联样式
 const styles = {
@@ -70,6 +72,7 @@ interface Portfolio {
   tickers: {
     symbol: string;
     weight: number;
+    info?: StockInfo | null;
   }[];
 }
 
@@ -103,8 +106,8 @@ const ChatHomePage = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   // 添加手动输入股票的相关状态
   const [isManualInputActive, setIsManualInputActive] = useState(false);
-  const [manualStocks, setManualStocks] = useState<{symbol: string, weight: number}[]>([
-    {symbol: '', weight: 0}
+  const [manualStocks, setManualStocks] = useState<{symbol: string, weight: number, info?: StockInfo | null}[]>([
+    {symbol: '', weight: 0, info: null}
   ]);
   const [portfolioName, setPortfolioName] = useState('');
 
@@ -864,7 +867,7 @@ const ChatHomePage = () => {
     }));
     
     // 添加新股票
-    setManualStocks([...updatedStocks, {symbol: '', weight: newWeight}]);
+    setManualStocks([...updatedStocks, {symbol: '', weight: newWeight, info: null}]);
   };
 
   const removeStock = (index: number) => {
@@ -949,7 +952,7 @@ const ChatHomePage = () => {
 
     // 重置表单和状态
     setIsManualInputActive(false);
-    setManualStocks([{symbol: '', weight: 0}]);
+    setManualStocks([{symbol: '', weight: 0, info: null}]);
     setPortfolioName('');
     
     // 立即发送到后端获取仪表板
@@ -1185,6 +1188,19 @@ const ChatHomePage = () => {
   const filterThinkingChain = (content: string): string => {
     // 使用正则表达式移除<think>...</think>之间的内容
     return content.replace(/<think>[\s\S]*?<\/think>/g, '');
+  };
+
+  // 添加处理股票选择的函数
+  const handleStockSelect = (index: number, stock: StockInfo | null) => {
+    if (stock) {
+      const newStocks = [...manualStocks];
+      newStocks[index] = { 
+        ...newStocks[index], 
+        symbol: stock.symbol,
+        info: stock
+      };
+      setManualStocks(newStocks);
+    }
   };
 
   return (
@@ -1483,7 +1499,7 @@ const ChatHomePage = () => {
                           <h3 className="text-lg font-medium mb-4">{t('portfolio.createManually')}</h3>
                           
                           <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('portfolio.name')}</label>
+                            <label className="block text-sm font-medium mb-1">{t('portfolio.name')}</label>
                             <input
                               type="text"
                               value={portfolioName}
@@ -1508,41 +1524,13 @@ const ChatHomePage = () => {
                             <div className="space-y-3">
                               {manualStocks.map((stock, index) => (
                                 <div key={index} className="flex flex-row gap-2 items-center">
-                                  <div className="flex-1 relative">
-                                    <input
-                                      type="text"
-                                      value={stock.symbol}
-                                      onChange={(e) => handleStockSymbolChange(index, e.target.value)}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                  <div className="flex-1">
+                                    <StockSearch
+                                      value={stock.info}
+                                      onChange={(selectedStock) => handleStockSelect(index, selectedStock)}
                                       placeholder={t('portfolio.stockCode')}
-                                      onFocus={() => setFocusedSymbolIndex(index)}
-                                      onBlur={() => setTimeout(() => setStockSuggestions([]), 200)}
+                                      label=""
                                     />
-                                    {stock.symbol && stockNameMapping[stock.symbol.toUpperCase()] && (
-                                      <div className="mt-1 text-xs text-gray-500">
-                                        {stockNameMapping[stock.symbol.toUpperCase()]}
-                                      </div>
-                                    )}
-                                    {stockSuggestions.length > 0 && focusedSymbolIndex === index && (
-                                      <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm">
-                                        {stockSuggestions.map((suggestion, i) => (
-                                          <div
-                                            key={i}
-                                            className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50"
-                                            onClick={() => selectStockSuggestion(index, suggestion)}
-                                          >
-                                            <div className="flex items-center">
-                                              <span className="font-medium">{suggestion.symbol}</span>
-                                              {suggestion.name && (
-                                                <span className="text-gray-500 ml-2 text-sm">
-                                                  {suggestion.name}
-                                                </span>
-                                              )}
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
                                   </div>
                                   <div className="w-24 flex-shrink-0">
                                     <div className="relative">
@@ -1779,41 +1767,13 @@ const ChatHomePage = () => {
                             <div className="space-y-3">
                               {manualStocks.map((stock, index) => (
                                 <div key={index} className="flex flex-row gap-2 items-center">
-                                  <div className="flex-1 relative">
-                                    <input
-                                      type="text"
-                                      value={stock.symbol}
-                                      onChange={(e) => handleStockSymbolChange(index, e.target.value)}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                  <div className="flex-1">
+                                    <StockSearch
+                                      value={stock.info}
+                                      onChange={(selectedStock) => handleStockSelect(index, selectedStock)}
                                       placeholder={t('portfolio.stockCode')}
-                                      onFocus={() => setFocusedSymbolIndex(index)}
-                                      onBlur={() => setTimeout(() => setStockSuggestions([]), 200)}
+                                      label=""
                                     />
-                                    {stock.symbol && stockNameMapping[stock.symbol.toUpperCase()] && (
-                                      <div className="mt-1 text-xs text-gray-500">
-                                        {stockNameMapping[stock.symbol.toUpperCase()]}
-                                      </div>
-                                    )}
-                                    {stockSuggestions.length > 0 && focusedSymbolIndex === index && (
-                                      <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm">
-                                        {stockSuggestions.map((suggestion, i) => (
-                                          <div
-                                            key={i}
-                                            className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50"
-                                            onClick={() => selectStockSuggestion(index, suggestion)}
-                                          >
-                                            <div className="flex items-center">
-                                              <span className="font-medium">{suggestion.symbol}</span>
-                                              {suggestion.name && (
-                                                <span className="text-gray-500 ml-2 text-sm">
-                                                  {suggestion.name}
-                                                </span>
-                                              )}
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
                                   </div>
                                   <div className="w-24 flex-shrink-0">
                                     <div className="relative">
