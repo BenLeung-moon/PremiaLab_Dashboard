@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../shared/i18n/LanguageContext';
 import { formatNumber, formatPercent } from '../../../shared/utils/formatting';
 import { PerformanceData, PerformanceTimeFrame } from '../../../shared/services/portfolioService';
+import TimePeriodSelector, { TimeFrame } from '../../../shared/components/TimePeriodSelector';
 
 // 定义指标数据类型
 interface MetricData {
@@ -13,17 +14,13 @@ interface MetricData {
   valueType?: 'percent' | 'number'; // 添加valueType属性
 }
 
-// 添加TimeFrame类型定义
-type TimeFrame = 'ytd' | 'oneYear' | 'threeYear' | 'fiveYear' | 'tenYear';
-
 interface PerformanceMetricsProps {
   data?: PerformanceData;
+  timeFrame?: TimeFrame; // 添加时间周期参数
 }
 
-const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data }) => {
+const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, timeFrame = 'oneYear' }) => {
   const { language, t } = useLanguage();
-  // 添加时间段选择器状态
-  const [selectedTimeFrame, setSelectedTimeFrame] = useState<TimeFrame>('oneYear');
   // 添加状态来存储处理后的数据
   const [processedData, setProcessedData] = useState<PerformanceData | undefined>(undefined);
   
@@ -31,6 +28,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data }) => {
   useEffect(() => {
     console.log('PerformanceMetrics 组件收到数据:', data);
     console.log('数据类型:', typeof data);
+    console.log('当前时间段:', timeFrame);
     if (data) {
       console.log('数据结构:', Object.keys(data));
       console.log('totalReturn:', data.totalReturn, '类型:', typeof data.totalReturn);
@@ -49,7 +47,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data }) => {
     } else {
       console.error('PerformanceMetrics 组件未收到有效数据');
     }
-  }, [data]);
+  }, [data, timeFrame]);
   
   // 当传入的数据变化时处理数据
   useEffect(() => {
@@ -211,11 +209,11 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data }) => {
   // 获取当前时间段的数据
   const getCurrentTimeFrameData = () => {
     // 获取选中的时间段数据
-    const timeFrame = performanceData.timeFrames?.[selectedTimeFrame];
+    const timeFrameData = performanceData.timeFrames?.[timeFrame];
     
     // 如果没有当前时间段的数据，返回总体指标
-    if (!timeFrame) {
-      console.warn(`未找到${selectedTimeFrame}时间段数据，使用总体指标`);
+    if (!timeFrameData) {
+      console.warn(`未找到${timeFrame}时间段数据，使用总体指标`);
       return {
         return: performanceData.totalReturn,
         annualized: performanceData.annualizedReturn,
@@ -228,10 +226,10 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data }) => {
     
     // 将timeFrame中的数据映射到所需的格式
     return {
-      return: typeof timeFrame.return === 'number' ? timeFrame.return : 0,
-      annualized: timeFrame.annualized !== undefined ? timeFrame.annualized : performanceData.annualizedReturn,
-      volatility: timeFrame.volatility !== undefined ? timeFrame.volatility : performanceData.volatility,
-      sharpe: timeFrame.sharpe !== undefined ? timeFrame.sharpe : performanceData.sharpeRatio,
+      return: typeof timeFrameData.return === 'number' ? timeFrameData.return : 0,
+      annualized: timeFrameData.annualized !== undefined ? timeFrameData.annualized : performanceData.annualizedReturn,
+      volatility: timeFrameData.volatility !== undefined ? timeFrameData.volatility : performanceData.volatility,
+      sharpe: timeFrameData.sharpe !== undefined ? timeFrameData.sharpe : performanceData.sharpeRatio,
       maxDrawdown: performanceData.maxDrawdown,
       winRate: performanceData.winRate
     };
@@ -253,7 +251,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data }) => {
     { 
       name: t('dashboard.performanceMetrics.totalReturn'), 
       value: currentTimeFrameData.return, 
-      change: performanceData.timeFrames?.[selectedTimeFrame]?.excessReturn || 0,
+      change: performanceData.timeFrames?.[timeFrame]?.excessReturn || 0,
       suffix: '%',
       valueType: 'percent'
     },
@@ -261,7 +259,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data }) => {
       name: t('dashboard.performanceMetrics.annualizedReturn'), 
       value: currentTimeFrameData.annualized, 
       change: calculateChange(
-        performanceData.timeFrames?.[selectedTimeFrame]?.annualized,
+        performanceData.timeFrames?.[timeFrame]?.annualized,
         performanceData.timeFrames?.threeYear?.annualized
       ),
       suffix: '%',
@@ -271,7 +269,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data }) => {
       name: t('dashboard.performanceMetrics.sharpeRatio'), 
       value: currentTimeFrameData.sharpe, 
       change: calculateChange(
-        performanceData.timeFrames?.[selectedTimeFrame]?.sharpe,
+        performanceData.timeFrames?.[timeFrame]?.sharpe,
         performanceData.timeFrames?.threeYear?.sharpe
       ),
       suffix: '',
@@ -288,7 +286,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data }) => {
       name: t('dashboard.performanceMetrics.volatility'), 
       value: currentTimeFrameData.volatility, 
       change: calculateChange(
-        performanceData.timeFrames?.[selectedTimeFrame]?.volatility,
+        performanceData.timeFrames?.[timeFrame]?.volatility,
         performanceData.timeFrames?.threeYear?.volatility
       ),
       suffix: '%',
@@ -306,35 +304,8 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data }) => {
   // 添加调试日志显示最终的指标数据
   console.log('最终计算的指标数据:', metrics);
   
-  // 时间段选项
-  const timeFrameOptions = [
-    { id: 'ytd', label: t('dashboard.timeframes.ytd') },
-    { id: 'oneYear', label: t('dashboard.timeframes.oneYear') },
-    { id: 'threeYear', label: t('dashboard.timeframes.threeYear') },
-    { id: 'fiveYear', label: t('dashboard.timeframes.fiveYear') },
-  ];
-
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 max-w-full mx-auto">
-      {/* 时间段选择器 */}
-      <div className="mb-6 flex justify-end">
-        <div className="flex space-x-1 bg-gray-100 rounded-md p-1">
-          {timeFrameOptions.map((option) => (
-            <button
-              key={option.id}
-              onClick={() => setSelectedTimeFrame(option.id as TimeFrame)}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                selectedTimeFrame === option.id
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      
       {/* 指标卡片 - 使用grid布局 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {metrics.map((metric, index) => (

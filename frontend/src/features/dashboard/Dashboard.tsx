@@ -3,13 +3,14 @@ import { useLanguage } from '../../shared/i18n/LanguageContext'
 import { useParams, Link } from 'react-router-dom'
 import { LanguageSwitcher } from '../../features/common/components'
 import PerformanceMetrics from './components/PerformanceMetrics'
-import FactorExposure from './components/FactorExposure'
+import FactorExposureWrapper from './components/FactorExposureWrapper'
 import RiskMetrics from './components/RiskMetrics'
 import HistoricalTrends from './components/HistoricalTrends'
 import AssetAllocation from './components/AssetAllocation'
 import Comparison from './components/Comparison'
 import PortfolioComposition from './components/PortfolioComposition'
 import { getPortfolioAnalysis, PortfolioAnalysis } from '../../shared/services/portfolioService'
+import TimePeriodSelector, { TimeFrame } from '../../shared/components/TimePeriodSelector'
 
 const Dashboard = ({ portfolioId = '' }) => {
   const { t, language, setLanguage } = useLanguage()
@@ -17,6 +18,9 @@ const Dashboard = ({ portfolioId = '' }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const params = useParams();
   const currentPortfolioId = portfolioId || params.portfolioId || '';
+  
+  // 添加共享的时间周期选择器状态
+  const [selectedTimeFrame, setSelectedTimeFrame] = useState<TimeFrame>('oneYear');
   
   // 分析数据状态
   const [analysisData, setAnalysisData] = useState<PortfolioAnalysis | null>(null);
@@ -136,6 +140,79 @@ const Dashboard = ({ portfolioId = '' }) => {
     }
   };
 
+  // 处理时间周期变更
+  const handleTimeFrameChange = (newTimeFrame: TimeFrame) => {
+    console.log(`Dashboard 时间周期变更: ${selectedTimeFrame} -> ${newTimeFrame}`);
+    setSelectedTimeFrame(newTimeFrame);
+  };
+
+  // 渲染当前激活的标签内容
+  const renderActiveTabContent = () => {
+    if (!analysisData) return null;
+
+    switch (activeTab) {
+      case 'holdings':
+        return <PortfolioComposition portfolioId={currentPortfolioId || 'test-portfolio'} />;
+      case 'allocation':
+        return <AssetAllocation portfolioId={currentPortfolioId || 'test-portfolio'} />;
+      case 'comparison':
+        return <Comparison 
+          portfolioId={currentPortfolioId || 'test-portfolio'} 
+          timeFrame={selectedTimeFrame} 
+        />;
+      case 'performance':
+        if (!analysisData.performance) {
+          return (
+            <div className="p-4 bg-yellow-50 text-yellow-700 rounded-lg">
+              {language === 'en' 
+                ? 'Unable to display performance metrics: No performance data in analysis results.' 
+                : '无法显示绩效指标：分析结果中没有绩效数据。'}
+            </div>
+          );
+        }
+        return <PerformanceMetrics 
+          data={analysisData.performance} 
+          timeFrame={selectedTimeFrame} 
+        />;
+      case 'factors':
+        if (!analysisData.factors) {
+          return (
+            <div className="p-4 bg-yellow-50 text-yellow-700 rounded-lg">
+              {language === 'en' 
+                ? 'Unable to display factor exposure: No factor data in analysis results.' 
+                : '无法显示因子暴露：分析结果中没有因子数据。'}
+            </div>
+          );
+        }
+        try {
+          return <FactorExposureWrapper factors={analysisData.factors} timeFrame={selectedTimeFrame} />;
+        } catch (error) {
+          console.error('Error rendering FactorExposure:', error);
+          return (
+            <div className="p-4 bg-red-50 text-red-700 rounded-lg">
+              {language === 'en' 
+                ? 'An error occurred while displaying factor exposure.' 
+                : '显示因子暴露时发生错误。'}
+            </div>
+          );
+        }
+      case 'risk':
+        return <RiskMetrics 
+          data={analysisData.risk} 
+          portfolioId={currentPortfolioId} 
+          timeFrame={selectedTimeFrame} 
+        />;
+      case 'trends':
+        return <HistoricalTrends 
+          data={analysisData.performance} 
+          portfolioId={currentPortfolioId} 
+          timeFrame={selectedTimeFrame} 
+        />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Top navigation bar - consistent with chat page */}
@@ -198,6 +275,14 @@ const Dashboard = ({ portfolioId = '' }) => {
         {/* 错误显示 */}
         {error && renderError()}
 
+        {/* 添加时间周期选择器 */}
+        <div className="mb-4 flex justify-end">
+          <TimePeriodSelector 
+            selectedTimeFrame={selectedTimeFrame}
+            onChange={handleTimeFrameChange}
+          />
+        </div>
+
         <div className="mb-6">
           <nav className="flex space-x-2 overflow-x-auto pb-2">
             {tabs.map((tab) => (
@@ -220,80 +305,7 @@ const Dashboard = ({ portfolioId = '' }) => {
         {loading && renderLoading()}
 
         {/* 已加载的内容 */}
-        {!loading && !error && (
-          <>
-            {activeTab === 'holdings' && <PortfolioComposition portfolioId={currentPortfolioId || 'test-portfolio'} />}
-            
-            {activeTab === 'allocation' && <AssetAllocation portfolioId={currentPortfolioId || 'test-portfolio'} />}
-            
-            {activeTab === 'comparison' && <Comparison portfolioId={currentPortfolioId || 'test-portfolio'} />}
-            
-            {activeTab === 'performance' && (() => {
-              console.log('Rendering PerformanceMetrics with data:', analysisData?.performance);
-              if (!analysisData) {
-                console.warn('analysisData is null or undefined when rendering PerformanceMetrics');
-                return (
-                  <div className="p-4 bg-yellow-50 text-yellow-700 rounded-lg">
-                    {language === 'en' 
-                      ? 'Unable to display performance metrics: No analysis data available.' 
-                      : '无法显示绩效指标：没有分析数据。'}
-                  </div>
-                );
-              }
-              if (!analysisData.performance) {
-                console.warn('analysisData.performance is null or undefined');
-                return (
-                  <div className="p-4 bg-yellow-50 text-yellow-700 rounded-lg">
-                    {language === 'en' 
-                      ? 'Unable to display performance metrics: No performance data in analysis results.' 
-                      : '无法显示绩效指标：分析结果中没有绩效数据。'}
-                  </div>
-                );
-              }
-              return <PerformanceMetrics data={analysisData.performance} />;
-            })()}
-            
-            {/* Remove the grid wrapper to let components use full width */}
-            {activeTab === 'factors' && (() => {
-              console.log('Rendering FactorExposure component with data:', analysisData?.factors);
-              // 添加一些额外的防御措施和调试信息
-              try {
-                if (!analysisData) {
-                  console.warn('analysisData is null or undefined');
-                  return (
-                    <div className="p-4 bg-yellow-50 text-yellow-700 rounded-lg">
-                      {language === 'en' 
-                        ? 'Unable to display factor exposure: No analysis data available.' 
-                        : '无法显示因子暴露：没有分析数据。'}
-                    </div>
-                  );
-                }
-                if (!analysisData.factors) {
-                  console.warn('analysisData.factors is null or undefined');
-                  return (
-                    <div className="p-4 bg-yellow-50 text-yellow-700 rounded-lg">
-                      {language === 'en' 
-                        ? 'Unable to display factor exposure: No factor data in analysis results.' 
-                        : '无法显示因子暴露：分析结果中没有因子数据。'}
-                    </div>
-                  );
-                }
-                return <FactorExposure factors={analysisData.factors} />;
-              } catch (error) {
-                console.error('Error rendering FactorExposure:', error);
-                return (
-                  <div className="p-4 bg-red-50 text-red-700 rounded-lg">
-                    {language === 'en' 
-                      ? 'An error occurred while displaying factor exposure.' 
-                      : '显示因子暴露时发生错误。'}
-                  </div>
-                );
-              }
-            })()}
-            {activeTab === 'risk' && <RiskMetrics data={analysisData?.risk} />}
-            {activeTab === 'trends' && <HistoricalTrends data={analysisData?.performance} />}
-          </>
-        )}
+        {!loading && !error && analysisData && renderActiveTabContent()}
       </div>
 
       {/* Settings panel - consistent with chat page */}

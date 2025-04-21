@@ -3,9 +3,11 @@ import { useLanguage } from '../../../shared/i18n/LanguageContext';
 import { FactorsData } from '../../../shared/services/portfolioService';
 import { Bar } from 'react-chartjs-2';
 import { formatNumber } from '../../../shared/utils/formatting';
+import { TimeFrame } from '../../../shared/components/TimePeriodSelector';
 
 interface FactorExposureProps {
   factors?: FactorsData;
+  timeFrame?: TimeFrame;
 }
 
 // 更丰富的默认数据，包含实际值和颜色信息
@@ -21,7 +23,7 @@ const DEFAULT_FACTORS = [
   { nameEn: 'Consumer Discretionary', nameZh: '非必需消费品', exposure: 0.38, benchmark: 0.30, category: 'sector' },
 ];
 
-const FactorExposure = ({ factors: propFactors }: FactorExposureProps) => {
+const FactorExposure: React.FC<FactorExposureProps> = ({ factors, timeFrame = 'oneYear' }) => {
   const { language } = useLanguage();
   const [renderError, setRenderError] = useState<Error | null>(null);
   const [factorsForDisplay, setFactorsForDisplay] = useState<any[]>([]);
@@ -31,14 +33,14 @@ const FactorExposure = ({ factors: propFactors }: FactorExposureProps) => {
   // 使用useEffect以安全方式处理数据转换
   useEffect(() => {
     try {
-      console.log('FactorExposure useEffect with propFactors:', propFactors);
+      console.log('FactorExposure useEffect with factors:', factors);
       
       // 如果没有提供数据或者API数据为空，使用默认数据
-      if (!propFactors || 
-          (!Array.isArray(propFactors.styleFactors) || propFactors.styleFactors.length === 0) && 
-          (!Array.isArray(propFactors.industryFactors) || propFactors.industryFactors.length === 0) && 
-          (!Array.isArray(propFactors.countryFactors) || propFactors.countryFactors.length === 0) && 
-          (!Array.isArray(propFactors.otherFactors) || propFactors.otherFactors.length === 0)) {
+      if (!factors || 
+          (!Array.isArray(factors.styleFactors) || factors.styleFactors.length === 0) && 
+          (!Array.isArray(factors.industryFactors) || factors.industryFactors.length === 0) && 
+          (!Array.isArray(factors.countryFactors) || factors.countryFactors.length === 0) && 
+          (!Array.isArray(factors.otherFactors) || factors.otherFactors.length === 0)) {
         console.log('Using default factor data');
         setFactorsForDisplay(DEFAULT_FACTORS);
         
@@ -59,10 +61,10 @@ const FactorExposure = ({ factors: propFactors }: FactorExposureProps) => {
       
       // 确保所有必需的数组属性存在
       const safeFactors: FactorsData = {
-        styleFactors: Array.isArray(propFactors.styleFactors) ? propFactors.styleFactors : [],
-        industryFactors: Array.isArray(propFactors.industryFactors) ? propFactors.industryFactors : [],
-        countryFactors: Array.isArray(propFactors.countryFactors) ? propFactors.countryFactors : [],
-        otherFactors: Array.isArray(propFactors.otherFactors) ? propFactors.otherFactors : [],
+        styleFactors: Array.isArray(factors.styleFactors) ? factors.styleFactors : [],
+        industryFactors: Array.isArray(factors.industryFactors) ? factors.industryFactors : [],
+        countryFactors: Array.isArray(factors.countryFactors) ? factors.countryFactors : [],
+        otherFactors: Array.isArray(factors.otherFactors) ? factors.otherFactors : [],
       };
       
       console.log('Safe factors structure:', safeFactors);
@@ -312,7 +314,13 @@ const FactorExposure = ({ factors: propFactors }: FactorExposureProps) => {
     } finally {
       setIsReady(true);
     }
-  }, [propFactors]);
+  }, [factors]);
+  
+  // 使用useEffect记录当前时间周期
+  useEffect(() => {
+    console.log(`FactorExposure组件使用时间周期: ${timeFrame}`);
+    // 可以在这里根据timeFrame重新获取或处理数据
+  }, [timeFrame]);
   
   // 安全获取数值，处理各种类型情况
   const safeGetNumber = (value: any): number => {
@@ -394,19 +402,17 @@ const FactorExposure = ({ factors: propFactors }: FactorExposureProps) => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <span className={`${factor.exposure > 0 ? 'text-green-600' : factor.exposure < 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                      <span className={`font-medium ${diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : 'text-gray-500'}`}>
                         {formatNumber(factor.exposure)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
-                      {formatNumber(factor.benchmark)}
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                      <span className="text-gray-500">
+                        {formatNumber(factor.benchmark)}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <span 
-                        className={`${
-                          diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : 'text-gray-500'
-                        }`}
-                      >
+                      <span className={`font-medium ${diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : 'text-gray-500'}`}>
                         {diff > 0 ? '+' : ''}{formatNumber(diff)}
                       </span>
                     </td>
@@ -420,60 +426,31 @@ const FactorExposure = ({ factors: propFactors }: FactorExposureProps) => {
     );
   };
 
-  // 简单加载指示器
   if (!isReady) {
     return (
-      <div className="bg-white rounded-lg shadow p-6 w-full flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+      <div className="flex justify-center items-center h-48">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">{language === 'en' ? 'Factor Exposure' : '因子暴露'}</h2>
-        
-        {renderErrorMessage()}
-        
-        <div className="mb-6">
-          <p className="text-gray-600">
-            {language === 'en' 
-              ? 'This analysis shows how your portfolio is exposed to different factors relative to the benchmark.' 
-              : '此分析显示您的投资组合相对于基准的各种因子暴露情况。'}
-          </p>
+      {renderErrorMessage()}
+      
+      {Object.keys(groupedFactors).map((category) => 
+        renderFactorCategory(category, groupedFactors[category])
+      )}
+      
+      {Object.keys(groupedFactors).length === 0 && (
+        <div className="p-4 bg-yellow-50 rounded-md text-yellow-700">
+          {language === 'en' 
+            ? 'No factor data available for display.' 
+            : '没有可显示的因子数据。'}
         </div>
-        
-        {/* 按照分类显示各组因子 */}
-        {Object.keys(groupedFactors).map(category => 
-          renderFactorCategory(category, groupedFactors[category])
-        )}
-        
-        {/* 图例说明 */}
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">
-            {language === 'en' ? 'How to interpret' : '如何解读'}
-          </h3>
-          <div className="flex items-center mb-2">
-            <div className="w-4 h-4 bg-green-500 rounded mr-2"></div>
-            <span className="text-sm text-gray-600">
-              {language === 'en' 
-                ? 'Positive exposure: your portfolio has higher exposure to this factor' 
-                : '正面暴露：您的投资组合对该因子有较高暴露'}
-            </span>
-          </div>
-          <div className="flex items-center mb-2">
-            <div className="w-4 h-4 bg-red-500 rounded mr-2"></div>
-            <span className="text-sm text-gray-600">
-              {language === 'en' 
-                ? 'Negative exposure: your portfolio has lower exposure to this factor' 
-                : '负面暴露：您的投资组合对该因子有较低暴露'}
-            </span>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
 
-export default FactorExposure; 
+export default FactorExposure;

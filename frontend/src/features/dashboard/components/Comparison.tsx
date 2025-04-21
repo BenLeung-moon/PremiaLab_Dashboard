@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { getPortfolioComparison } from '../../../shared/services/portfolioService';
 import { useLanguage } from '../../../shared/i18n/LanguageContext';
 import { formatNumber, formatPercent } from '../../../shared/utils/formatting';
+import { TimeFrame } from '../../../shared/components/TimePeriodSelector';
 
 interface ComparisonProps {
-  portfolioId: string;
+  portfolioId?: string;
+  data?: ComparisonData;
+  timeFrame?: TimeFrame;
 }
 
 // 前端期望的接口定义
@@ -30,7 +33,7 @@ interface ComparisonData {
   胜率?: number;
 }
 
-const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
+const Comparison: React.FC<ComparisonProps> = ({ portfolioId, data, timeFrame = 'oneYear' }) => {
   const { language } = useLanguage();
   const [comparison, setComparison] = useState<ComparisonData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,6 +41,8 @@ const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
   const [benchmarkMissing, setBenchmarkMissing] = useState(false);
 
   useEffect(() => {
+    console.log(`Comparison组件使用时间周期: ${timeFrame}`);
+    
     const fetchComparison = async () => {
       try {
         setLoading(true);
@@ -70,7 +75,7 @@ const Comparison: React.FC<ComparisonProps> = ({ portfolioId }) => {
     };
 
     fetchComparison();
-  }, [portfolioId, language]);
+  }, [timeFrame, portfolioId, language]);
 
   if (loading) {
     return (

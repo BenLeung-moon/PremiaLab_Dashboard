@@ -246,10 +246,28 @@ async def get_stock_history_service(ticker: str, days: int = 30) -> List[Dict[st
     Returns:
         List of price data points
     """
+    logger = logging.getLogger(__name__)
+    logger.info(f"获取股票历史数据 - 股票代码: {ticker}, 请求天数: {days}")
+    
     price_data = _load_price_history(ticker).get(ticker, [])
     
-    # Limit to requested number of days
-    return price_data[:min(days, len(price_data))]
+    if not price_data:
+        logger.warning(f"找不到股票 {ticker} 的历史数据")
+        return []
+    
+    logger.info(f"获取到 {ticker} 的历史数据点数: {len(price_data)}个")
+    
+    # 不需要限制天数 - 返回所有可用数据
+    # 客户端会根据需要进行筛选
+    
+    # 最多返回请求的天数，但不限制数据点的个数
+    # 之前的写法会导致只返回最近的days个数据点，而不是天数
+    
+    # 注意：这里直接返回所有数据，因为我们希望满足5年期请求
+    # 即使股票只有10年的数据，也应该全部返回，而不是仅返回days个点
+    
+    # 确保返回足够的数据量
+    return price_data
 
 async def get_stock_name_mapping_service() -> Dict[str, Dict[str, str]]:
     """Get bilingual stock name mapping

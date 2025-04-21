@@ -23,6 +23,7 @@ import {
   Filler
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import TimePeriodSelector, { TimeFrame } from '../../../shared/components/TimePeriodSelector';
 
 // 注册Chart.js组件
 ChartJS.register(
@@ -40,6 +41,7 @@ interface HistoricalTrendsProps {
   data?: PerformanceData;
   portfolioId?: string;
   historicalTrends?: HistoricalTrendsData;
+  timeFrame?: TimeFrame;
 }
 
 // 定义图表数据类型
@@ -64,7 +66,7 @@ interface ChartData {
 type ApiStatus = 'idle' | 'loading' | 'success' | 'error';
 
 // 添加常量定义
-const AUTO_REFRESH_ENABLED = true;
+const AUTO_REFRESH_ENABLED = false; // 禁用自动刷新
 const REFRESH_INTERVAL = 60000; // 60秒
 
 // 计算累计回报
@@ -84,18 +86,26 @@ const calculateCumulativeReturns = (monthlyReturns: MonthlyReturn[]): Cumulative
   });
 };
 
-// 获取API参数
-const getPeriodParam = (timeFrame: string): 'ytd' | '1year' | '3year' | '5year' => {
+// 适配函数 - 将TimeFrame类型转换为API需要的时间段参数类型
+const getApiPeriodParam = (timeFrame: TimeFrame): 'ytd' | '1year' | '3year' | '5year' => {
   switch(timeFrame) {
     case 'ytd': return 'ytd';
     case 'oneYear': return '1year';
     case 'threeYear': return '3year';
     case 'fiveYear': return '5year';
-    default: return '1year';
+    // API不支持tenYear和all选项，回退到5year
+    case 'tenYear':
+    case 'all':
+    default: return '5year';
   }
 };
 
-const HistoricalTrends = ({ data, portfolioId: propPortfolioId, historicalTrends: propHistoricalTrends }: HistoricalTrendsProps) => {
+const HistoricalTrends = ({ 
+  data, 
+  portfolioId: propPortfolioId, 
+  historicalTrends: propHistoricalTrends,
+  timeFrame = 'oneYear'
+}: HistoricalTrendsProps) => {
   const { portfolioId: urlPortfolioId } = useParams<{ portfolioId: string }>();
   const { language, t } = useLanguage();
   
@@ -108,9 +118,6 @@ const HistoricalTrends = ({ data, portfolioId: propPortfolioId, historicalTrends
   const [apiStatus, setApiStatus] = useState<ApiStatus>((data || propHistoricalTrends) ? 'success' : 'idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  
-  // 添加时间段选择器状态
-  const [selectedTimeFrame, setSelectedTimeFrame] = useState<string>('oneYear');
   
   // 添加数据加载状态
   const [dataLoading, setDataLoading] = useState<boolean>(false);
@@ -132,10 +139,10 @@ const HistoricalTrends = ({ data, portfolioId: propPortfolioId, historicalTrends
     
     setApiStatus('loading');
     try {
-      console.log('正在获取投资组合分析数据，ID:', portfolioId, '时间段:', selectedTimeFrame, '时间:', new Date().toLocaleTimeString());
+      console.log('正在获取投资组合分析数据，ID:', portfolioId, '时间段:', timeFrame, '时间:', new Date().toLocaleTimeString());
       
-      // 获取所选时间段的数据
-      const periodParam = getPeriodParam(selectedTimeFrame);
+      // 获取所选时间段的数据，使用适配函数
+      const periodParam = getApiPeriodParam(timeFrame);
       console.log(`获取${periodParam}时间段的历史趋势数据`);
       
       setErrorMessage(null);
@@ -182,45 +189,14 @@ const HistoricalTrends = ({ data, portfolioId: propPortfolioId, historicalTrends
       setErrorMessage(error.message);
       setApiStatus('error');
     }
-  }, [portfolioId, language, selectedTimeFrame]);
+  }, [portfolioId, timeFrame, language]);
   
-  // 处理时间段更改
-  const handleTimeFrameChange = (newTimeFrame: string) => {
-    console.log(`切换时间段: ${selectedTimeFrame} -> ${newTimeFrame}`);
-    setSelectedTimeFrame(newTimeFrame);
-    
-    // 立即获取新时间段的数据
-    // 使用setTimeout确保状态更新后再fetch
-    setTimeout(() => {
-      fetchData(false);
-    }, 0);
-  };
-  
-  // 初始加载和定时刷新
+  // 监听props变化
   useEffect(() => {
-    let timer: number | undefined;
-    
-    const initData = async () => {
-      console.log('初始加载数据');
-      await fetchData(true);
-      
-      // 设置定时刷新
-      if (AUTO_REFRESH_ENABLED) {
-        timer = setInterval(() => {
-          console.log(`定时刷新数据，当前选择的时间段: ${selectedTimeFrame}`);
-          fetchData(false);
-        }, REFRESH_INTERVAL);
-      }
-    };
-    
-    initData();
-    
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-    // 注意：这里我们不将selectedTimeFrame作为依赖项
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [portfolioId, language]);
+    // 当timeFrame变化时重新获取数据
+    console.log(`HistoricalTrends - 时间周期变化为: ${timeFrame}，重新获取数据`);
+    fetchData(false);
+  }, [timeFrame, fetchData]);
   
   // 在组件挂载和语言变化时输出当前语言设置
   useEffect(() => {
@@ -456,26 +432,9 @@ const HistoricalTrends = ({ data, portfolioId: propPortfolioId, historicalTrends
   // 添加调试日志
   useEffect(() => {
     console.log(`总月度数据点数量: ${monthlyReturns.length}个月`);
-    console.log('当前选择的时间段:', selectedTimeFrame);
-  }, [monthlyReturns.length, selectedTimeFrame]);
+    console.log('当前选择的时间段:', timeFrame);
+  }, [monthlyReturns.length, timeFrame]);
   
-  // 时间段选项
-  const timeFrameOptions = [
-    { id: 'ytd', label: language === 'en' ? 'YTD' : '今年以来' },
-    { id: 'oneYear', label: language === 'en' ? '1 Year' : '1年' },
-    { id: 'threeYear', label: language === 'en' ? '3 Years' : '3年' },
-    { id: 'fiveYear', label: language === 'en' ? '5 Years' : '5年' },
-  ];
-  
-  // 使用useRef保存上一次选择的时间段，帮助调试
-  const prevTimeFrameRef = useRef(selectedTimeFrame);
-  useEffect(() => {
-    if (prevTimeFrameRef.current !== selectedTimeFrame) {
-      console.log(`时间段状态变化: ${prevTimeFrameRef.current} -> ${selectedTimeFrame}`);
-      prevTimeFrameRef.current = selectedTimeFrame;
-    }
-  }, [selectedTimeFrame]);
-
   // 根据所选时间段筛选数据
   const getFilteredMonthlyReturns = useCallback(() => {
     if (!monthlyReturns || monthlyReturns.length === 0) {
@@ -483,7 +442,7 @@ const HistoricalTrends = ({ data, portfolioId: propPortfolioId, historicalTrends
       return [];
     }
     
-    console.log(`筛选前有 ${monthlyReturns.length} 个月的数据，当前选择的时间段: ${selectedTimeFrame}`);
+    console.log(`筛选前有 ${monthlyReturns.length} 个月的数据，当前选择的时间段: ${timeFrame}`);
     
     // 确保月度数据按日期排序（从旧到新）
     const sortedMonths = [...monthlyReturns].sort((a, b) => 
@@ -496,7 +455,7 @@ const HistoricalTrends = ({ data, portfolioId: propPortfolioId, historicalTrends
     let filtered = [];
     
     // 注意：后端已经提供了完整的数据，我们在前端进行筛选
-    switch(selectedTimeFrame) {
+    switch(timeFrame) {
       case 'ytd':
         // 从今年1月开始到当前月份
         filtered = sortedMonths.filter(item => {
@@ -541,7 +500,7 @@ const HistoricalTrends = ({ data, portfolioId: propPortfolioId, historicalTrends
     }
     
     return filtered;
-  }, [monthlyReturns, selectedTimeFrame]);
+  }, [monthlyReturns, timeFrame]);
 
   // 使用筛选后的数据
   const filteredReturns = useMemo(() => getFilteredMonthlyReturns(), [getFilteredMonthlyReturns]);
@@ -795,18 +754,6 @@ const HistoricalTrends = ({ data, portfolioId: propPortfolioId, historicalTrends
         </div>
       </div>
       
-      {/* 加载指示器 - 在数据加载中显示 */}
-      {apiStatus === 'loading' && (
-        <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded mb-4 flex items-center">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-          <p className="text-sm">
-            {language === 'en' 
-              ? `Loading ${timeFrameOptions.find(t => t.id === selectedTimeFrame)?.label} data...` 
-              : `正在加载${timeFrameOptions.find(t => t.id === selectedTimeFrame)?.label}数据...`}
-          </p>
-        </div>
-      )}
-      
       {/* 添加错误指示器，表明当前显示的是默认数据 */}
       {(!historicalTrendsData || !historicalTrendsData.monthlyReturns || historicalTrendsData.monthlyReturns.length === 0) && (
         <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded mb-4">
@@ -822,31 +769,11 @@ const HistoricalTrends = ({ data, portfolioId: propPortfolioId, historicalTrends
       <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded mb-4">
         <p className="text-sm font-medium">
           {language === 'en' 
-            ? `Currently showing: ${timeFrameOptions.find(t => t.id === selectedTimeFrame)?.label} data` 
-            : `当前显示: ${timeFrameOptions.find(t => t.id === selectedTimeFrame)?.label}数据`}
+            ? `Currently showing: ${timeFrame} data` 
+            : `当前显示: ${timeFrame}数据`}
           {filteredReturns.length > 0 && 
             ` (${filteredReturns[0].month} - ${filteredReturns[filteredReturns.length-1].month})`}
         </p>
-      </div>
-      
-      {/* 添加时间段选择器 */}
-      <div className="mb-6 flex justify-end">
-        <div className="flex space-x-1 bg-gray-100 rounded-md p-1">
-          {timeFrameOptions.map((option) => (
-            <button
-              key={option.id}
-              onClick={() => handleTimeFrameChange(option.id)}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                selectedTimeFrame === option.id
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-200'
-              }`}
-              disabled={apiStatus === 'loading'}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
       </div>
       
       {/* 添加累计收益走势图 */}
@@ -926,8 +853,8 @@ const HistoricalTrends = ({ data, portfolioId: propPortfolioId, historicalTrends
         
         <div className="mt-4 text-sm text-gray-600">
           {language === 'en' 
-            ? `Showing monthly returns for: ${timeFrameOptions.find(t => t.id === selectedTimeFrame)?.label}` 
-            : `当前显示时间范围: ${timeFrameOptions.find(t => t.id === selectedTimeFrame)?.label}`}
+            ? `Showing monthly returns for: ${timeFrame}` 
+            : `当前显示时间范围: ${timeFrame}`}
           {filteredReturns.length > 0 && 
             ` (${filteredReturns[0].month || ''} - ${filteredReturns[filteredReturns.length-1].month || ''})`}
         </div>
