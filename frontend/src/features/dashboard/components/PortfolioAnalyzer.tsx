@@ -60,7 +60,6 @@ const PortfolioAnalyzer: React.FC = () => {
     { id: 'performance', label: t('dashboard.performance') },
     { id: 'allocation', label: t('dashboard.allocation') },
     { id: 'risk', label: t('dashboard.risk') },
-    { id: 'comparison', label: t('dashboard.comparison') },
     { id: 'factors', label: '因子暴露' },
     { id: 'trends', label: '历史趋势' }
   ];
@@ -180,13 +179,6 @@ const PortfolioAnalyzer: React.FC = () => {
           <div>
             <h2 className="text-xl font-medium mb-4">风险分析</h2>
             <RiskMetrics data={analysisData.risk} />
-          </div>
-        )}
-        
-        {activeTab === 'comparison' && (
-          <div>
-            <h2 className="text-xl font-medium mb-4">基准比较</h2>
-            <Comparison portfolioId={portfolioId || ''} />
           </div>
         )}
         

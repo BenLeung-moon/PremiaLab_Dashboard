@@ -102,6 +102,28 @@ async def get_portfolio_historical_trends(portfolio_id: str,
         "cumulativeReturns": filtered_cumulative
     }
 
+@router.get("/{portfolio_id}/factors")
+async def get_portfolio_factor_exposure(portfolio_id: str):
+    """
+    获取投资组合的因子暴露数据（风格、行业、国家等）
+    """
+    logger = logging.getLogger(__name__)
+    logger.info(f"因子暴露请求 - 组合ID: {portfolio_id}")
+    
+    analysis = await analyze_portfolio_service(portfolio_id)
+    
+    if not analysis:
+        raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
+    
+    if not analysis.factors:
+        logger.error(f"组合 {portfolio_id} 没有可用的因子暴露数据")
+        # 尝试加载模拟数据
+        from ...utils.market_data import get_mock_factor_exposure
+        return get_mock_factor_exposure()
+    
+    logger.info(f"成功获取组合 {portfolio_id} 的因子暴露数据")
+    return analysis.factors
+
 @router.post("/mock", response_model=PortfolioAnalysis)
 async def mock_analyze_portfolio(portfolio: Portfolio):
     """Analyze a portfolio without saving it"""

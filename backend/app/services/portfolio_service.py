@@ -9,7 +9,6 @@ import logging
 from ..models.portfolio import Portfolio, PortfolioResponse, Ticker
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Data path
@@ -112,9 +111,48 @@ async def create_portfolio_service(portfolio: Portfolio) -> PortfolioResponse:
     logger.info(f"Creating new portfolio: {portfolio.name}")
     portfolios = _load_portfolios()
     
+    # 加载公司信息数据
+    companies_data = {}
+    companies_file = DATA_DIR / "companies.json"
+    if companies_file.exists():
+        try:
+            with open(companies_file, "r") as f:
+                companies_json = json.load(f)
+                companies_data = companies_json.get("companies", {})
+            logger.info(f"Loaded company data for {len(companies_data)} companies")
+        except Exception as e:
+            logger.error(f"Error loading companies.json: {e}")
+    
     # Generate new ID with port- prefix
     new_id = f"port-{len(portfolios) + 1}"
     logger.info(f"Generated portfolio ID: {new_id}")
+    
+    # 处理每个股票，添加行业和地区信息
+    enriched_tickers = []
+    for ticker in portfolio.tickers:
+        ticker_dict = ticker.dict()
+        
+        # 从companies.json获取额外信息
+        if ticker.symbol in companies_data:
+            company_info = companies_data[ticker.symbol]
+            # 添加公司全名
+            if "name" in company_info:
+                ticker_dict["name"] = company_info["name"]
+            # 添加行业信息
+            if not ticker_dict.get("sector") and "sector" in company_info:
+                ticker_dict["sector"] = company_info["sector"]
+            # 添加地区信息
+            if not ticker_dict.get("region") and "region" in company_info:
+                ticker_dict["region"] = company_info["region"]
+            # 添加行业细分信息
+            if not ticker_dict.get("industry") and "industry" in company_info:
+                ticker_dict["industry"] = company_info["industry"]
+            
+            logger.info(f"Enriched ticker {ticker.symbol} with sector: {ticker_dict.get('sector')}, region: {ticker_dict.get('region')}")
+        else:
+            logger.warning(f"No company info found for ticker {ticker.symbol}")
+        
+        enriched_tickers.append(ticker_dict)
     
     # Create portfolio data
     portfolio_data = {
@@ -122,13 +160,16 @@ async def create_portfolio_service(portfolio: Portfolio) -> PortfolioResponse:
         "name": portfolio.name,
         "created_at": datetime.now().isoformat(),
         "user_id": "default_user",
-        "tickers": [ticker.dict() for ticker in portfolio.tickers]
+        "tickers": enriched_tickers
     }
     
     # Log ticker info
     logger.info(f"Portfolio contains {len(portfolio.tickers)} tickers:")
-    for ticker in portfolio.tickers:
-        logger.info(f"  - {ticker.symbol}: {ticker.weight}")
+    for ticker_dict in enriched_tickers:
+        symbol = ticker_dict.get("symbol")
+        weight = ticker_dict.get("weight")
+        sector = ticker_dict.get("sector", "Unknown")
+        logger.info(f"  - {symbol}: {weight} (Sector: {sector})")
     
     # Save to cache
     portfolios[new_id] = portfolio_data
@@ -157,10 +198,49 @@ async def update_portfolio_service(portfolio_id: str, portfolio: Portfolio) -> O
     if portfolio_id not in portfolios:
         return None
     
+    # 加载公司信息数据
+    companies_data = {}
+    companies_file = DATA_DIR / "companies.json"
+    if companies_file.exists():
+        try:
+            with open(companies_file, "r") as f:
+                companies_json = json.load(f)
+                companies_data = companies_json.get("companies", {})
+            logger.info(f"Loaded company data for {len(companies_data)} companies")
+        except Exception as e:
+            logger.error(f"Error loading companies.json: {e}")
+    
+    # 处理每个股票，添加行业和地区信息
+    enriched_tickers = []
+    for ticker in portfolio.tickers:
+        ticker_dict = ticker.dict()
+        
+        # 从companies.json获取额外信息
+        if ticker.symbol in companies_data:
+            company_info = companies_data[ticker.symbol]
+            # 添加公司全名
+            if "name" in company_info:
+                ticker_dict["name"] = company_info["name"]
+            # 添加行业信息
+            if not ticker_dict.get("sector") and "sector" in company_info:
+                ticker_dict["sector"] = company_info["sector"]
+            # 添加地区信息
+            if not ticker_dict.get("region") and "region" in company_info:
+                ticker_dict["region"] = company_info["region"]
+            # 添加行业细分信息
+            if not ticker_dict.get("industry") and "industry" in company_info:
+                ticker_dict["industry"] = company_info["industry"]
+            
+            logger.info(f"Enriched ticker {ticker.symbol} with sector: {ticker_dict.get('sector')}, region: {ticker_dict.get('region')}")
+        else:
+            logger.warning(f"No company info found for ticker {ticker.symbol}")
+        
+        enriched_tickers.append(ticker_dict)
+    
     # Update portfolio data
     portfolio_data = portfolios[portfolio_id]
     portfolio_data["name"] = portfolio.name
-    portfolio_data["tickers"] = [ticker.dict() for ticker in portfolio.tickers]
+    portfolio_data["tickers"] = enriched_tickers
     
     # Save to cache
     portfolios[portfolio_id] = portfolio_data

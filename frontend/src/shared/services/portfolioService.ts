@@ -130,16 +130,21 @@ export interface ComparisonData {
 // 因子数据相关接口
 export interface FactorData {
   name: string;
-  exposure?: number;
-  rawExposure?: number;
-  positive?: boolean;
-  portfolio_exposure?: number;
-  benchmark_exposure?: number;
-  benchmark?: number;
-  value?: number;
-  raw_exposure?: number;
-  benchmarkExposure?: number;
-  difference?: number;
+  // 核心字段 - 后端始终提供
+  portfolio_exposure?: number; // 投资组合暴露值
+  benchmark_exposure?: number; // 基准暴露值
+  difference?: number;        // 差异值
+  category?: string;          // 因子类别: 'style', 'industry', 'country', 'other'
+  
+  // 向后兼容字段 - 旧版API兼容
+  exposure?: number;          // 等效于 portfolio_exposure
+  benchmark?: number;         // 等效于 benchmark_exposure
+  value?: number;             // 等效于 portfolio_exposure
+  raw_exposure?: number;      // 原始暴露值（未校正）
+  rawExposure?: number;       // 原始暴露值（驼峰命名版本）
+  benchmarkExposure?: number; // 等效于 benchmark_exposure（驼峰命名版本）
+  positive?: boolean;         // 是否为正向暴露（已弃用，使用 difference > 0 判断）
+  factor?: string;            // 旧版API使用的因子名称字段，等效于 name
 }
 
 export interface FactorCorrelation {
@@ -154,26 +159,19 @@ export interface RiskContribution {
   displayName?: string;
 }
 
-export interface FactorItem {
-  name: string;
-  exposure?: number;
-  portfolio_exposure?: number;
-  value?: number;
-  raw_exposure?: number;
-  rawExposure?: number;
-  benchmark?: number;
-  benchmark_exposure?: number;
-  benchmarkExposure?: number;
+// 向后兼容旧版本用的接口 - 实际同 FactorData
+export interface FactorItem extends FactorData {
+  // 此接口与 FactorData 相同，保留是为了向后兼容
 }
 
 export interface FactorsData {
-  styleFactors?: FactorData[] | FactorItem[];
-  industryFactors?: FactorData[] | FactorItem[];
-  countryFactors?: FactorData[] | FactorItem[];
-  otherFactors?: FactorData[] | FactorItem[];
-  factorCorrelations?: FactorCorrelation[];
-  riskContributions?: RiskContribution[];
-  hasCorrelationData?: boolean;
+  styleFactors?: FactorData[];      // 风格因子（Value, Growth, Size等）
+  industryFactors?: FactorData[];   // 行业因子（Technology, Healthcare等）
+  countryFactors?: FactorData[];    // 国家/地区因子（US, China等）
+  otherFactors?: FactorData[];      // 其他因子
+  factorCorrelations?: FactorCorrelation[]; // 因子间相关性
+  riskContributions?: RiskContribution[];   // 风险贡献
+  hasCorrelationData?: boolean;     // 是否有相关性数据
 }
 
 // 投资组合分析数据
@@ -529,7 +527,54 @@ export const getPortfolioAllocation = async (portfolioId: string): Promise<any> 
     const analysisData = await getPortfolioAnalysis(portfolioId);
     
     if (analysisData && analysisData.allocation) {
-      return analysisData.allocation;
+      const allocation = analysisData.allocation;
+      
+      // 检查数据格式并在必要时进行转换
+      const result: AllocationData = {
+        sectorDistribution: {},
+        regionDistribution: {},
+        marketCapDistribution: {}
+      };
+      
+      // 处理行业分布数据
+      if (allocation.sectorDistribution) {
+        // 已经是正确格式
+        result.sectorDistribution = allocation.sectorDistribution;
+      } else if (allocation.sector && Array.isArray(allocation.sector)) {
+        // 旧数组格式，需要转换
+        allocation.sector.forEach(item => {
+          if (item.type && item.percentage !== undefined) {
+            result.sectorDistribution[item.type] = item.percentage;
+          }
+        });
+      }
+      
+      // 处理地区分布数据
+      if (allocation.regionDistribution) {
+        // 已经是正确格式
+        result.regionDistribution = allocation.regionDistribution;
+      } else if (allocation.geography && Array.isArray(allocation.geography)) {
+        // 旧数组格式，需要转换
+        allocation.geography.forEach(item => {
+          if (item.region && item.percentage !== undefined) {
+            result.regionDistribution[item.region] = item.percentage;
+          }
+        });
+      }
+      
+      // 处理市值分布数据
+      if (allocation.marketCapDistribution) {
+        result.marketCapDistribution = allocation.marketCapDistribution;
+      } else {
+        // 添加默认市值分布
+        result.marketCapDistribution = {
+          "Large Cap": 70.0,
+          "Mid Cap": 20.0,
+          "Small Cap": 10.0
+        };
+      }
+      
+      return result;
     }
     
     throw new Error('Invalid response format from API');
@@ -675,24 +720,30 @@ export const mockPortfolioAnalysis = (): PortfolioAnalysis => {
       }
     },
     allocation: {
-      sector: [
-        { type: '科技', percentage: 32.5 },
-        { type: '医疗健康', percentage: 15.8 },
-        { type: '金融', percentage: 12.3 },
-        { type: '消费品', percentage: 10.5 },
-        { type: '通信服务', percentage: 8.7 },
-        { type: '工业', percentage: 7.9 },
-        { type: '能源', percentage: 5.3 },
-        { type: '材料', percentage: 4.2 },
-        { type: '公用事业', percentage: 2.8 },
-      ],
-      geography: [
-        { region: '美国', percentage: 45.7 },
-        { region: '中国', percentage: 21.5 },
-        { region: '欧洲', percentage: 15.8 },
-        { region: '日本', percentage: 7.3 },
-        { region: '新兴市场', percentage: 9.7 }
-      ]
+      // 使用新的对象格式而不是数组格式
+      sectorDistribution: {
+        '科技': 32.5,
+        '医疗健康': 15.8,
+        '金融': 12.3,
+        '消费品': 10.5,
+        '通信服务': 8.7,
+        '工业': 7.9,
+        '能源': 5.3,
+        '材料': 4.2,
+        '公用事业': 2.8
+      },
+      regionDistribution: {
+        '美国': 45.7,
+        '中国': 21.5,
+        '欧洲': 15.8,
+        '日本': 7.3,
+        '新兴市场': 9.7
+      },
+      marketCapDistribution: {
+        'Large Cap': 70.0,
+        'Mid Cap': 20.0,
+        'Small Cap': 10.0
+      }
     },
     risk: [
       { name: '波动率', value: '12.5%', status: 'medium', percentage: 60 },

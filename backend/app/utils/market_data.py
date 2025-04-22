@@ -11,16 +11,29 @@ import os
 import yfinance as yf
 from datetime import datetime, timedelta
 import json
+import traceback
+import logging
+
+# 设置日志
+logger = logging.getLogger("app.utils.market_data")
+
+# 配置目录路径
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+
+# 数据文件路径
+PRICE_HISTORY_PATH = os.path.join(DATA_DIR, "Price_History.csv")
+FACTOR_EXPOSURES_PATH = os.path.join(DATA_DIR, "Factor_Exposures.csv")
+FACTOR_COVARIANCE_PATH = os.path.join(DATA_DIR, "Factor_Covariance_Matrix.csv")
+STATIC_DATA_PATH = os.path.join(DATA_DIR, "Static_Data.csv")
+FACTOR_MAPPING_PATH = os.path.join(DATA_DIR, "factor_category_mapping.json")
+COMPANIES_JSON_PATH = os.path.join(DATA_DIR, "companies.json")
 
 # 数据路径
 DATA_DIR = Path(os.path.dirname(os.path.dirname(__file__))) / "data"
 # 缓存目录
 CACHE_DIR = DATA_DIR / "cache"
 CACHE_DIR.mkdir(exist_ok=True)  # 确保缓存目录存在
-STATIC_DATA_PATH = DATA_DIR / "Static_Data.csv"
-PRICE_HISTORY_PATH = DATA_DIR / "Constituent_Price_History.csv"
-FACTOR_EXPOSURES_PATH = DATA_DIR / "Factor_Exposures.csv"
-FACTOR_COVARIANCE_PATH = DATA_DIR / "Factor_Covariance_Matrix.csv"
 
 # 缓存文件路径
 SPY_CACHE_FILE = CACHE_DIR / "spy_data_cache.json"
@@ -35,6 +48,288 @@ _spy_cache_expiry = None
 
 # SPY数据缓存有效期（秒）
 SPY_CACHE_DURATION = 3600  # 1小时
+
+# 全局变量，用于缓存数据
+_price_data = None
+_factor_mapping = None
+
+# 添加新函数
+def get_real_asset_allocation(tickers):
+    """
+    根据 companies.json 计算真实的资产配置数据
+    
+    参数:
+        tickers: 股票列表，可以是股票代码字符串列表或包含symbol和weight属性的对象列表
+        
+    返回:
+        dict: 行业、地区和市值配置的真实数据
+    """
+    # 检查 companies.json 是否存在
+    if not os.path.exists(COMPANIES_JSON_PATH):
+        logger.warning(f"找不到 companies.json 文件，使用模拟数据。路径: {COMPANIES_JSON_PATH}")
+        return get_asset_allocation(tickers)
+    
+    try:
+        # 加载 companies.json 文件
+        with open(COMPANIES_JSON_PATH, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            
+        # 提取公司数据（适应实际的JSON结构）
+        companies_data = data.get('companies', {})
+        
+        # 初始化分布数据
+        sector_allocation = {}
+        region_allocation = {}
+        market_cap_allocation = {}
+        
+        # 检查输入参数类型并处理
+        ticker_symbols = []
+        normalized_weights = {}
+        
+        if isinstance(tickers, list) and len(tickers) > 0:
+            if isinstance(tickers[0], str):
+                # 处理字符串列表，每个股票使用相同权重
+                ticker_symbols = tickers
+                equal_weight = 1.0 / len(tickers)
+                normalized_weights = {symbol: equal_weight for symbol in ticker_symbols}
+            else:
+                # 处理Ticker对象列表
+                # 规范化权重
+                total_weight = sum(ticker.weight for ticker in tickers)
+                ticker_symbols = [ticker.symbol for ticker in tickers]
+                
+                if total_weight == 0:
+                    logger.warning("投资组合权重总和为0，使用均等权重")
+                    normalized_weights = {ticker.symbol: 1.0/len(tickers) for ticker in tickers}
+                else:
+                    normalized_weights = {ticker.symbol: ticker.weight/total_weight for ticker in tickers}
+        else:
+            logger.warning("传入的tickers为空或格式不正确，使用模拟数据")
+            return get_asset_allocation(tickers)
+        
+        # 行业、地区和市值的标准化映射
+        sector_to_code = {
+            "Information Technology": "info_tech",
+            "Financials": "financials",
+            "Communication": "communication",
+            "Communication Services": "communication",
+            "Consumer Discretionary": "consumer_disc",
+            "Consumer Staples": "consumer_staples",
+            "Health Care": "health_care",
+            "Industrials": "industrials",
+            "Energy": "energy",
+            "Materials": "materials",
+            "Utilities": "utilities",
+            "Real Estate": "real_estate",
+            "Other": "other"
+        }
+        
+        region_to_code = {
+            "United States": "us",
+            "Europe": "europe",
+            "Asia": "asia",
+            "China": "china",
+            "Japan": "japan",
+            "Emerging Markets": "emerging",
+            "Other": "other"
+        }
+        
+        market_cap_to_code = {
+            "Large Cap": "large",
+            "Mid Cap": "mid",
+            "Small Cap": "small",
+            "Micro Cap": "micro",
+            "Unknown": "unknown"
+        }
+        
+        # 遍历投资组合中的股票
+        not_found_tickers = []
+        for symbol in ticker_symbols:
+            weight = normalized_weights[symbol]
+            
+            # 查找该股票的公司数据
+            if symbol in companies_data:
+                company = companies_data[symbol]
+                
+                # 提取行业信息并标准化
+                sector = company.get('sector', 'Other')
+                sector_code = sector_to_code.get(sector, 'other')  # 默认为'other'
+                if sector_code in sector_allocation:
+                    sector_allocation[sector_code] += weight * 100
+                else:
+                    sector_allocation[sector_code] = weight * 100
+                
+                # 提取地区信息并标准化
+                region = company.get('region', 'Other')
+                region_code = region_to_code.get(region, 'other')  # 默认为'other'
+                if region_code in region_allocation:
+                    region_allocation[region_code] += weight * 100
+                else:
+                    region_allocation[region_code] = weight * 100
+                
+                # 提取市值分类并标准化
+                market_cap = company.get('marketCap', 'Unknown')
+                market_cap_code = market_cap_to_code.get(market_cap, 'unknown')  # 默认为'unknown'
+                if market_cap_code in market_cap_allocation:
+                    market_cap_allocation[market_cap_code] += weight * 100
+                else:
+                    market_cap_allocation[market_cap_code] = weight * 100
+            else:
+                not_found_tickers.append(symbol)
+                # 如果找不到该股票，分配到 "其他" 类别
+                if "other" in sector_allocation:
+                    sector_allocation["other"] += weight * 100
+                else:
+                    sector_allocation["other"] = weight * 100
+                
+                if "other" in region_allocation:
+                    region_allocation["other"] += weight * 100
+                else:
+                    region_allocation["other"] = weight * 100
+                
+                if "unknown" in market_cap_allocation:
+                    market_cap_allocation["unknown"] += weight * 100
+                else:
+                    market_cap_allocation["unknown"] = weight * 100
+                    
+        # 只在有未找到的股票时才记录日志
+        if not_found_tickers:
+            logger.warning(f"在 companies.json 中找不到 {len(not_found_tickers)} 个股票的数据: {', '.join(not_found_tickers)}")
+        
+        # 如果没有提取到任何数据，使用默认分类
+        if not sector_allocation:
+            sector_allocation = {"other": 100.0}
+        if not region_allocation:
+            region_allocation = {"other": 100.0}
+        if not market_cap_allocation:
+            market_cap_allocation = {
+                "large": 70.0,
+                "mid": 20.0,
+                "small": 10.0
+            }
+        
+        # 返回前端所需的格式 - 添加原始数据和标准化数据
+        return {
+            'sectorDistribution': {k: round(v, 1) for k, v in sector_allocation.items()},
+            'regionDistribution': {k: round(v, 1) for k, v in region_allocation.items()},
+            'marketCapDistribution': {k: round(v, 1) for k, v in market_cap_allocation.items()}
+        }
+    except Exception as e:
+        logger.error(f"计算真实资产配置数据时出错: {str(e)}")
+        # 打印详细错误信息到调试日志
+        logger.debug(traceback.format_exc())
+        # 出错时回退到模拟数据
+        return get_asset_allocation(tickers)
+
+def get_factor_category_mapping():
+    """
+    获取因子分类映射数据
+    
+    返回:
+        dict: 包含因子分类信息的字典
+    """
+    global _factor_mapping
+    
+    # 如果已经加载过映射数据，直接返回
+    if _factor_mapping is not None:
+        return _factor_mapping
+    
+    # 检查映射文件是否存在
+    if not os.path.exists(FACTOR_MAPPING_PATH):
+        logger.warning(f"因子分类映射文件不存在: {FACTOR_MAPPING_PATH}")
+        # 返回一个默认的基础映射
+        return {
+            "categories": {
+                "style": ["Value", "Growth", "Size", "Momentum", "Quality", "Volatility"],
+                "industry": [],
+                "country": [],
+                "other": []
+            },
+            "mapping": {
+                "value": "style",
+                "growth": "style",
+                "size": "style",
+                "momentum": "style",
+                "quality": "style",
+                "volatility": "style",
+                "sector": "industry",
+                "region": "country"
+            },
+            "special_mappings": {
+                "sector": "industry",
+                "region": "country"
+            }
+        }
+    
+    try:
+        # 读取映射文件
+        with open(FACTOR_MAPPING_PATH, 'r', encoding='utf-8') as f:
+            _factor_mapping = json.load(f)
+        logger.info(f"成功加载因子分类映射, 包含 {sum(len(factors) for factors in _factor_mapping['categories'].values())} 个因子")
+        return _factor_mapping
+    except Exception as e:
+        logger.error(f"读取因子分类映射文件时出错: {e}")
+        logger.debug(traceback.format_exc())
+        # 返回一个默认的基础映射
+        return {
+            "categories": {
+                "style": ["Value", "Growth", "Size", "Momentum", "Quality", "Volatility"],
+                "industry": [],
+                "country": [],
+                "other": []
+            },
+            "mapping": {
+                "value": "style",
+                "growth": "style",
+                "size": "style",
+                "momentum": "style",
+                "quality": "style",
+                "volatility": "style",
+                "sector": "industry",
+                "region": "country"
+            },
+            "special_mappings": {
+                "sector": "industry",
+                "region": "country"
+            }
+        }
+
+def get_factor_category(factor_name):
+    """
+    获取给定因子的分类
+    
+    参数:
+        factor_name (str): 因子名称
+        
+    返回:
+        str: 因子分类 ('style', 'industry', 'country', 或 'other')
+    """
+    # 获取映射数据
+    mapping = get_factor_category_mapping()
+    
+    # 尝试直接从映射中获取
+    if factor_name in mapping["mapping"]:
+        return mapping["mapping"][factor_name]
+    
+    # 尝试使用小写名称
+    if factor_name.lower() in mapping["mapping"]:
+        return mapping["mapping"][factor_name.lower()]
+    
+    # 检查特殊映射规则
+    if factor_name in mapping["special_mappings"]:
+        return mapping["special_mappings"][factor_name]
+    
+    if factor_name.lower() in mapping["special_mappings"]:
+        return mapping["special_mappings"][factor_name.lower()]
+    
+    # 尝试使用已定义的分类模式
+    for category, factors in mapping["categories"].items():
+        if any(factor.lower() == factor_name.lower() for factor in factors):
+            return category
+    
+    # 如果无法确定分类，返回 'other'
+    logger.warning(f"未找到因子 '{factor_name}' 的分类，默认归为 'other'")
+    return "other"
 
 def get_spy_data(start_date, end_date):
     """
@@ -53,7 +348,7 @@ def get_spy_data(start_date, end_date):
     
     # 检查内存缓存是否存在且未过期
     if _spy_data_cache is not None and _spy_cache_expiry and _spy_cache_expiry > now:
-        print("使用SPY数据内存缓存")
+        logger.info("使用SPY数据内存缓存")
         return _spy_data_cache
     
     # 检查文件缓存
@@ -64,7 +359,7 @@ def get_spy_data(start_date, end_date):
                 cache_expiry = datetime.fromisoformat(cache_data["expiry"])
                 
                 if cache_expiry > now:
-                    print("使用SPY数据文件缓存")
+                    logger.info("使用SPY数据文件缓存")
                     # 将JSON数据转换回pandas Series
                     dates = pd.to_datetime(cache_data["dates"])
                     values = cache_data["values"]
@@ -76,11 +371,11 @@ def get_spy_data(start_date, end_date):
                     
                     return spy_data
         except Exception as e:
-            print(f"读取SPY缓存文件失败: {e}")
+            logger.error(f"读取SPY缓存文件失败: {e}")
     
     # 首先尝试从本地价格历史文件获取SPX数据
     try:
-        print(f"尝试从本地文件获取SPX数据")
+        logger.info(f"尝试从本地文件获取SPX数据")
         df = pd.read_csv(PRICE_HISTORY_PATH)
         
         # 将日期列转换为日期类型
@@ -113,20 +408,20 @@ def get_spy_data(start_date, end_date):
                 }
                 with open(SPY_CACHE_FILE, "w") as f:
                     json.dump(cache_data, f)
-                print("SPX数据已保存到文件缓存")
+                logger.info("SPX数据已保存到文件缓存")
             except Exception as e:
-                print(f"保存SPY缓存文件失败: {e}")
+                logger.error(f"保存SPY缓存文件失败: {e}")
             
-            print(f"成功获取SPX数据: {len(spy_data)}条记录")
+            logger.info(f"成功获取SPX数据: {len(spy_data)}条记录")
             return spy_data
         else:
-            print("本地文件中未找到SPX数据，尝试从YFinance获取SPY数据")
+            logger.info("本地文件中未找到SPX数据，尝试从YFinance获取SPY数据")
     except Exception as e:
-        print(f"从本地文件获取SPX数据失败: {e}")
+        logger.error(f"从本地文件获取SPX数据失败: {e}")
     
     # 如果本地SPX数据获取失败，则从YFinance获取SPY数据
     try:
-        print(f"从YFinance获取SPY数据，起始日期: {start_date}, 结束日期: {end_date}")
+        logger.info(f"从YFinance获取SPY数据，起始日期: {start_date}, 结束日期: {end_date}")
         spy = yf.Ticker("SPY")
         df = spy.history(start=start_date, end=end_date, interval="1d")
         
@@ -149,22 +444,22 @@ def get_spy_data(start_date, end_date):
             }
             with open(SPY_CACHE_FILE, "w") as f:
                 json.dump(cache_data, f)
-            print("SPY数据已保存到文件缓存")
+            logger.info("SPY数据已保存到文件缓存")
         except Exception as e:
-            print(f"保存SPY缓存文件失败: {e}")
+            logger.error(f"保存SPY缓存文件失败: {e}")
         
-        print(f"成功获取SPY数据: {len(spy_data)}条记录")
+        logger.info(f"成功获取SPY数据: {len(spy_data)}条记录")
         return spy_data
     
     except Exception as e:
-        print(f"从YFinance获取SPY数据失败: {e}")
+        logger.error(f"从YFinance获取SPY数据失败: {e}")
         # 如果出错但有旧的缓存，返回旧缓存
         if _spy_data_cache is not None:
-            print("使用过期的SPY数据内存缓存")
+            logger.info("使用过期的SPY数据内存缓存")
             return _spy_data_cache
         
         # 否则返回空的Series
-        print("返回空的SPY数据")
+        logger.info("返回空的SPY数据")
         return pd.Series()
 
 def get_static_data():
@@ -332,33 +627,49 @@ def get_asset_allocation(tickers):
     
     # 行业配置
     sector_allocation = {}
+    
+    # 行业标准化映射 (与get_real_asset_allocation中保持一致)
+    sector_to_code = {
+        "Information Technology": "info_tech",
+        "Financials": "financials",
+        "Communication": "communication",
+        "Communication Services": "communication",
+        "Consumer Discretionary": "consumer_disc",
+        "Consumer Staples": "consumer_staples",
+        "Health Care": "health_care",
+        "Industrials": "industrials",
+        "Energy": "energy",
+        "Materials": "materials",
+        "Utilities": "utilities",
+        "Real Estate": "real_estate",
+        "Other": "other"
+    }
+    
     for ticker in tickers:
         if ticker.symbol in static_data.index:
             sector = static_data.loc[ticker.symbol, 'sector']
-            if sector in sector_allocation:
-                sector_allocation[sector] += ticker.weight * 100
+            sector_code = sector_to_code.get(sector, 'other')
+            if sector_code in sector_allocation:
+                sector_allocation[sector_code] += ticker.weight * 100
             else:
-                sector_allocation[sector] = ticker.weight * 100
+                sector_allocation[sector_code] = ticker.weight * 100
         
-    # 地区配置（模拟数据，实际应从静态数据中提取）
+    # 地区配置（使用标准化的代码）
     region_allocation = {
-        "United States": 0,
-        "Europe": 0, 
-        "Asia": 0,
-        "Other": 0
+        "us": 100.0,  # 假设所有股票都是美国的
+        "europe": 0.0,
+        "asia": 0.0,
+        "other": 0.0
     }
-    
-    # 假设所有股票都是美国的
-    region_allocation["United States"] = 100
     
     # 转换为前端所需格式
     allocation_data = {
         'sectorDistribution': {k: round(v, 1) for k, v in sector_allocation.items()},
-        'regionDistribution': {k: round(v, 1) for k, v in region_allocation.items()},
+        'regionDistribution': region_allocation,
         'marketCapDistribution': {
-            "Large Cap": 70.0,
-            "Mid Cap": 20.0,
-            "Small Cap": 10.0
+            "large": 70.0,
+            "mid": 20.0,
+            "small": 10.0
         }
     }
     
@@ -366,354 +677,415 @@ def get_asset_allocation(tickers):
 
 def get_portfolio_factor_exposure(tickers):
     """
-    计算投资组合因子暴露，考虑因子间相关性
+    计算投资组合的因子暴露度
     
     参数:
-        tickers: 股票列表，包含symbol和weight属性
+        tickers: 股票代码列表，可以是单纯的字符串列表或具有symbol属性的对象列表
         
     返回:
-        dict: 因子暴露数据，包括原始暴露和考虑相关性后的调整暴露
+        dict: 投资组合的因子暴露度数据，包括风格因子、行业因子和国家因子
     """
-    # 加载因子暴露数据
-    global _factor_exposures, _factor_covariance
+    logger.debug(f"Factor_Exposures.csv exists: {os.path.exists(FACTOR_EXPOSURES_PATH)}")
+    logger.debug(f"Factor_Covariance_Matrix.csv exists: {os.path.exists(FACTOR_COVARIANCE_PATH)}")
+    
+    # 检查输入参数类型
+    ticker_symbols = []
+    if tickers and len(tickers) > 0:
+        if isinstance(tickers[0], str):
+            logger.debug(f"处理字符串ticker列表: {tickers}")
+            ticker_symbols = tickers
+        else:
+            # 从ticker对象中提取symbol属性
+            try:
+                ticker_symbols = [t.symbol for t in tickers]
+                logger.debug(f"从ticker对象中获取的symbol列表: {ticker_symbols}")
+            except AttributeError as e:
+                logger.error(f"提取ticker对象的symbol属性时出错: {e}")
+                # 尝试直接使用tickers作为symbol列表
+                ticker_symbols = tickers
+                logger.warning(f"直接使用传入的tickers作为symbol列表: {ticker_symbols}")
+    else:
+        logger.warning("提供的tickers为空，将返回模拟数据")
+        return get_mock_factor_exposure()
+    
+    # 检查是否有可用的因子数据
+    if not os.path.exists(FACTOR_EXPOSURES_PATH) or not os.path.exists(FACTOR_COVARIANCE_PATH):
+        logger.warning("找不到因子数据文件，使用模拟数据")
+        return get_mock_factor_exposure()
     
     try:
-        # 检查数据文件是否存在
-        print(f"Factor_Exposures.csv exists: {os.path.exists(FACTOR_EXPOSURES_PATH)}")
-        print(f"Factor_Covariance_Matrix.csv exists: {os.path.exists(FACTOR_COVARIANCE_PATH)}")
-        print(f"Static_Data.csv exists: {os.path.exists(STATIC_DATA_PATH)}")
+        # 读取因子暴露度数据
+        factor_exposures = pd.read_csv(FACTOR_EXPOSURES_PATH)
         
-        # 获取股票静态数据，用于行业信息
-        static_data = get_static_data()
-        print(f"Static data loaded: {static_data.shape}, columns: {static_data.columns.tolist()}")
+        # 准备映射和分类
+        factor_mapping = get_factor_category_mapping()
+        categories = factor_mapping.get("categories", {})
         
-        # 获取投资组合中的行业分布
-        sector_allocation = {}
-        ticker_sector_map = {}
+        style_factors = categories.get("style", [])
+        industry_factors = categories.get("industry", [])
+        country_factors = categories.get("country", [])
+        other_factors = categories.get("other", [])
         
-        # 预先提取每个股票的行业信息
-        for ticker in tickers:
-            if ticker.symbol in static_data.index:
-                sector = static_data.loc[ticker.symbol, 'sector']
-                ticker_sector_map[ticker.symbol] = sector
+        logger.debug(f"Style factors: {style_factors[:5]}...")
+        logger.debug(f"Industry factors: {industry_factors[:5]}...")
+        logger.debug(f"Country factors: {country_factors[:5]}...")
+        logger.debug(f"Other factors: {other_factors[:5]}...")
+        
+        # 初始化结果
+        portfolio_exposures = {}
+        for factor in style_factors + industry_factors + country_factors + other_factors:
+            portfolio_exposures[factor] = 0.0
+        
+        # 记录未映射的ticker
+        unmapped_tickers = []
+        
+        # 统计未映射的因子
+        unmapped_factors = []
+        
+        # 处理每支股票
+        mapped_ticker_count = 0
+        for ticker in ticker_symbols:
+            ticker_data = factor_exposures[factor_exposures['Ticker'] == ticker]
+            
+            if len(ticker_data) > 0:
+                mapped_ticker_count += 1
                 
-                # 累计各行业权重
-                if sector in sector_allocation:
-                    sector_allocation[sector] += ticker.weight
+                for factor in portfolio_exposures.keys():
+                    if factor in ticker_data.columns:
+                        # 确保值是有效的数字
+                        value = ticker_data[factor].values[0]
+                        if pd.isna(value) or np.isinf(value):
+                            continue
+                        # 假设每支股票权重相等
+                        portfolio_exposures[factor] += value / len(ticker_symbols)
+                    else:
+                        if factor not in unmapped_factors:
+                            unmapped_factors.append(factor)
+            else:
+                unmapped_tickers.append(ticker)
+        
+        logger.debug(f"Successfully mapped tickers: {mapped_ticker_count} out of {len(ticker_symbols)}")
+        if unmapped_tickers:
+            logger.debug(f"Unmapped tickers: {unmapped_tickers[:5]}...")
+        
+        # 如果没有成功映射任何股票，则使用模拟数据
+        if mapped_ticker_count == 0:
+            logger.warning("没有股票能够成功映射到因子数据，使用模拟数据")
+            return get_mock_factor_exposure()
+        
+        # 读取因子协方差矩阵 - 用于计算风险贡献
+        try:
+            factor_covariance = pd.read_csv(FACTOR_COVARIANCE_PATH, index_col=0)
+            has_covariance = True
+            logger.debug(f"Has covariance data: {has_covariance}")
+            logger.debug(f"Covariance factors: {len(factor_covariance.columns)}")
+            
+            # 确保因子名称一致
+            common_factors = list(set(portfolio_exposures.keys()) & set(factor_covariance.columns))
+            logger.debug(f"Common factors: {len(common_factors)}")
+            
+            # 如果因子协方差数据可用，计算风险贡献
+            if len(common_factors) > 0:
+                # 提取共同因子的暴露度
+                common_exposures = np.array([portfolio_exposures[f] for f in common_factors])
+                
+                # 检查是否存在Inf或NaN值
+                if np.any(np.isnan(common_exposures)) or np.any(np.isinf(common_exposures)):
+                    logger.warning("检测到NaN或Inf值，将替换为0")
+                    common_exposures = np.nan_to_num(common_exposures, nan=0.0, posinf=0.0, neginf=0.0)
+                
+                # 提取共同因子的协方差子矩阵
+                common_covariance = factor_covariance.loc[common_factors, common_factors].values
+                
+                # 检查协方差矩阵是否存在Inf或NaN值
+                if np.any(np.isnan(common_covariance)) or np.any(np.isinf(common_covariance)):
+                    logger.warning("协方差矩阵中检测到NaN或Inf值，将替换为0")
+                    common_covariance = np.nan_to_num(common_covariance, nan=0.0, posinf=0.0, neginf=0.0)
+                
+                # 计算风险贡献
+                factor_contributions = common_exposures @ common_covariance @ common_exposures
+                logger.debug(f"Total risk contribution: {factor_contributions}")
+                
+                # 检查风险贡献是否为有效值
+                if pd.isna(factor_contributions) or np.isinf(factor_contributions) or factor_contributions == 0:
+                    logger.warning("风险贡献为无效值或0，将跳过风险贡献比例计算")
+                    has_covariance = False
                 else:
-                    sector_allocation[sector] = ticker.weight
-        
-        print(f"Portfolio sector allocation: {sector_allocation}")
-        print(f"Tickers sectors mapped: {len(ticker_sector_map)} out of {len(tickers)}")
-        
-        if _factor_exposures is None:
-            try:
-                _factor_exposures = pd.read_csv(FACTOR_EXPOSURES_PATH)
-                _factor_exposures.set_index('Ticker', inplace=True)
-                print(f"Successfully loaded {FACTOR_EXPOSURES_PATH}, shape: {_factor_exposures.shape}")
-                print(f"Columns: {_factor_exposures.columns.tolist()[:5]}...")
-                print(f"Index sample: {_factor_exposures.index.tolist()[:5]}...")
-            except Exception as e:
-                print(f"Error loading Factor_Exposures.csv: {e}")
-                # 无法读取因子暴露数据，返回模拟数据
-                return get_mock_factor_exposure()
-        
-        # 加载因子协方差矩阵 - 用于计算因子间相关性
-        if _factor_covariance is None:
-            try:
-                _factor_covariance = pd.read_csv(FACTOR_COVARIANCE_PATH)
-                # 将第一列设为索引
-                if 'Factor' in _factor_covariance.columns:
-                    _factor_covariance.set_index('Factor', inplace=True)
-                print(f"Successfully loaded {FACTOR_COVARIANCE_PATH}, shape: {_factor_covariance.shape}")
-            except Exception as e:
-                print(f"Error loading Factor_Covariance_Matrix.csv: {e}")
-                # 无法读取因子协方差数据，但可以继续使用暴露数据
-        
-        # 获取数据中所有可用的因子列
-        all_factors = _factor_exposures.columns.tolist()
-        
-        # 按照因子类型分组（可以根据实际数据结构调整）
-        style_factors = ['Value', 'Growth', 'Size', 'Momentum', 'Quality', 'Volatility']
-        industry_factors = [f for f in all_factors if f.startswith('Industry_')]
-        country_factors = [f for f in all_factors if f.startswith('Country_')]
-        
-        # 将剩余因子归类为其他因子
-        other_factors = [f for f in all_factors if f not in style_factors + industry_factors + country_factors]
-        
-        print(f"Style factors: {style_factors}")
-        print(f"Industry factors: {industry_factors[:5]}...")
-        print(f"Country factors: {country_factors[:5]}...")
-        print(f"Other factors: {other_factors[:5]}...")
-        
-        # 1. 计算原始投资组合因子暴露（未考虑相关性）
-        raw_exposures = {}
-        
-        # 记录成功映射的Ticker
-        mapped_tickers = []
-        for factor in all_factors:
-            if factor in _factor_exposures.columns:
-                exposure = 0
-                factors_mapped = 0
-                for ticker in tickers:
-                    if ticker.symbol in _factor_exposures.index:
-                        if not pd.isna(_factor_exposures.loc[ticker.symbol, factor]):
-                            exposure += _factor_exposures.loc[ticker.symbol, factor] * ticker.weight
-                            factors_mapped += 1
-                            if ticker.symbol not in mapped_tickers:
-                                mapped_tickers.append(ticker.symbol)
-                
-                raw_exposures[factor] = round(exposure, 2)
-                if factors_mapped == 0:
-                    print(f"Warning: No tickers mapped for factor {factor}")
-        
-        print(f"Successfully mapped tickers: {len(mapped_tickers)} out of {len(tickers)}")
-        unmapped = [t.symbol for t in tickers if t.symbol not in mapped_tickers]
-        print(f"Unmapped tickers: {unmapped[:10]}...")
-        
-        # 2. 考虑因子相关性，计算调整后的暴露
-        adjusted_exposures = raw_exposures.copy()
-        
-        # 检查因子协方差矩阵是否可用
-        has_covariance_data = _factor_covariance is not None and not _factor_covariance.empty
-        print(f"Has covariance data: {has_covariance_data}")
-        
-        if has_covariance_data:
-            # 获取协方差矩阵中的因子列表
-            cov_factors = _factor_covariance.index.tolist()
-            print(f"Covariance factors: {len(cov_factors)}")
-            
-            # 找出原始暴露和协方差矩阵中共有的因子
-            common_factors = [f for f in raw_exposures.keys() if f in cov_factors]
-            print(f"Common factors: {len(common_factors)}")
-            
-            if common_factors:
-                # 提取这些因子的原始暴露值
-                exposures_vector = np.array([raw_exposures.get(f, 0) for f in common_factors])
-                
-                # 从协方差矩阵中提取相应的子矩阵
-                cov_submatrix = _factor_covariance.loc[common_factors, common_factors].values
-                
-                # 计算考虑相关性的风险贡献（风险贡献 = 暴露 * 协方差 * 暴露^T）
-                risk_contribution = np.dot(np.dot(exposures_vector, cov_submatrix), exposures_vector)
-                print(f"Total risk contribution: {risk_contribution}")
-                
-                # 计算每个因子对总风险的贡献
-                for i, factor in enumerate(common_factors):
-                    # 计算这个因子对总风险的边际贡献
-                    marginal_contribution = np.dot(cov_submatrix[i], exposures_vector)
+                    # 计算每个因子的风险贡献占比
+                    factor_marginal_contributions = common_exposures @ common_covariance
                     
-                    # 将边际贡献用作调整系数（标准化处理）
-                    if np.sum(np.abs(marginal_contribution)) > 0:
-                        # 修复: 检查边际贡献是否为标量
-                        if np.isscalar(marginal_contribution):
-                            # 如果是标量，直接使用
-                            adjustment = marginal_contribution / np.abs(marginal_contribution)
-                        else:
-                            # 如果是数组，使用索引
-                            adjustment = marginal_contribution[i] / np.sum(np.abs(marginal_contribution))
-                        
-                        # 应用调整系数，更新暴露值
-                        adjusted_exposures[factor] = round(raw_exposures[factor] * (1 + adjustment * 0.2), 2)
+                    # 检查边际贡献是否包含无效值
+                    if np.any(np.isnan(factor_marginal_contributions)) or np.any(np.isinf(factor_marginal_contributions)):
+                        logger.warning("边际贡献中检测到NaN或Inf值，将替换为0")
+                        factor_marginal_contributions = np.nan_to_num(factor_marginal_contributions, nan=0.0, posinf=0.0, neginf=0.0)
+                    
+                    factor_percentage_contributions = {}
+                    
+                    for i, factor in enumerate(common_factors):
+                        factor_percentage_contributions[factor] = (
+                            factor_marginal_contributions[i] * common_exposures[i] / factor_contributions
+                            if factor_contributions != 0 else 0
+                        )
+                        # 确保值是有效的
+                        if pd.isna(factor_percentage_contributions[factor]) or np.isinf(factor_percentage_contributions[factor]):
+                            factor_percentage_contributions[factor] = 0
+            else:
+                has_covariance = False
+        except Exception as e:
+            logger.error(f"计算风险贡献时出错: {e}")
+            logger.debug(traceback.format_exc())
+            has_covariance = False
         
-        # 假设基准投资组合的因子暴露 - 通常这些应该从实际基准投资组合计算得出
-        # 但这里使用简化的模拟数据
-        benchmark_exposures = {
-            'Value': 0.55,
-            'Growth': 0.35,
-            'Size': 0.10,
-            'Momentum': 0.45,
-            'Quality': 0.60,
-            'Volatility': -0.15
-        }
+        # 获取基准数据 - 假设S&P 500
+        benchmark_exposures = {}
+        for factor in portfolio_exposures.keys():
+            benchmark_exposures[factor] = 0.0  # 默认为0
         
-        # 3. 将风格因子转换为前端所需格式
-        style_factors_data = []
+        # 计算投资组合相对于基准的暴露度差异
+        exposure_diffs = {}
+        for factor in portfolio_exposures.keys():
+            exposure_diffs[factor] = portfolio_exposures[factor] - benchmark_exposures[factor]
+        
+        # 格式化结果
+        # 1. 风格因子
+        style_exposures = []
         for factor in style_factors:
-            if factor in adjusted_exposures:
-                adjusted_exposure = adjusted_exposures[factor]
-                raw_exposure = raw_exposures[factor]
-                benchmark_exposure = benchmark_exposures.get(factor, 0.0)
-                difference = round(adjusted_exposure - benchmark_exposure, 2)
+            if factor in portfolio_exposures:
+                # 确保所有值都是有效的，替换NaN或Inf值
+                port_exp = portfolio_exposures[factor]
+                bench_exp = benchmark_exposures[factor]
+                diff_exp = exposure_diffs[factor]
                 
-                # 使用新的前端需要的格式 (portfolio_exposure, benchmark_exposure, difference)
-                style_factors_data.append({
+                if pd.isna(port_exp) or np.isinf(port_exp):
+                    port_exp = 0.0
+                if pd.isna(bench_exp) or np.isinf(bench_exp):
+                    bench_exp = 0.0
+                if pd.isna(diff_exp) or np.isinf(diff_exp):
+                    diff_exp = 0.0
+                
+                style_exposures.append({
                     "name": factor,
-                    "portfolio_exposure": adjusted_exposure,
-                    "benchmark_exposure": benchmark_exposure,
-                    "difference": difference
+                    "portfolio_exposure": round(port_exp, 2),
+                    "benchmark_exposure": round(bench_exp, 2),
+                    "difference": round(diff_exp, 2),
+                    "category": "style"
                 })
         
-        # 4. 计算行业因子暴露 - 方法1: 直接使用行业分布
-        industry_factors_data1 = []
-        for sector, weight in sector_allocation.items():
-            if sector and not pd.isna(sector):  # 确保行业不是空值
-                industry_factors_data1.append({
-                    "name": sector,
-                    "portfolio_exposure": round(weight, 2),
-                    "benchmark_exposure": 0.0,  # 默认基准暴露为0
-                    "difference": round(weight, 2)
-                })
+        # 2. 行业因子
+        industry_exposures = []
         
-        # 5. 计算行业因子暴露 - 方法2: 使用因子暴露数据
-        industry_factors_data2 = []
+        # 方法1: 直接使用因子数据
         for factor in industry_factors:
-            if factor in adjusted_exposures:
-                adjusted_exposure = adjusted_exposures[factor]
-                raw_exposure = raw_exposures[factor]
-                # 从因子名称中提取行业名称 (例如 Industry_Technology -> Technology)
-                industry_name = factor.replace('Industry_', '')
-                # 设置一个默认的基准暴露值 
-                benchmark_exposure = 0.0
-                difference = round(adjusted_exposure - benchmark_exposure, 2)
+            if factor in portfolio_exposures:
+                # 确保所有值都是有效的，替换NaN或Inf值
+                port_exp = portfolio_exposures[factor]
+                bench_exp = benchmark_exposures[factor]
+                diff_exp = exposure_diffs[factor]
                 
-                industry_factors_data2.append({
-                    "name": industry_name,
-                    "portfolio_exposure": adjusted_exposure,
-                    "benchmark_exposure": benchmark_exposure,
-                    "difference": difference
-                })
-        
-        # 选择行业因子暴露的方法
-        # 优先使用方法1（直接根据静态数据计算的行业分布），因为更准确
-        # 只有在方法1没有数据时才使用方法2（从因子暴露数据中提取）
-        industry_factors_data = industry_factors_data1 if industry_factors_data1 else industry_factors_data2
-        
-        # 打印用于调试
-        print(f"Industry exposure method used: {'Method 1 (Static Data)' if industry_factors_data1 else 'Method 2 (Factor Data)'}")
-        print(f"Number of industry exposures: {len(industry_factors_data)}")
-        
-        # 6. 将国家/地区因子转换为前端所需格式
-        country_factors_data = []
-        for factor in country_factors:
-            if factor in adjusted_exposures:
-                adjusted_exposure = adjusted_exposures[factor]
-                raw_exposure = raw_exposures[factor]
-                # 从因子名称中提取国家/地区名称 (例如 Country_US -> US)
-                country_name = factor.replace('Country_', '')
-                # 设置一个默认的基准暴露值 
-                benchmark_exposure = 0.0
-                difference = round(adjusted_exposure - benchmark_exposure, 2)
+                if pd.isna(port_exp) or np.isinf(port_exp):
+                    port_exp = 0.0
+                if pd.isna(bench_exp) or np.isinf(bench_exp):
+                    bench_exp = 0.0
+                if pd.isna(diff_exp) or np.isinf(diff_exp):
+                    diff_exp = 0.0
                 
-                country_factors_data.append({
-                    "name": country_name,
-                    "portfolio_exposure": adjusted_exposure,
-                    "benchmark_exposure": benchmark_exposure,
-                    "difference": difference
-                })
-        
-        # 7. 处理其他类型的因子
-        other_factors_data = []
-        for factor in other_factors:
-            if factor in adjusted_exposures:
-                adjusted_exposure = adjusted_exposures[factor]
-                raw_exposure = raw_exposures[factor]
-                # 设置一个默认的基准暴露值 
-                benchmark_exposure = 0.0
-                difference = round(adjusted_exposure - benchmark_exposure, 2)
-                
-                other_factors_data.append({
+                industry_exposures.append({
                     "name": factor,
-                    "portfolio_exposure": adjusted_exposure,
-                    "benchmark_exposure": benchmark_exposure,
-                    "difference": difference
+                    "portfolio_exposure": round(port_exp, 2),
+                    "benchmark_exposure": round(bench_exp, 2),
+                    "difference": round(diff_exp, 2),
+                    "category": "industry"
                 })
         
-        # 8. 计算相关性矩阵数据（用于前端显示）
-        correlation_matrix = []
-        if has_covariance_data and len(style_factors) > 1:
-            # 提取风格因子的相关性矩阵
-            style_factors_lower = [f.lower() for f in style_factors]
-            style_factors_available = [f for f in style_factors if f in cov_factors]
-            
-            if style_factors_available:
-                # 从协方差矩阵计算相关性矩阵
-                cov_subset = _factor_covariance.loc[style_factors_available, style_factors_available]
-                # 计算标准差（对角线是方差）
-                std_devs = np.sqrt(np.diag(cov_subset))
-                # 计算相关性矩阵
-                corr_matrix = np.zeros(cov_subset.shape)
-                for i in range(len(std_devs)):
-                    for j in range(len(std_devs)):
-                        if std_devs[i] > 0 and std_devs[j] > 0:
-                            corr_matrix[i, j] = cov_subset.iloc[i, j] / (std_devs[i] * std_devs[j])
+        # 使用方法2: 使用sector_allocation数据作为替代
+        # 如果方法1没有产生足够的行业暴露数据
+        industry_exposure_method = "Method 1 (Direct)"
+        if len(industry_exposures) < 5:
+            industry_exposure_method = "Method 2 (Factor Data)"
+            try:
+                # 加载真实的行业分配数据
+                asset_allocation = get_real_asset_allocation(tickers)
+                sector_distribution = asset_allocation.get("sectorDistribution", {})
                 
-                # 转换为前端所需格式
-                for i, factor1 in enumerate(style_factors_available):
-                    for j, factor2 in enumerate(style_factors_available):
-                        if i < j:  # 只取上三角矩阵（不包括对角线）
-                            correlation_matrix.append({
-                                "factor1": factor1.lower(),
-                                "factor2": factor2.lower(),
-                                "correlation": round(corr_matrix[i, j], 2)
-                            })
-        
-        # 9. 构建因子风险贡献数据
-        risk_contribution_data = []
-        if has_covariance_data and 'common_factors' in locals() and len(common_factors) > 0:
-            total_risk = risk_contribution if 'risk_contribution' in locals() and risk_contribution > 0 else 1.0
-            for i, factor in enumerate(common_factors):
-                if factor in style_factors:
-                    factor_risk = np.dot(exposures_vector[i], np.dot(cov_submatrix[i], exposures_vector))
-                    risk_contribution_data.append({
-                        "name": factor.lower(),
-                        "contribution": round(factor_risk / total_risk * 100, 1) if total_risk > 0 else 0
+                # 将sector_distribution转换为行业因子格式
+                industry_exposures = []
+                for sector, weight in sector_distribution.items():
+                    # 映射sector代码到行业名称
+                    sector_name_map = {
+                        "info_tech": "Information Technology",
+                        "financials": "Financials",
+                        "communication": "Communication Services",
+                        "consumer_disc": "Consumer Discretionary",
+                        "consumer_staples": "Consumer Staples",
+                        "health_care": "Health Care",
+                        "industrials": "Industrials",
+                        "energy": "Energy",
+                        "materials": "Materials",
+                        "utilities": "Utilities",
+                        "real_estate": "Real Estate",
+                        "other": "Other"
+                    }
+                    
+                    sector_name = sector_name_map.get(sector, sector.capitalize())
+                    
+                    # 行业权重作为暴露度，基准使用默认值
+                    # 确保数值是有效的
+                    if pd.isna(weight) or np.isinf(weight):
+                        weight = 0.0
+                        
+                    industry_exposures.append({
+                        "name": sector_name,
+                        "portfolio_exposure": round(weight, 2),  # 使用行业权重作为暴露度
+                        "benchmark_exposure": 0.0,  # 默认基准暴露度
+                        "difference": round(weight, 2),  # 差异等于投资组合暴露度
+                        "category": "industry"
                     })
+            except Exception as e:
+                logger.error(f"使用sector_allocation作为行业因子时出错: {e}")
+                logger.debug(traceback.format_exc())
         
-        # 10. 返回完整的因子暴露数据
-        result_data = {
-            "styleFactors": style_factors_data,
-            "industryFactors": industry_factors_data,
-            "countryFactors": country_factors_data,
-            "otherFactors": other_factors_data,
-            "factorCorrelations": correlation_matrix,
-            "riskContributions": risk_contribution_data,
-            "hasCorrelationData": has_covariance_data
+        # 3. 国家因子
+        country_exposures = []
+        for factor in country_factors:
+            if factor in portfolio_exposures:
+                # 确保所有值都是有效的，替换NaN或Inf值
+                port_exp = portfolio_exposures[factor]
+                bench_exp = benchmark_exposures[factor]
+                diff_exp = exposure_diffs[factor]
+                
+                if pd.isna(port_exp) or np.isinf(port_exp):
+                    port_exp = 0.0
+                if pd.isna(bench_exp) or np.isinf(bench_exp):
+                    bench_exp = 0.0
+                if pd.isna(diff_exp) or np.isinf(diff_exp):
+                    diff_exp = 0.0
+                
+                country_exposures.append({
+                    "name": factor,
+                    "portfolio_exposure": round(port_exp, 2),
+                    "benchmark_exposure": round(bench_exp, 2),
+                    "difference": round(diff_exp, 2),
+                    "category": "country"
+                })
+        
+        # 如果国家因子不足，可以使用资产配置中的地区数据作为补充
+        if len(country_exposures) < 3:
+            try:
+                asset_allocation = get_real_asset_allocation(tickers)
+                region_distribution = asset_allocation.get("regionDistribution", {})
+                
+                # 将region_distribution转换为国家因子格式
+                region_name_map = {
+                    "us": "United States",
+                    "europe": "Europe",
+                    "asia": "Asia",
+                    "china": "China",
+                    "japan": "Japan",
+                    "emerging": "Emerging Markets",
+                    "other": "Other"
+                }
+                
+                for region, weight in region_distribution.items():
+                    region_name = region_name_map.get(region, region.capitalize())
+                    
+                    # 确保数值是有效的
+                    if pd.isna(weight) or np.isinf(weight):
+                        weight = 0.0
+                    
+                    country_exposures.append({
+                        "name": region_name,
+                        "portfolio_exposure": round(weight, 2),
+                        "benchmark_exposure": 0.0,
+                        "difference": round(weight, 2),
+                        "category": "country"
+                    })
+            except Exception as e:
+                logger.error(f"使用regionDistribution作为国家因子时出错: {e}")
+                logger.debug(traceback.format_exc())
+        
+        # 构建返回结果
+        result = {
+            "styleExposures": style_exposures,
+            "industryExposures": industry_exposures,
+            "countryExposures": country_exposures,
+            "hasCovariance": has_covariance,
+            "mappedTickerCount": mapped_ticker_count,
+            "unmappedTickerCount": len(unmapped_tickers),
+            "industryExposureMethod": industry_exposure_method
         }
         
-        # 打印最终结果的摘要
-        print(f"Final result: {len(style_factors_data)} style factors, {len(industry_factors_data)} industry factors")
-        print(f"Style factors examples: {style_factors_data[:2]}")
-        print(f"Industry factors examples: {industry_factors_data[:2]}")
+        # 最后检查，确保所有数字类型字段都是有效的JSON值
+        for category in ["styleExposures", "industryExposures", "countryExposures"]:
+            for i, item in enumerate(result[category]):
+                for key in ["portfolio_exposure", "benchmark_exposure", "difference"]:
+                    if key in item and (pd.isna(item[key]) or np.isinf(item[key])):
+                        result[category][i][key] = 0.0
         
-        return result_data
-    
+        return result
+        
     except Exception as e:
-        print(f"Error in get_portfolio_factor_exposure: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"计算因子暴露度时出错: {str(e)}")
+        logger.debug(traceback.format_exc())
+        # 出错时返回模拟数据
         return get_mock_factor_exposure()
 
 # 模拟因子暴露数据 - 当实际数据不可用时使用
 def get_mock_factor_exposure():
     """返回模拟因子暴露数据，当实际数据不可用时使用"""
-    print("Using mock factor exposure data")
+    logger.info("使用模拟因子暴露数据")
     
     # 风格因子暴露
     style_factors = [
-        {"name": "Value", "portfolio_exposure": 0.32, "benchmark_exposure": 0.55, "difference": -0.23},
-        {"name": "Growth", "portfolio_exposure": 0.11, "benchmark_exposure": 0.35, "difference": -0.24},
-        {"name": "Size", "portfolio_exposure": -0.15, "benchmark_exposure": 0.10, "difference": -0.25},
-        {"name": "Momentum", "portfolio_exposure": 0.68, "benchmark_exposure": 0.45, "difference": 0.23},
-        {"name": "Quality", "portfolio_exposure": 0.85, "benchmark_exposure": 0.60, "difference": 0.25},
-        {"name": "Volatility", "portfolio_exposure": -0.25, "benchmark_exposure": -0.15, "difference": -0.10}
+        {"name": "Value", "portfolio_exposure": 0.32, "benchmark_exposure": 0.55, "difference": -0.23, "category": get_factor_category("Value")},
+        {"name": "Growth", "portfolio_exposure": 0.85, "benchmark_exposure": 0.35, "difference": 0.50, "category": get_factor_category("Growth")},
+        {"name": "Size", "portfolio_exposure": -0.15, "benchmark_exposure": 0.10, "difference": -0.25, "category": get_factor_category("Size")},
+        {"name": "Momentum", "portfolio_exposure": 0.68, "benchmark_exposure": 0.45, "difference": 0.23, "category": get_factor_category("Momentum")},
+        {"name": "Quality", "portfolio_exposure": 0.85, "benchmark_exposure": 0.60, "difference": 0.25, "category": get_factor_category("Quality")},
+        {"name": "Volatility", "portfolio_exposure": -0.25, "benchmark_exposure": -0.15, "difference": -0.10, "category": get_factor_category("Volatility")}
     ]
     
     # 行业因子暴露
     industry_factors = [
-        {"name": "Information Technology", "portfolio_exposure": 0.67, "benchmark_exposure": 0.0, "difference": 0.67},
-        {"name": "Health Care", "portfolio_exposure": 0.33, "benchmark_exposure": 0.0, "difference": 0.33}
+        {"name": "Information Technology", "portfolio_exposure": 0.67, "benchmark_exposure": 0.22, "difference": 0.45, "category": get_factor_category("Information Technology")},
+        {"name": "Health Care", "portfolio_exposure": 0.33, "benchmark_exposure": 0.15, "difference": 0.18, "category": get_factor_category("Health Care")},
+        {"name": "Financials", "portfolio_exposure": -0.24, "benchmark_exposure": 0.13, "difference": -0.37, "category": get_factor_category("Financials")},
+        {"name": "Consumer Discretionary", "portfolio_exposure": 0.45, "benchmark_exposure": 0.10, "difference": 0.35, "category": get_factor_category("Consumer Discretionary")},
+        {"name": "Communication Services", "portfolio_exposure": 0.38, "benchmark_exposure": 0.12, "difference": 0.26, "category": get_factor_category("Communication Services")},
+        {"name": "Industrials", "portfolio_exposure": -0.12, "benchmark_exposure": 0.11, "difference": -0.23, "category": get_factor_category("Industrials")}
     ]
     
     # 国家因子暴露
     country_factors = [
-        {"name": "United States", "portfolio_exposure": 1.0, "benchmark_exposure": 0.0, "difference": 1.0}
+        {"name": "United States", "portfolio_exposure": 0.78, "benchmark_exposure": 0.65, "difference": 0.13, "category": get_factor_category("United States")},
+        {"name": "China", "portfolio_exposure": 0.25, "benchmark_exposure": 0.18, "difference": 0.07, "category": get_factor_category("China")},
+        {"name": "Europe", "portfolio_exposure": -0.12, "benchmark_exposure": 0.10, "difference": -0.22, "category": get_factor_category("Europe")},
+        {"name": "Japan", "portfolio_exposure": 0.05, "benchmark_exposure": 0.08, "difference": -0.03, "category": get_factor_category("Japan")}
     ]
     
     # 其他因子暴露
     other_factors = [
-        {"name": "Liquidity", "portfolio_exposure": 0.24, "benchmark_exposure": 0.0, "difference": 0.24},
-        {"name": "Market Risk", "portfolio_exposure": -0.35, "benchmark_exposure": 0.0, "difference": -0.35}
+        {"name": "Liquidity", "portfolio_exposure": 0.24, "benchmark_exposure": 0.18, "difference": 0.06, "category": get_factor_category("Liquidity")},
+        {"name": "Market Risk", "portfolio_exposure": -0.35, "benchmark_exposure": -0.12, "difference": -0.23, "category": get_factor_category("Market Risk")},
+        {"name": "Dividend Yield", "portfolio_exposure": 0.42, "benchmark_exposure": 0.35, "difference": 0.07, "category": get_factor_category("Dividend Yield")}
+    ]
+    
+    # 模拟因子相关性数据
+    factor_correlations = [
+        {"factor1": "value", "factor2": "growth", "correlation": -0.65},
+        {"factor1": "value", "factor2": "quality", "correlation": 0.45},
+        {"factor1": "momentum", "factor2": "volatility", "correlation": -0.30},
+        {"factor1": "size", "factor2": "quality", "correlation": 0.20},
+        {"factor1": "quality", "factor2": "volatility", "correlation": -0.25}
+    ]
+    
+    # 模拟风险贡献数据
+    risk_contributions = [
+        {"name": "value", "contribution": 12.5},
+        {"name": "growth", "contribution": 28.3},
+        {"name": "momentum", "contribution": 22.7},
+        {"name": "quality", "contribution": 15.6},
+        {"name": "size", "contribution": 8.2},
+        {"name": "volatility", "contribution": 12.7}
     ]
     
     return {
@@ -721,9 +1093,9 @@ def get_mock_factor_exposure():
         "industryFactors": industry_factors,
         "countryFactors": country_factors,
         "otherFactors": other_factors,
-        "factorCorrelations": [],
-        "riskContributions": [],
-        "hasCorrelationData": False
+        "factorCorrelations": factor_correlations,
+        "riskContributions": risk_contributions,
+        "hasCorrelationData": True
     }
 
 def compare_with_benchmark(tickers, benchmark_ticker="SPY", start_date=None, end_date=None):
@@ -773,11 +1145,11 @@ def compare_with_benchmark(tickers, benchmark_ticker="SPY", start_date=None, end
             if benchmark_ticker not in prices.columns:
                 prices[benchmark_ticker] = spy_prices
             
-            print(f"成功整合SPY数据，共{len(spy_prices[spy_prices.notna()])}条记录")
+            logger.info(f"成功整合SPY数据，共{len(spy_prices[spy_prices.notna()])}条记录")
         else:
-            print("警告: 无法获取SPY数据")
+            logger.warning("警告: 无法获取SPY数据")
     except Exception as e:
-        print(f"整合SPY数据时出错: {e}")
+        logger.error(f"整合SPY数据时出错: {e}")
     
     # 计算收益率
     returns = prices.pct_change().dropna()
@@ -798,12 +1170,12 @@ def compare_with_benchmark(tickers, benchmark_ticker="SPY", start_date=None, end
     
     # 如果没有找到基准数据或基准数据全为0，使用模拟数据
     if not benchmark_found:
-        print(f"警告: 未找到基准 {benchmark_ticker} 的有效数据，使用模拟数据")
+        logger.warning(f"警告: 未找到基准 {benchmark_ticker} 的有效数据，使用模拟数据")
         # 创建一个与投资组合收益率长度相同的模拟基准收益率序列
         # 使用略低于投资组合收益的数据，通常基准表现略差于精心挑选的投资组合
         benchmark_returns = portfolio_returns * 0.85
     else:
-        print(f"使用实际{benchmark_ticker}数据作为基准")
+        logger.info(f"使用实际{benchmark_ticker}数据作为基准")
     
     # 计算主要指标
     portfolio_total_return = (portfolio_returns + 1).prod() - 1

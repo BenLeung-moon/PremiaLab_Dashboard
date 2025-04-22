@@ -137,7 +137,6 @@ export default {
       performance: "绩效指标",
       holdings: "持仓",
       allocation: "资产配置",
-      comparison: "基准比较",
       factors: "因子暴露",
       risk: "风险指标",
       trends: "历史趋势",
@@ -187,7 +186,6 @@ export default {
     performance: "绩效",
     allocation: "配置",
     risk: "风险",
-    comparison: "基准比较",
     marketView: "市场视图",
     stockDetails: "股票详情",
     portfolioDetails: "投资组合详情",
@@ -262,11 +260,27 @@ export default {
     correlationMatrix: "因子相关性矩阵",
     correlationTitle: "相关性",
     correlationExplanation: "因子相关性",
-    correlationDescription: "因子之间可能相互关联，影响整体投资组合风险。绿色表示正相关，红色表示负相关。",
+    correlationDescription: "因子间可能相互关联，影响整体投资组合风险。绿色表示正相关，红色表示负相关。",
     positiveCorrelation: "正相关",
     negativeCorrelation: "负相关",
     riskContribution: "因子风险贡献",
-    riskContributionDescription: "显示每个因子对整体投资组合风险的百分比贡献，考虑暴露幅度和因子相关性。"
+    riskContributionDescription: "显示每个因子对整体投资组合风险的百分比贡献，考虑暴露幅度和因子相关性。",
+    factorDataError: "处理因子数据时发生错误。显示默认值。",
+    
+    // 其他因子和金融指标
+    carbonEfficiency: "碳足印",
+    computersElectronics: "计算机电子",
+    country: "国家",
+    dividendYield: "股息收益率",
+    earningsQuality: "盈利质量",
+    earningsVariability: "盈利波动性",
+    earningsYield: "盈利收益率",
+    esg: "ESG",
+    leverage: "杠杆",
+    investmentQuality: "投资质量",
+    internetSoftwareAndItServices: "互联网软件和IT服务",
+    yield: "收益率",
+    profitability: "盈利能力"
   },
   industries: {
     technology: "科技",
@@ -278,7 +292,15 @@ export default {
     materials: "材料",
     industrials: "工业",
     communication: "通信服务",
-    realestate: "房地产"
+    realestate: "房地产",
+    
+    // 行业因子名称
+    informationTechnology: "信息技术",
+    consumerDiscretionary: "非必需消费品",
+    consumerStaples: "必需消费品",
+    communicationServices: "通信服务",
+    realEstate: "房地产",
+    aerospaceAndDefense: "航空航天与国防"
   },
   countries: {
     us: "美国",
@@ -286,5 +308,37 @@ export default {
     europe: "欧洲",
     japan: "日本",
     emergingmarkets: "新兴市场"
+  },
+  allocation: {
+    sectors: {
+      "info_tech": "信息技术",
+      "financials": "金融",
+      "communication": "通信服务",
+      "consumer_disc": "非必需消费品",
+      "consumer_staples": "必需消费品",
+      "health_care": "医疗保健",
+      "industrials": "工业",
+      "energy": "能源",
+      "materials": "材料",
+      "utilities": "公用事业",
+      "real_estate": "房地产",
+      "other": "其他"
+    },
+    regions: {
+      "us": "美国",
+      "europe": "欧洲",
+      "asia": "亚洲",
+      "china": "中国",
+      "japan": "日本",
+      "emerging": "新兴市场",
+      "other": "其他"
+    },
+    marketCaps: {
+      "large": "大型股",
+      "mid": "中型股",
+      "small": "小型股",
+      "micro": "微型股",
+      "unknown": "未知"
+    }
   }
 }; 

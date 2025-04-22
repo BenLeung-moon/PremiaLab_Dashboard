@@ -13,7 +13,7 @@ from ...services.portfolio_service import (
 from ...services.analysis_service import analyze_portfolio_service
 
 # 设置日志
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("app.api.routes.portfolio")
 
 router = APIRouter()
 

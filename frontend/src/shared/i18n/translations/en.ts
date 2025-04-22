@@ -137,7 +137,6 @@ export default {
       performance: "Performance Metrics",
       holdings: "Holdings",
       allocation: "Asset Allocation",
-      comparison: "Benchmark Comparison",
       factors: "Factor Exposure",
       risk: "Risk Metrics",
       trends: "Historical Trends",
@@ -187,7 +186,6 @@ export default {
     performance: "Performance",
     allocation: "Allocation",
     risk: "Risk",
-    comparison: "Benchmark Comparison",
     marketView: "Market View",
     stockDetails: "Stock Details",
     portfolioDetails: "Portfolio Details",
@@ -266,7 +264,22 @@ export default {
     positiveCorrelation: "Positive",
     negativeCorrelation: "Negative",
     riskContribution: "Factor Risk Contribution",
-    riskContributionDescription: "Shows the percentage contribution of each factor to the overall portfolio risk, considering both exposure magnitude and factor correlations."
+    riskContributionDescription: "Shows the percentage contribution of each factor to the overall portfolio risk, considering both exposure magnitude and factor correlations.",
+    factorDataError: "There was an error processing the factor data. Showing default values instead.",
+    
+    // Additional factors and financial indicators
+    carbonEfficiency: "Carbon Efficiency",
+    computersElectronics: "Computers Electronics",
+    country: "Country",
+    earningsQuality: "Earnings Quality",
+    earningsVariability: "Earnings Variability",
+    earningsYield: "Earnings Yield",
+    esg: "ESG",
+    leverage: "Leverage",
+    investmentQuality: "Investment Quality",
+    internetSoftwareAndItServices: "Internet Software and IT Services",
+    yield: "Yield",
+    profitability: "Profitability"
   },
   industries: {
     technology: "Technology",
@@ -278,7 +291,15 @@ export default {
     materials: "Materials",
     industrials: "Industrials",
     communication: "Communication Services",
-    realestate: "Real Estate"
+    realestate: "Real Estate",
+    
+    // Industry factor names
+    informationTechnology: "Information Technology",
+    consumerDiscretionary: "Consumer Discretionary",
+    consumerStaples: "Consumer Staples",
+    communicationServices: "Communication Services",
+    realEstate: "Real Estate",
+    aerospaceAndDefense: "Aerospace and Defense"
   },
   countries: {
     us: "United States",
@@ -286,5 +307,37 @@ export default {
     europe: "Europe",
     japan: "Japan",
     emergingmarkets: "Emerging Markets"
+  },
+  allocation: {
+    sectors: {
+      "info_tech": "Information Technology",
+      "financials": "Financials",
+      "communication": "Communication Services",
+      "consumer_disc": "Consumer Discretionary",
+      "consumer_staples": "Consumer Staples",
+      "health_care": "Health Care",
+      "industrials": "Industrials",
+      "energy": "Energy",
+      "materials": "Materials",
+      "utilities": "Utilities",
+      "real_estate": "Real Estate",
+      "other": "Other"
+    },
+    regions: {
+      "us": "United States",
+      "europe": "Europe",
+      "asia": "Asia",
+      "china": "China",
+      "japan": "Japan",
+      "emerging": "Emerging Markets",
+      "other": "Other"
+    },
+    marketCaps: {
+      "large": "Large Cap",
+      "mid": "Mid Cap",
+      "small": "Small Cap",
+      "micro": "Micro Cap",
+      "unknown": "Unknown"
+    }
   }
 }; 

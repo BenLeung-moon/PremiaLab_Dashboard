@@ -7,7 +7,6 @@ import FactorExposureWrapper from './components/FactorExposureWrapper'
 import RiskMetrics from './components/RiskMetrics'
 import HistoricalTrends from './components/HistoricalTrends'
 import AssetAllocation from './components/AssetAllocation'
-import Comparison from './components/Comparison'
 import PortfolioComposition from './components/PortfolioComposition'
 import { getPortfolioAnalysis, PortfolioAnalysis } from '../../shared/services/portfolioService'
 import TimePeriodSelector, { TimeFrame } from '../../shared/components/TimePeriodSelector'
@@ -94,7 +93,6 @@ const Dashboard = ({ portfolioId = '' }) => {
     { id: 'performance', label: language === 'en' ? 'Performance Metrics' : '绩效指标' },
     { id: 'holdings', label: language === 'en' ? 'Holdings' : '持仓明细' },
     { id: 'allocation', label: language === 'en' ? 'Asset Allocation' : '资产配置' },
-    { id: 'comparison', label: language === 'en' ? 'Benchmark Comparison' : '基准比较' },
     { id: 'factors', label: language === 'en' ? 'Factor Exposure' : '因子暴露' },
     { id: 'risk', label: language === 'en' ? 'Risk Metrics' : '风险指标' },
     { id: 'trends', label: language === 'en' ? 'Historical Trends' : '历史趋势' },
@@ -155,11 +153,6 @@ const Dashboard = ({ portfolioId = '' }) => {
         return <PortfolioComposition portfolioId={currentPortfolioId || 'test-portfolio'} />;
       case 'allocation':
         return <AssetAllocation portfolioId={currentPortfolioId || 'test-portfolio'} />;
-      case 'comparison':
-        return <Comparison 
-          portfolioId={currentPortfolioId || 'test-portfolio'} 
-          timeFrame={selectedTimeFrame} 
-        />;
       case 'performance':
         if (!analysisData.performance) {
           return (
@@ -263,13 +256,6 @@ const Dashboard = ({ portfolioId = '' }) => {
               {language === 'en' ? 'Portfolio ID' : '投资组合ID'}: {currentPortfolioId}
             </div>
           )}
-        </div>
-
-        {/* 投资组合信息栏 */}
-        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3 flex justify-between items-center">
-          <span className="text-blue-700 text-sm">
-            {language === 'en' ? `Analyzing portfolio ID: ${currentPortfolioId}` : `正在分析投资组合 ID: ${currentPortfolioId}`}
-          </span>
         </div>
 
         {/* 错误显示 */}

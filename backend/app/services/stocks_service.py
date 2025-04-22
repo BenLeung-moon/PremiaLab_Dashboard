@@ -10,7 +10,6 @@ from datetime import datetime
 import logging
 
 # 设置日志
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Data path

@@ -12,9 +12,9 @@ from ..models.portfolio import Portfolio, PortfolioAnalysis
 from .portfolio_service import get_portfolio_service
 from .stocks_service import get_stock_history_service
 import math
+from ..utils.market_data import get_portfolio_factor_exposure, get_real_asset_allocation
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Data path
@@ -23,7 +23,7 @@ DATA_DIR.mkdir(exist_ok=True)
 
 async def analyze_portfolio_service(portfolio_id: str, period: str = "5year") -> Optional[PortfolioAnalysis]:
     """Analyze a specific portfolio by ID"""
-    logger.info(f"Analyzing portfolio with ID: {portfolio_id}, period: {period}")
+    logger.debug(f"Analyzing portfolio with ID: {portfolio_id}, period: {period}")
     
     # Get portfolio
     portfolio_response = await get_portfolio_service(portfolio_id)
@@ -39,7 +39,7 @@ async def analyze_portfolio_service(portfolio_id: str, period: str = "5year") ->
             logger.error(f"Portfolio not found with ID {portfolio_id}")
             return None
     
-    logger.info(f"Portfolio found: {portfolio_response.name}, with {len(portfolio_response.tickers)} tickers")
+    logger.debug(f"Portfolio found: {portfolio_response.name}, with {len(portfolio_response.tickers)} tickers")
     
     # Convert to Portfolio object for analysis
     portfolio = Portfolio(
@@ -68,10 +68,10 @@ async def analyze_portfolio_service(portfolio_id: str, period: str = "5year") ->
         # 默认5年
         days = 5 * trading_days_per_year + 40
     
-    logger.info(f"Using {days} trading days for period: {period} (with {trading_days_per_month} trading days per month)")
+    logger.debug(f"Using {days} trading days for period: {period} (with {trading_days_per_month} trading days per month)")
     
     # Return analysis with specified time period
-    logger.info(f"Generating analysis for portfolio {portfolio_id}")
+    logger.debug(f"Generating analysis for portfolio {portfolio_id}")
     return await analyze_portfolio(portfolio, days, period)
 
 async def analyze_portfolio(portfolio: Portfolio, days: int, period: str) -> PortfolioAnalysis:
@@ -91,16 +91,16 @@ async def analyze_portfolio(portfolio: Portfolio, days: int, period: str) -> Por
     
     # Calculate risk metrics
     risk = _calculate_risk_metrics(historical_data, weights)
-    logger.info(f"Calculate risk metrics completed, returned {len(risk)} metrics")
+    logger.debug(f"Calculate risk metrics completed, returned {len(risk)} metrics")
     
     # Calculate comparison with benchmarks
     comparison = _calculate_comparison(historical_data, weights)
     
     # Calculate factor exposure
-    factors = _calculate_factor_exposure(portfolio.tickers)
+    factors = _calculate_factor_exposure(tickers)
     
     # 明确记录当前请求的时间段
-    logger.info(f"Calculating historical trends for period: {period} (days: {days})")
+    logger.debug(f"Calculating historical trends for period: {period} (days: {days})")
     
     # Calculate historical trends data - 直接传递请求的天数到历史趋势计算函数
     historical_trends = _calculate_historical_trends(historical_data, weights, days)
@@ -115,7 +115,7 @@ async def analyze_portfolio(portfolio: Portfolio, days: int, period: str) -> Por
         historical_trends=historical_trends
     )
     
-    logger.info(f"Portfolio analysis completed with components: performance={bool(performance)}, "
+    logger.debug(f"Portfolio analysis completed with components: performance={bool(performance)}, "
                 f"allocation={bool(allocation)}, risk={bool(risk)} ({len(risk) if risk else 0} metrics), "
                 f"comparison={bool(comparison)}, factors={bool(factors)}, "
                 f"historical_trends={bool(historical_trends)}")
@@ -144,7 +144,7 @@ async def mock_analyze_portfolio_service(portfolio: Portfolio) -> PortfolioAnaly
     comparison = _calculate_comparison(historical_data, weights)
     
     # Calculate factor exposure
-    factors = _calculate_factor_exposure(portfolio.tickers)
+    factors = _calculate_factor_exposure(tickers)
     
     return PortfolioAnalysis(
         performance=performance,
@@ -156,7 +156,7 @@ async def mock_analyze_portfolio_service(portfolio: Portfolio) -> PortfolioAnaly
 
 async def _get_historical_data(tickers, days=365):
     """Get real historical price data for tickers"""
-    logger.info(f"Getting historical data for {len(tickers)} tickers over {days} days")
+    logger.debug(f"Getting historical data for {len(tickers)} tickers over {days} days")
     
     # Create empty DataFrame to store results
     data = pd.DataFrame()
@@ -165,7 +165,10 @@ async def _get_historical_data(tickers, days=365):
     all_tickers = tickers.copy()
     if 'SPX' not in all_tickers:
         all_tickers.append('SPX')
-        logger.info("Added SPX to the list of tickers for benchmark comparison")
+        logger.debug("Added SPX to the list of tickers for benchmark comparison")
+    
+    # 改为仅记录未获取到数据的ticker，避免每个都记录
+    missing_tickers = []
     
     for ticker in all_tickers:
         try:
@@ -176,7 +179,7 @@ async def _get_historical_data(tickers, days=365):
                 if ticker == 'SPX':
                     logger.warning("No SPX data found, benchmark comparisons will use mock data")
                 else:
-                    logger.warning(f"No historical data found for {ticker}, using mock data")
+                    missing_tickers.append(ticker)
                 continue
                 
             # Convert to DataFrame
@@ -189,7 +192,6 @@ async def _get_historical_data(tickers, days=365):
             # Extract price column based on ticker
             if ticker == 'SPX' and 'value' in ticker_df.columns:
                 # For SPX use value column if available
-                logger.info("Using 'value' column for SPX data")
                 prices = ticker_df['value']
                 data[ticker] = prices
             elif 'PRC' in ticker_df.columns:
@@ -200,7 +202,6 @@ async def _get_historical_data(tickers, days=365):
                 # Try to use any available numeric column
                 for col in ticker_df.columns:
                     if pd.api.types.is_numeric_dtype(ticker_df[col]):
-                        logger.info(f"Using '{col}' column for {ticker} data")
                         prices = ticker_df[col]
                         data[ticker] = prices
                         break
@@ -211,6 +212,10 @@ async def _get_historical_data(tickers, days=365):
                 logger.error(f"Error getting SPX benchmark data: {e}")
             else:
                 logger.error(f"Error getting data for {ticker}: {e}")
+    
+    # 只在有未获取到数据的ticker时才记录日志
+    if missing_tickers:
+        logger.warning(f"No historical data found for {len(missing_tickers)} tickers: {', '.join(missing_tickers[:5])}{'...' if len(missing_tickers) > 5 else ''}")
     
     # If we have no data, generate mock data
     if data.empty:
@@ -263,8 +268,8 @@ def _generate_historical_data(tickers, days=365):
 
 def _calculate_statistics(historical_data, weights):
     """Calculate performance statistics for portfolio"""
-    # Create daily returns
-    returns = historical_data.pct_change().dropna()
+    # Create daily returns - 明确指定fill_method
+    returns = historical_data.pct_change(fill_method=None).dropna()
     
     # Check if returns is empty
     if returns.empty:
@@ -301,21 +306,44 @@ def _calculate_statistics(historical_data, weights):
         # If all weights are zero, distribute equally
         adjusted_weights = [1/len(adjusted_weights)] * len(adjusted_weights)
     
-    logger.info(f"Portfolio returns data shape: {portfolio_returns_data.shape}, Adjusted weights length: {len(adjusted_weights)}")
+    logger.debug(f"Portfolio returns data shape: {portfolio_returns_data.shape}, Adjusted weights length: {len(adjusted_weights)}")
     
     # Calculate portfolio returns with adjusted weights
     portfolio_returns = portfolio_returns_data.dot(adjusted_weights)
     
+    # 检查并处理无效值
+    portfolio_returns = portfolio_returns.replace([np.inf, -np.inf], np.nan).fillna(0)
+    
     # Calculate metrics
     annual_return = portfolio_returns.mean() * 252
     annual_volatility = portfolio_returns.std() * np.sqrt(252)
-    sharpe_ratio = annual_return / annual_volatility
+    
+    # 检查是否为有效值
+    if pd.isna(annual_return) or np.isinf(annual_return):
+        logger.warning("Invalid annual return detected, using default value")
+        annual_return = 0.08  # 8% 默认年化收益率
+        
+    if pd.isna(annual_volatility) or np.isinf(annual_volatility) or annual_volatility == 0:
+        logger.warning("Invalid annual volatility detected, using default value")
+        annual_volatility = 0.15  # 15% 默认年化波动率
+        
+    sharpe_ratio = annual_return / annual_volatility if annual_volatility > 0 else 1.0
+    
+    # 检查夏普比率是否有效
+    if pd.isna(sharpe_ratio) or np.isinf(sharpe_ratio):
+        logger.warning("Invalid Sharpe ratio detected, using default value")
+        sharpe_ratio = 1.0  # 默认夏普比率
     
     # Calculate drawdown
     cum_returns = (1 + portfolio_returns).cumprod()
     running_max = cum_returns.cummax()
     drawdown = (cum_returns / running_max) - 1
     max_drawdown = drawdown.min()
+    
+    # 检查最大回撤是否有效
+    if pd.isna(max_drawdown) or np.isinf(max_drawdown):
+        logger.warning("Invalid max drawdown detected, using default value")
+        max_drawdown = -0.15  # 默认最大回撤 -15%
     
     # Generate monthly returns for the chart
     monthly_returns = []
@@ -343,9 +371,15 @@ def _calculate_statistics(historical_data, weights):
     # 确保按月份排序
     monthly_returns.sort(key=lambda x: x["month"])
     
+    # 获取累积收益率并检查是否有效
+    total_return = cum_returns.iloc[-1] - 1 if len(cum_returns) > 0 else annual_return
+    if pd.isna(total_return) or np.isinf(total_return):
+        logger.warning("Invalid total return detected, using annual return instead")
+        total_return = annual_return
+    
     # 转换为前端期望的格式（驼峰命名和百分比值）
     result = {
-        "totalReturn": round(float((cum_returns.iloc[-1] - 1) * 100), 2),
+        "totalReturn": round(float(total_return * 100), 2),
         "annualizedReturn": round(float(annual_return * 100), 2),
         "volatility": round(float(annual_volatility * 100), 2),
         "sharpeRatio": round(float(sharpe_ratio), 2),
@@ -392,48 +426,14 @@ def _calculate_statistics(historical_data, weights):
 
 def _calculate_allocation(tickers):
     """Calculate portfolio allocation by sector"""
-    # Group by sector
-    sectors = {}
-    for ticker in tickers:
-        sector = ticker.sector if ticker.sector else "Other"
-        if sector not in sectors:
-            sectors[sector] = 0
-        sectors[sector] += ticker.weight
-    
-    # Create result
-    sector_data = [
-        {"name": sector, "value": round(weight * 100, 2)}
-        for sector, weight in sectors.items()
-    ]
-    
-    # Group by region (mock data)
-    regions = {
-        "Americas": 0,
-        "Europe": 0,
-        "Asia": 0,
-        "Other": 0
-    }
-    
-    # Assign random regions
-    for ticker in tickers:
-        region = random.choice(list(regions.keys()))
-        regions[region] += ticker.weight
-    
-    region_data = [
-        {"name": region, "value": round(weight * 100, 2)}
-        for region, weight in regions.items()
-        if weight > 0
-    ]
-    
-    return {
-        "sectors": sector_data,
-        "regions": region_data
-    }
+    # 调用专门的资产配置服务函数，获取真实数据
+    logger.debug(f"调用get_real_asset_allocation计算资产配置，tickers类型: {type(tickers)}")
+    return get_real_asset_allocation(tickers)
 
 def _calculate_risk_metrics(historical_data, weights):
     """Calculate risk metrics for the portfolio"""
-    # Calculate daily returns
-    returns = historical_data.pct_change().dropna()
+    # Calculate daily returns - 明确指定fill_method
+    returns = historical_data.pct_change(fill_method=None).dropna()
     
     # Check if returns is empty
     if returns.empty:
@@ -470,26 +470,45 @@ def _calculate_risk_metrics(historical_data, weights):
         # If all weights are zero, distribute equally
         adjusted_weights = [1/len(adjusted_weights)] * len(adjusted_weights)
     
-    logger.info(f"Risk metrics: portfolio returns data shape: {portfolio_returns_data.shape}, Adjusted weights length: {len(adjusted_weights)}")
+    logger.debug(f"Risk metrics: portfolio returns data shape: {portfolio_returns_data.shape}, Adjusted weights length: {len(adjusted_weights)}")
     
     # Calculate portfolio returns with adjusted weights
     portfolio_returns = portfolio_returns_data.dot(adjusted_weights)
     
+    # 处理无效值
+    portfolio_returns = portfolio_returns.replace([np.inf, -np.inf], np.nan).fillna(0)
+    
     # Calculate volatility (annualized)
     volatility = portfolio_returns.std() * np.sqrt(252)
+    if pd.isna(volatility) or np.isinf(volatility) or volatility < 0.001:
+        logger.warning("Invalid volatility detected, using default value")
+        volatility = 0.15  # 默认值15%
     
     # Calculate downside risk (semi-deviation of negative returns)
     downside_returns = portfolio_returns[portfolio_returns < 0]
-    downside_risk = downside_returns.std() * np.sqrt(252) if len(downside_returns) > 0 else volatility * 0.6
+    if len(downside_returns) > 0:
+        downside_risk = downside_returns.std() * np.sqrt(252)
+        if pd.isna(downside_risk) or np.isinf(downside_risk) or downside_risk < 0.001:
+            downside_risk = volatility * 0.6  # 使用波动率的60%作为默认值
+    else:
+        downside_risk = volatility * 0.6
     
     # Calculate Value at Risk (VaR) at 95% confidence
-    var_95 = np.percentile(portfolio_returns, 5) * np.sqrt(252)
+    if len(portfolio_returns) >= 20:  # 需要足够的数据点
+        var_95 = np.percentile(portfolio_returns, 5) * np.sqrt(252)
+        if pd.isna(var_95) or np.isinf(var_95):
+            var_95 = -volatility * 1.65  # 使用正态分布95%置信度的估计
+    else:
+        var_95 = -volatility * 1.65
     
     # Calculate beta against "market" (use SPX if available)
     if 'SPX' in returns.columns:
         market_returns = returns['SPX']
     else:
         market_returns = returns.iloc[:, 0]
+    
+    # 处理市场收益率中的无效值
+    market_returns = market_returns.replace([np.inf, -np.inf], np.nan).fillna(0)
     
     # Ensure market_returns and portfolio_returns have the same index
     common_index = portfolio_returns.index.intersection(market_returns.index)
@@ -499,54 +518,102 @@ def _calculate_risk_metrics(historical_data, weights):
     else:
         port_returns_aligned = portfolio_returns.loc[common_index]
         market_returns_aligned = market_returns.loc[common_index]
-        cov = np.cov(port_returns_aligned, market_returns_aligned)[0, 1]
-        market_var = np.var(market_returns_aligned)
-        if market_var > 0:
-            beta = cov / market_var
-        else:
+        
+        # 计算Beta
+        try:
+            cov = np.cov(port_returns_aligned, market_returns_aligned)[0, 1]
+            market_var = np.var(market_returns_aligned)
+            if market_var > 0:
+                beta = cov / market_var
+                if pd.isna(beta) or np.isinf(beta) or abs(beta) > 3:
+                    logger.warning(f"Unreasonable beta value: {beta}, using default")
+                    beta = 1.0
+            else:
+                beta = 1.0  # 默认值
+        except Exception as e:
+            logger.error(f"Error calculating beta: {str(e)}")
             beta = 1.0  # 默认值
     
     # Calculate maximum drawdown
-    cumulative_returns = (1 + portfolio_returns).cumprod()
-    peak = cumulative_returns.expanding(min_periods=1).max()
-    drawdown = (cumulative_returns / peak) - 1
-    max_drawdown = drawdown.min()
+    try:
+        cumulative_returns = (1 + portfolio_returns).cumprod()
+        peak = cumulative_returns.expanding(min_periods=1).max()
+        drawdown = (cumulative_returns / peak) - 1
+        max_drawdown = drawdown.min()
+        
+        if pd.isna(max_drawdown) or np.isinf(max_drawdown) or max_drawdown < -1:
+            logger.warning("Invalid max drawdown value, using default")
+            max_drawdown = -0.20  # 默认最大回撤 -20%
+    except Exception as e:
+        logger.error(f"Error calculating maximum drawdown: {str(e)}")
+        max_drawdown = -0.20  # 默认值
     
     # Calculate tracking error (difference between portfolio and benchmark returns)
-    if 'SPX' in returns.columns:
-        # Align market and portfolio returns
-        aligned_market = market_returns.loc[common_index]
-        aligned_portfolio = portfolio_returns.loc[common_index]
-        # Calculate tracking error
-        tracking_error = (aligned_portfolio - aligned_market).std() * np.sqrt(252)
+    if 'SPX' in returns.columns and len(common_index) >= 10:
+        try:
+            # Align market and portfolio returns
+            aligned_market = market_returns.loc[common_index]
+            aligned_portfolio = portfolio_returns.loc[common_index]
+            # Calculate tracking error
+            tracking_diff = aligned_portfolio - aligned_market
+            tracking_error = tracking_diff.std() * np.sqrt(252)
+            
+            if pd.isna(tracking_error) or np.isinf(tracking_error) or tracking_error < 0.001:
+                tracking_error = volatility * 0.4  # 估计值
+        except Exception as e:
+            logger.error(f"Error calculating tracking error: {str(e)}")
+            tracking_error = volatility * 0.4  # 估计值
     else:
-        tracking_error = volatility * 0.4  # Estimate if benchmark not available
+        tracking_error = volatility * 0.4  # 估计值
     
     # Calculate information ratio
     if 'SPX' in returns.columns and len(common_index) >= 10:
-        aligned_market = market_returns.loc[common_index]
-        aligned_portfolio = portfolio_returns.loc[common_index]
-        excess_return = aligned_portfolio.mean() - aligned_market.mean()
-        if tracking_error > 0:
-            information_ratio = (excess_return * 252) / tracking_error
-        else:
-            information_ratio = 0.0
+        try:
+            aligned_market = market_returns.loc[common_index]
+            aligned_portfolio = portfolio_returns.loc[common_index]
+            excess_return = aligned_portfolio.mean() - aligned_market.mean()
+            
+            if tracking_error > 0:
+                information_ratio = (excess_return * 252) / tracking_error
+                if pd.isna(information_ratio) or np.isinf(information_ratio) or abs(information_ratio) > 5:
+                    information_ratio = 0.5  # 合理的默认值
+            else:
+                information_ratio = 0.5
+        except Exception as e:
+            logger.error(f"Error calculating information ratio: {str(e)}")
+            information_ratio = 0.5
     else:
-        information_ratio = 1.2  # Default value
+        information_ratio = 0.5  # 默认值
     
     # Calculate Sortino ratio (return / downside risk)
-    avg_return = portfolio_returns.mean() * 252  # Annualized
-    risk_free_rate = 0.03  # Assume 3% risk-free rate
-    if downside_risk > 0:
-        sortino_ratio = (avg_return - risk_free_rate) / downside_risk
-    else:
-        sortino_ratio = 1.5  # Default value
+    try:
+        avg_return = portfolio_returns.mean() * 252  # Annualized
+        if pd.isna(avg_return) or np.isinf(avg_return):
+            avg_return = 0.08  # 默认年化收益率 8%
+            
+        risk_free_rate = 0.03  # Assume 3% risk-free rate
+        
+        if downside_risk > 0:
+            sortino_ratio = (avg_return - risk_free_rate) / downside_risk
+            if pd.isna(sortino_ratio) or np.isinf(sortino_ratio) or abs(sortino_ratio) > 5:
+                sortino_ratio = 1.0  # 合理的默认值
+        else:
+            sortino_ratio = 1.0  # 默认值
+    except Exception as e:
+        logger.error(f"Error calculating Sortino ratio: {str(e)}")
+        sortino_ratio = 1.0  # 默认值
     
     # Calculate Sharpe ratio
-    if volatility > 0:
-        sharpe_ratio = (avg_return - risk_free_rate) / volatility
-    else:
-        sharpe_ratio = 1.0  # Default value
+    try:
+        if volatility > 0:
+            sharpe_ratio = (avg_return - risk_free_rate) / volatility
+            if pd.isna(sharpe_ratio) or np.isinf(sharpe_ratio) or abs(sharpe_ratio) > 5:
+                sharpe_ratio = 1.0  # 合理的默认值
+        else:
+            sharpe_ratio = 1.0  # 默认值
+    except Exception as e:
+        logger.error(f"Error calculating Sharpe ratio: {str(e)}")
+        sharpe_ratio = 1.0  # 默认值
     
     # Prepare data in the format expected by frontend
     risk_data = [
@@ -614,17 +681,6 @@ def _calculate_risk_metrics(historical_data, weights):
             "percentage": min(int(sharpe_ratio * 25) + 50, 95)
         }
     ]
-    
-    # 记录每个指标的评估标准，便于调试和理解
-    logger.debug("风险指标评估标准：")
-    logger.debug("波动率(Volatility): <18% = 好, 18-25% = 中等, >25% = 差")
-    logger.debug("下行风险(Downside Risk): <12% = 好, 12-18% = 中等, >18% = 差")
-    logger.debug("风险价值(VaR): <2.5% = 好, 2.5-3.5% = 中等, >3.5% = 差")
-    logger.debug("贝塔系数(Beta): <0.9 = 好, 0.9-1.1 = 中等, >1.1 = 差")
-    logger.debug("最大回撤(Max Drawdown): <15% = 好, 15-25% = 中等, >25% = 差")
-    logger.debug("信息比率(Information Ratio): >0.5 = 好, 0-0.5 = 中等, <0 = 差")
-    logger.debug("索提诺比率(Sortino Ratio): >1.0 = 好, 0.5-1.0 = 中等, <0.5 = 差")
-    logger.debug("夏普比率(Sharpe Ratio): >1.0 = 好, 0.5-1.0 = 中等, <0.5 = 差")
     
     return risk_data
 
@@ -701,8 +757,8 @@ def _generate_mock_risk_metrics():
 
 def _calculate_comparison(historical_data, weights):
     """Calculate performance comparison with benchmarks"""
-    # Calculate daily returns
-    returns = historical_data.pct_change().dropna()
+    # Calculate daily returns - 明确指定fill_method
+    returns = historical_data.pct_change(fill_method=None).dropna()
     
     # Calculate portfolio returns
     portfolio_tickers = [ticker for ticker in historical_data.columns if ticker != 'SPX']
@@ -838,28 +894,15 @@ def _generate_mock_comparison(num_points=30):
 
 def _calculate_factor_exposure(tickers):
     """Calculate factor exposure for portfolio"""
-    # Mock factor exposures
-    factors = ["Value", "Growth", "Momentum", "Quality", "Size", "Volatility"]
+    # 使用market_data.py中的完整实现
+    from ..utils.market_data import get_portfolio_factor_exposure
     
-    # Create random exposure for portfolio
-    exposures = {}
-    for factor in factors:
-        exposures[factor] = round(random.uniform(-2.0, 2.0), 2)
-    
-    # Format for frontend
-    exposure_data = [
-        {"factor": factor, "exposure": exposure}
-        for factor, exposure in exposures.items()
-    ]
-    
-    return {
-        "exposures": exposure_data,
-        "summary": "This portfolio has a strong Growth and Quality tilt with negative exposure to Value and Size factors."
-    }
+    # 调用实际的因子暴露计算函数
+    return get_portfolio_factor_exposure(tickers)
 
 def _calculate_historical_trends(historical_data, weights, days=1825):  # 默认最多5年数据
     """Calculate historical performance trends for portfolio"""
-    logger.info(f"Calculating historical trends for portfolio with {len(weights)} assets")
+    logger.debug(f"Calculating historical trends for portfolio with {len(weights)} assets")
     
     # 确保我们有足够的数据点
     if historical_data.empty:
@@ -872,8 +915,8 @@ def _calculate_historical_trends(historical_data, weights, days=1825):  # 默认
         logger.warning("No portfolio tickers found in historical data, using mock data")
         return _generate_mock_historical_trends(days)
     
-    # 计算日收益率
-    returns = historical_data[portfolio_tickers].pct_change().dropna()
+    # 计算日收益率 - 明确指定fill_method
+    returns = historical_data[portfolio_tickers].pct_change(fill_method=None).dropna()
     
     # 调整权重以匹配可用数据
     adjusted_weights = []
@@ -895,7 +938,7 @@ def _calculate_historical_trends(historical_data, weights, days=1825):  # 默认
     else:
         adjusted_weights = [1/len(adjusted_weights)] * len(adjusted_weights)
     
-    logger.info(f"Historical trends: portfolio returns data shape: {returns.shape}, Adjusted weights length: {len(adjusted_weights)}")
+    logger.debug(f"Historical trends: portfolio returns data shape: {returns.shape}, Adjusted weights length: {len(adjusted_weights)}")
     
     # 计算投资组合收益率
     portfolio_returns = returns.dot(adjusted_weights)
@@ -946,9 +989,16 @@ def _calculate_historical_trends(historical_data, weights, days=1825):  # 默认
             if date in monthly_benchmark.index:
                 bench_return = monthly_benchmark[date]
                 
-                # 确保数据在合理范围内
-                port_return = min(max(port_return, -0.3), 0.3)  # 限制在-30%到30%之间
-                bench_return = min(max(bench_return, -0.25), 0.25)  # 限制在-25%到25%之间
+                # 确保数据在合理范围内及不是NaN或Infinity
+                if pd.isna(port_return) or np.isinf(port_return):
+                    port_return = 0.0
+                else:
+                    port_return = min(max(port_return, -0.3), 0.3)  # 限制在-30%到30%之间
+                
+                if pd.isna(bench_return) or np.isinf(bench_return):
+                    bench_return = 0.0
+                else:
+                    bench_return = min(max(bench_return, -0.25), 0.25)  # 限制在-25%到25%之间
                 
                 monthly_data.append({
                     "month": date.strftime("%Y-%m"),
@@ -979,7 +1029,7 @@ def _calculate_historical_trends(historical_data, weights, days=1825):  # 默认
     # 确保最小要求的月数为12个月
     required_months = max(12, required_months)
     
-    logger.info(f"Requested months based on days ({days}): {required_months} months (using {trading_days_per_month} trading days per month)")
+    logger.debug(f"Requested months based on days ({days}): {required_months} months (using {trading_days_per_month} trading days per month)")
     
     if len(monthly_data) < required_months:
         logger.warning(f"Not enough historical data ({len(monthly_data)} months), generating additional mock data")
@@ -1002,7 +1052,7 @@ def _calculate_historical_trends(historical_data, weights, days=1825):  # 默认
     # 确保我们至少返回一年的数据
     requested_months = max(12, requested_months)
     
-    logger.info(f"Limiting historical trends to {requested_months} months based on requested days: {days} (using {trading_days_per_month} trading days per month)")
+    logger.debug(f"Limiting historical trends to {requested_months} months based on requested days: {days} (using {trading_days_per_month} trading days per month)")
     
     # 只有当数据量超过请求的月数时才进行截取
     if len(monthly_data) > requested_months:
@@ -1049,23 +1099,60 @@ def _calculate_cumulative_performance(monthly_data):
     cumulative_data = []
     
     for month_data in monthly_data:
-        port_return = month_data["return"] / 100.0  # 转回小数
-        bench_return = month_data["benchmark"] / 100.0  # 转回小数
-        
-        cumulative_port *= (1 + port_return)
-        cumulative_bench *= (1 + bench_return)
-        
-        cumulative_data.append({
-            "month": month_data["month"],
-            "portfolio": round(cumulative_port - 100, 2),  # 转为相对于基期的百分比收益
-            "benchmark": round(cumulative_bench - 100, 2)  # 转为相对于基期的百分比收益
-        })
+        try:
+            # 获取每月回报率并转回小数
+            port_return = month_data["return"] / 100.0
+            bench_return = month_data["benchmark"] / 100.0
+            
+            # 检查是否为有效数字
+            if pd.isna(port_return) or np.isinf(port_return):
+                port_return = 0.0
+                
+            if pd.isna(bench_return) or np.isinf(bench_return):
+                bench_return = 0.0
+            
+            # 计算累积表现
+            cumulative_port *= (1 + port_return)
+            cumulative_bench *= (1 + bench_return)
+            
+            # 检查累积值是否有效
+            if pd.isna(cumulative_port) or np.isinf(cumulative_port):
+                logger.warning(f"Detected invalid portfolio cumulative value for month {month_data['month']}")
+                cumulative_port = 100.0  # 重置为初始值
+                
+            if pd.isna(cumulative_bench) or np.isinf(cumulative_bench):
+                logger.warning(f"Detected invalid benchmark cumulative value for month {month_data['month']}")
+                cumulative_bench = 100.0  # 重置为初始值
+            
+            # 计算相对于基期的百分比收益并确保为有效值
+            port_cumulative = cumulative_port - 100
+            bench_cumulative = cumulative_bench - 100
+            
+            if pd.isna(port_cumulative) or np.isinf(port_cumulative):
+                port_cumulative = 0.0
+                
+            if pd.isna(bench_cumulative) or np.isinf(bench_cumulative):
+                bench_cumulative = 0.0
+            
+            cumulative_data.append({
+                "month": month_data["month"],
+                "portfolio": round(port_cumulative, 2),
+                "benchmark": round(bench_cumulative, 2)
+            })
+        except Exception as e:
+            logger.error(f"Error calculating cumulative performance for month {month_data.get('month', 'unknown')}: {e}")
+            # 添加一个默认值以保持数据连续性
+            cumulative_data.append({
+                "month": month_data.get("month", "unknown"),
+                "portfolio": 0.0,
+                "benchmark": 0.0
+            })
     
     return cumulative_data
 
 def _generate_mock_historical_trends(days=1825):
     """Generate mock historical trends data for UI testing"""
-    logger.info(f"Generating mock historical trends data for {days} days")
+    logger.debug(f"Generating mock historical trends data for {days} days")
     
     # 生成每月数据
     monthly_data = _generate_mock_monthly_returns(min(60, days // 30))
