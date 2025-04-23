@@ -122,7 +122,8 @@ const ManualPortfolioBuilder: React.FC<ManualPortfolioBuilderProps> = ({
       name: portfolioName,
       tickers: stocks.map(stock => ({
         symbol: stock.symbol.toUpperCase(),
-        weight: stock.weight / 100 // 转换为小数
+        weight: stock.weight / 100, // 转换为小数
+        name: stock.info ? (stock.info.englishName || stock.info.name || '') : '' // 添加股票名称信息
       }))
     };
 

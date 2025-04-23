@@ -73,6 +73,7 @@ interface Portfolio {
     symbol: string;
     weight: number;
     info?: StockInfo | null;
+    name?: string;
   }[];
 }
 
@@ -106,7 +107,7 @@ const ChatHomePage = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   // 添加手动输入股票的相关状态
   const [isManualInputActive, setIsManualInputActive] = useState(false);
-  const [manualStocks, setManualStocks] = useState<{symbol: string, weight: number, info?: StockInfo | null}[]>([
+  const [manualStocks, setManualStocks] = useState<{symbol: string, weight: number, info?: StockInfo | null, name?: string}[]>([
     {symbol: '', weight: 0, info: null}
   ]);
   const [portfolioName, setPortfolioName] = useState('');
@@ -227,33 +228,24 @@ const ChatHomePage = () => {
     }
   }, [language, t, activeConversationId]);
 
-  // 当组件首次加载时，检查是否有对话
+  // 当组件首次加载时，始终显示欢迎界面
   useEffect(() => {
     if (conversations.length > 0) {
-      // 如果已经有对话，则设置最新的一个为活动对话
-      const latestConversation = conversations[conversations.length - 1];
+      // 如果已经有对话，则设置最新的一个为活动对话，但仍然显示欢迎界面
+      const latestConversation = conversations[0];
       setActiveConversationId(latestConversation.id);
-      setMessages(conversationMessages[latestConversation.id] || []);
+      // 设置为系统欢迎消息，以触发欢迎界面显示
+      setMessages([{ role: 'system', content: t('chat.welcome') }]);
     } else {
       // 如果没有对话，则设置欢迎消息在界面上显示，但不创建对话记录
       setActiveConversationId('default');
-      setMessages([{ role: 'assistant', content: t('chat.welcome') }]);
+      setMessages([{ role: 'system', content: t('chat.welcome') }]);
     }
   }, []);
   
-  // 当切换对话时加载对应消息
+  // 当切换对话时，仍然显示欢迎界面
   useEffect(() => {
-    if (conversationMessages[activeConversationId]) {
-      setMessages(conversationMessages[activeConversationId]);
-    } else {
-      // 如果不存在该对话的消息，创建新的欢迎消息
-      const newMessages = [{ role: 'system' as const, content: t('chat.welcome') }];
-      setMessages(newMessages);
-      setConversationMessages(prev => ({
-        ...prev,
-        [activeConversationId]: newMessages
-      }));
-    }
+    // 移除设置欢迎消息的代码
     
     // 重置其他状态
     setExtractedPortfolio(null);
@@ -367,35 +359,69 @@ const ChatHomePage = () => {
     }
   }, [apiKey, isApiKeyValid, t]);
 
+  // 添加一个临时状态来标记新对话模式
+  const [isNewChatMode, setIsNewChatMode] = useState(false);
+
   // 处理消息提交
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    // 检查是否需要创建新对话
-    if (!activeConversationId || activeConversationId === 'default' || !conversations.some(conv => conv.id === activeConversationId)) {
-      createNewConversation();
+    // 保存当前输入
+    const currentInput = input;
+    setInput('');
+
+    // 创建用户消息
+    const userMessage = { role: 'user' as const, content: currentInput };
+    
+    // 如果是新对话模式，先创建新对话
+    if (isNewChatMode) {
+      const newId = `conv-${Date.now()}`;
+      
+      // 创建欢迎消息
+      const welcomeMessage = [{ role: 'system' as const, content: t('chat.welcome') }];
+      
+      // 使用用户输入作为标题
+      const title = currentInput.length > 20 ? currentInput.substring(0, 20) + '...' : currentInput;
+      
+      // 更新对话列表
+      setConversations(prev => [{id: newId, title}, ...prev]);
+      
+      // 更新当前对话消息
+      const newMessages = [...welcomeMessage, userMessage];
+      setMessages(newMessages);
+      
+      // 更新存储的对话消息
+      setConversationMessages(prev => ({
+        ...prev,
+        [newId]: newMessages
+      }));
+      
+      // 设置活跃对话ID
+      setActiveConversationId(newId);
+      
+      // 退出新对话模式
+      setIsNewChatMode(false);
+    } else {
+      // 常规对话流程 - 添加用户消息到当前对话
+      // 更新UI
+      setMessages(prev => [...prev, userMessage]);
+      
+      // 如果这是第一条消息且对话还没保存，则保存对话
+      if (messages.length === 1 && messages[0].role === 'system') {
+        saveConversation(currentInput);
+      }
+      
+      // 更新存储的对话消息
+      setConversationMessages(prev => ({
+        ...prev,
+        [activeConversationId]: [...prev[activeConversationId] || [], userMessage]
+      }));
     }
 
-    // 重置仪表板状态
-    setExtractedPortfolio(null);
-    
-    const userMessage = { role: 'user' as const, content: input };
-    // 更新当前显示的消息
-    setMessages(prev => [...prev, userMessage]);
-    
-    // 同时更新存储的对话消息
-    setConversationMessages(prev => ({
-      ...prev,
-      [activeConversationId]: [...(prev[activeConversationId] || []), userMessage]
-    }));
-    
-    // 保存对话并生成标题
-    saveConversation(input);
-    
-    setInput('');
+    // 设置加载状态，在等待AI回复期间显示
     setIsLoading(true);
-
+    
     try {
       // 优先检查API密钥，只有在没有密钥的情况下才使用测试模式
       if (!apiKey) {
@@ -405,8 +431,8 @@ const ChatHomePage = () => {
           
           // 根据输入内容选择不同的模拟响应
           let mockResponse;
-          if (input.toLowerCase().includes('portfolio') || 
-              input.toLowerCase().includes(t('portfolio.title').toLowerCase())) {
+          if (currentInput.toLowerCase().includes('portfolio') || 
+              currentInput.toLowerCase().includes(t('portfolio.title').toLowerCase())) {
             mockResponse = getMockResponses(t).portfolio;
           } else {
             mockResponse = getMockResponses(t).default;
@@ -561,7 +587,7 @@ const ChatHomePage = () => {
                 content: systemPrompt
               },
               ...messages.map(m => ({ role: m.role, content: m.content })),
-              { role: 'user', content: input }
+              { role: 'user', content: currentInput }
             ],
             temperature: 0.7,
             max_tokens: 1000
@@ -640,6 +666,21 @@ const ChatHomePage = () => {
           if (parsedResponse.portfolio) {
             console.log('成功提取投资组合:', parsedResponse.portfolio);
             setExtractedPortfolio(parsedResponse.portfolio);
+            
+            // 添加一个提示消息，表示可以发送到仪表板
+            const readyMessage = { 
+              role: 'system' as const, 
+              content: t('portfolio.readyToSendToDashboard') 
+            };
+            
+            // 更新当前显示的消息
+            setMessages(prev => [...prev, readyMessage]);
+            
+            // 同时更新存储的对话消息
+            setConversationMessages(prev => ({
+              ...prev,
+              [activeConversationId]: [...(prev[activeConversationId] || []), readyMessage]
+            }));
           } else {
             setExtractedPortfolio(null);
           }
@@ -759,34 +800,105 @@ const ChatHomePage = () => {
         throw new Error('投资组合数据不完整，请检查名称和股票列表');
       }
       
+      // 创建tickers的副本，避免修改原始数据
+      const normalizedTickers = [...extractedPortfolio.tickers];
+      
       // 确保所有股票都有权重，且权重总和接近1
-      const tickers = extractedPortfolio.tickers;
-      const totalWeight = tickers.reduce((sum, ticker) => sum + ticker.weight, 0);
+      const totalWeight = normalizedTickers.reduce((sum, ticker) => sum + ticker.weight, 0);
       
       // 如果总权重远离1，进行归一化
       if (Math.abs(totalWeight - 1) > 0.01) {
         console.log('正在归一化投资组合权重，当前总权重:', totalWeight);
         if (Math.abs(totalWeight - 100) < 1) {
           // 如果总权重接近100，可能是百分比格式，转换为小数
-          extractedPortfolio.tickers = tickers.map(ticker => ({
-            ...ticker,
-            weight: ticker.weight / 100
-          }));
+          normalizedTickers.forEach(ticker => {
+            ticker.weight = ticker.weight / 100;
+          });
         } else if (totalWeight > 0) {
           // 如果总权重不接近100但大于0，则归一化
-          extractedPortfolio.tickers = tickers.map(ticker => ({
-            ...ticker,
-            weight: ticker.weight / totalWeight
-          }));
+          normalizedTickers.forEach(ticker => {
+            ticker.weight = ticker.weight / totalWeight;
+          });
         } else {
           throw new Error('投资组合权重总和异常，请检查股票权重');
         }
       }
       
-      console.log('发送到后端的投资组合数据:', extractedPortfolio);
+      // 定义获取股票信息的函数
+      const fetchStockInfo = async (symbol: string): Promise<string | null> => {
+        try {
+          // 尝试从后端API获取股票信息
+          console.log(`尝试从API获取股票 ${symbol} 的信息`);
+          const response = await axios.get(`/api/stocks/info/${symbol}`);
+          if (response.data && response.data.name) {
+            console.log(`成功获取股票 ${symbol} 的名称: ${response.data.name}`);
+            return response.data.name;
+          }
+          return null;
+        } catch (error) {
+          console.error(`获取股票 ${symbol} 信息失败:`, error);
+          return null;
+        }
+      };
+      
+      // 确保每个股票都有名称信息 - 增强版（包含API查询）
+      const enrichedTickers = await Promise.all(normalizedTickers.map(async ticker => {
+        // 创建一个新对象，避免修改原始数据
+        const enrichedTicker = { ...ticker };
+        
+        // 1. 如果已有名称且不为空，保留它
+        if (enrichedTicker.name && enrichedTicker.name.trim() !== '') {
+          return enrichedTicker;
+        }
+        
+        // 2. 如果有info对象，尝试从中获取名称
+        if (enrichedTicker.info) {
+          const stockInfo = enrichedTicker.info;
+          if (stockInfo.englishName) {
+            enrichedTicker.name = stockInfo.englishName;
+            return enrichedTicker;
+          }
+          if (stockInfo.name) {
+            enrichedTicker.name = stockInfo.name;
+            return enrichedTicker;
+          }
+          if (stockInfo.chineseName) {
+            enrichedTicker.name = stockInfo.chineseName;
+            return enrichedTicker;
+          }
+        }
+        
+        // 3. 尝试从后端API获取股票名称
+        const apiStockName = await fetchStockInfo(enrichedTicker.symbol);
+        if (apiStockName) {
+          enrichedTicker.name = apiStockName;
+          return enrichedTicker;
+        }
+        
+        // 4. 从stockNameMapping获取名称
+        if (stockNameMapping[enrichedTicker.symbol]) {
+          // 只取英文部分（在第一个'/'前的部分）
+          const fullName = stockNameMapping[enrichedTicker.symbol];
+          const englishName = fullName.split(' / ')[0];
+          enrichedTicker.name = englishName;
+          return enrichedTicker;
+        }
+        
+        // 5. 最后使用股票代码作为名称（避免名称为空）
+        enrichedTicker.name = enrichedTicker.symbol;
+        return enrichedTicker;
+      }));
+      
+      // 创建最终的投资组合对象
+      const portfolioToSubmit = {
+        name: extractedPortfolio.name,
+        tickers: enrichedTickers
+      };
+      
+      console.log('发送到后端的投资组合数据:', portfolioToSubmit);
       
       // 使用服务发送投资组合，传递当前语言
-      const response = await submitPortfolio(extractedPortfolio, language);
+      const response = await submitPortfolio(portfolioToSubmit, language);
       const portfolioId = response.id || 'test-123';
       
       // 添加一个系统消息表示投资组合已发送到仪表板
@@ -910,100 +1022,119 @@ const ChatHomePage = () => {
     }
     
     if (manualStocks.some(stock => !stock.symbol.trim())) {
-      alert("请输入所有股票的代码");
+      alert("请填写所有股票代码");
       return;
     }
     
-    if (manualStocks.some(stock => stock.weight <= 0)) {
-      alert("所有股票的权重必须大于0");
-      return;
-    }
-    
-    // 计算总权重，确保接近100%
+    // 验证权重总和是否接近100
     const totalWeight = manualStocks.reduce((sum, stock) => sum + stock.weight, 0);
-    if (Math.abs(totalWeight - 100) > 1) {
-      alert(`股票总权重应为100%，当前为${totalWeight.toFixed(2)}%`);
+    if (Math.abs(totalWeight - 100) > 0.5) {
+      alert(`投资组合权重总和必须为100%，当前总和为${totalWeight.toFixed(2)}%`);
       return;
     }
     
-    // 创建投资组合对象
-    const portfolio: Portfolio = {
-      name: portfolioName,
-      tickers: manualStocks.map(stock => ({
-        symbol: stock.symbol.toUpperCase(),
-        weight: stock.weight / 100 // 转换为小数
-      }))
-    };
-
-    // 设置投资组合数据
-    setExtractedPortfolio(portfolio);
-    
-    // 添加系统消息
-    const systemMessage = { role: 'system' as const, content: `已创建投资组合: ${portfolioName}，包含 ${manualStocks.length} 只股票` };
-    
-    // 更新当前显示的消息
-    setMessages(prev => [...prev, systemMessage]);
-    
-    // 同时更新存储的对话消息
-    setConversationMessages(prev => ({
-      ...prev,
-      [activeConversationId]: [...(prev[activeConversationId] || []), systemMessage]
-    }));
-
-    // 重置表单和状态
-    setIsManualInputActive(false);
-    setManualStocks([{symbol: '', weight: 0, info: null}]);
-    setPortfolioName('');
-    
-    // 立即发送到后端获取仪表板
     try {
       setIsLoading(true);
       
-      // 使用服务发送投资组合，传递当前语言
-      const response = await submitPortfolio(portfolio, language);
-      const portfolioId = response.id || 'portfolio-' + Date.now();
-      
-      // 添加一个系统消息表示投资组合已发送到仪表板
-      const dashboardMessage = { 
-        role: 'system' as const, 
-        content: t('portfolio.sentToDashboard') 
+      // 定义获取股票信息的函数
+      const fetchStockInfo = async (symbol: string): Promise<string | null> => {
+        try {
+          // 尝试从后端API获取股票信息
+          console.log(`尝试从API获取股票 ${symbol} 的信息`);
+          const response = await axios.get(`/api/stocks/info/${symbol}`);
+          if (response.data && response.data.name) {
+            console.log(`成功获取股票 ${symbol} 的名称: ${response.data.name}`);
+            return response.data.name;
+          }
+          return null;
+        } catch (error) {
+          console.error(`获取股票 ${symbol} 信息失败:`, error);
+          return null;
+        }
       };
       
-      // 更新当前显示的消息
-      setMessages(prev => [...prev, dashboardMessage]);
+      // 增强版本 - 确保所有股票都有名称信息（包含API查询）
+      const enrichedTickers = await Promise.all(manualStocks.map(async stock => {
+        // 创建一个新对象，避免修改原始数据
+        const result = { 
+          symbol: stock.symbol.toUpperCase(),
+          weight: stock.weight / 100 // 转换为小数形式
+        };
+        
+        // 确定股票名称 - 按优先级处理
+        let stockName = '';
+        
+        // 1. 如果有name属性且不为空，直接使用
+        if (stock.name && stock.name.trim() !== '') {
+          stockName = stock.name;
+        }
+        // 2. 首先尝试从info对象获取名称
+        else if (stock.info) {
+          if (stock.info.englishName && stock.info.englishName.trim() !== '') {
+            stockName = stock.info.englishName;
+          } else if (stock.info.name && stock.info.name.trim() !== '') {
+            stockName = stock.info.name;
+          } else if (stock.info.chineseName && stock.info.chineseName.trim() !== '') {
+            stockName = stock.info.chineseName;
+          }
+        }
+        
+        // 3. 尝试从后端API获取股票名称
+        if (!stockName) {
+          const apiStockName = await fetchStockInfo(stock.symbol);
+          if (apiStockName) {
+            stockName = apiStockName;
+          }
+        }
+        
+        // 4. 如果info和API没有提供名称，尝试从本地映射获取
+        if (!stockName && stockNameMapping[stock.symbol]) {
+          // 只取英文部分（在第一个'/'前的部分）
+          const fullName = stockNameMapping[stock.symbol];
+          stockName = fullName.split(' / ')[0];
+        }
+        
+        // 5. 如果仍然没有名称，使用股票代码作为名称
+        if (!stockName) {
+          stockName = stock.symbol;
+        }
+        
+        // 设置名称
+        return {
+          ...result,
+          name: stockName
+        };
+      }));
+      
+      // 创建投资组合对象
+      const portfolio: Portfolio = {
+        name: portfolioName,
+        tickers: enrichedTickers
+      };
+      
+      // 创建投资组合卡片，而不直接发送到后端
+      setExtractedPortfolio(portfolio);
+      
+      // 添加一个系统消息表示投资组合已创建
+      const message = {
+        role: 'system' as const,
+        content: t('portfolio.readyToSendToDashboard')
+      };
+      
+      // 添加到消息列表
+      setMessages(prev => [...prev, message]);
       
       // 同时更新存储的对话消息
       setConversationMessages(prev => ({
         ...prev,
-        [activeConversationId]: [...(prev[activeConversationId] || []), dashboardMessage]
+        [activeConversationId]: [...(prev[activeConversationId] || []), message]
       }));
       
-      // 存储当前对话对应的投资组合ID
-      setConversationPortfolios(prev => ({
-        ...prev,
-        [activeConversationId]: portfolioId
-      }));
-      
-      // 设置最后使用的投资组合ID
-      setLastPortfolioId(portfolioId);
-      
-      // 保存到最近的投资组合列表
-      setSavedPortfolios(prev => [
-        { id: portfolioId, name: portfolio.name, created_at: new Date().toISOString() },
-        ...prev.filter(p => p.id !== portfolioId)
-      ]);
+      // 重置手动输入状态
+      setIsManualInputActive(false);
     } catch (error) {
-      console.error('发送投资组合失败:', error);
-      // 添加错误消息
-      const errorMessage = { 
-        role: 'system' as const, 
-        content: t('portfolio.error')
-      };
-      setMessages(prev => [...prev, errorMessage]);
-      setConversationMessages(prev => ({
-        ...prev,
-        [activeConversationId]: [...(prev[activeConversationId] || []), errorMessage]
-      }));
+      console.error('创建投资组合失败:', error);
+      alert('创建投资组合失败，请重试');
     } finally {
       setIsLoading(false);
     }
@@ -1050,26 +1181,19 @@ const ChatHomePage = () => {
 
   // 创建新对话
   const createNewConversation = () => {
-    const newId = `conv-${Date.now()}`;
-    
-    // 创建新对话的欢迎消息
-    const welcomeMessage = [{ role: 'system' as const, content: t('chat.welcome') }];
-    
-    // 设置当前显示消息
-    setMessages(welcomeMessage);
-    
-    // 更新存储的对话消息
-    setConversationMessages(prev => ({
-      ...prev,
-      [newId]: welcomeMessage
-    }));
+    // 不立即创建对话ID和记录，只是重置状态
+    // 设置当前显示消息为欢迎信息
+    setMessages([{ role: 'system', content: t('chat.welcome') }]);
     
     // 重置状态
     setExtractedPortfolio(null);
+    setIsManualInputActive(false);
     
-    // 将新对话添加到列表中，使用翻译函数获取标题
-    setConversations(prev => [{id: newId, title: t('chat.newChatTitle')}, ...prev]);
-    setActiveConversationId(newId);
+    // 设置为临时的新对话模式
+    setIsNewChatMode(true);
+    
+    // 清空激活的对话ID，表示暂时没有关联的对话
+    setActiveConversationId('temp-new-chat');
   };
 
   // 保存对话并自动生成标题
@@ -1194,12 +1318,30 @@ const ChatHomePage = () => {
   const handleStockSelect = (index: number, stock: StockInfo | null) => {
     if (stock) {
       const newStocks = [...manualStocks];
+      
+      // 确定最佳的股票名称
+      let stockName = '';
+      if (stock.englishName && stock.englishName.trim() !== '') {
+        stockName = stock.englishName;
+      } else if (stock.name && stock.name.trim() !== '') {
+        stockName = stock.name;
+      } else if (stock.chineseName && stock.chineseName.trim() !== '') {
+        stockName = stock.chineseName;
+      } else {
+        stockName = stock.symbol;
+      }
+      
       newStocks[index] = { 
         ...newStocks[index], 
         symbol: stock.symbol,
-        info: stock
+        name: stockName,  // 直接存储名称
+        info: stock       // 同时保存完整的StockInfo对象以备后用
       };
+      
       setManualStocks(newStocks);
+      
+      // 关闭股票建议列表
+      setStockSuggestions([]);
     }
   };
 
@@ -1326,11 +1468,12 @@ const ChatHomePage = () => {
                 {conversations.map(conv => {
                   // 检查该对话是否有关联的投资组合
                   const hasPortfolio = conversationPortfolios[conv.id] ? true : false;
+                  const isActive = activeConversationId === conv.id && !isNewChatMode;
                   
                   return (
                     <div 
                       key={conv.id}
-                      className={`flex items-center justify-between px-3 py-2 mb-2 rounded-md hover:bg-gray-100 cursor-pointer relative ${activeConversationId === conv.id ? 'bg-gray-100' : 'bg-white'}`}
+                      className={`flex items-center justify-between px-3 py-2 mb-2 rounded-md hover:bg-gray-100 cursor-pointer relative ${isActive ? 'bg-gray-100' : 'bg-white'}`}
                       style={{ marginBottom: '8px' }}
                     >
                       <div 
@@ -1339,6 +1482,12 @@ const ChatHomePage = () => {
                           setActiveConversationId(conv.id);
                           // 切换对话时重置仪表板状态
                           setExtractedPortfolio(null);
+                          
+                          // 如果当前在新对话模式，退出该模式
+                          if (isNewChatMode) {
+                            setIsNewChatMode(false);
+                          }
+                          
                           // 加载对应的消息
                           if (conversationMessages[conv.id]) {
                             setMessages(conversationMessages[conv.id]);
@@ -1413,14 +1562,14 @@ const ChatHomePage = () => {
           <div className="flex-1 flex flex-col">
             <div className="flex-1 overflow-auto">
               <div className={`container mx-auto max-w-2xl px-4 py-6`}>
-                {/* 只在新对话（消息数为1，即只有系统欢迎消息）时显示欢迎语 */}
-                {messages.length === 1 && (
+                {/* 只在消息为空或仅有欢迎消息时显示欢迎语界面，或者在新对话模式时 */}
+                {(messages.length === 0 || (messages.length === 1 && messages[0].role === 'system') || isNewChatMode) && (
                   <div className="text-center mb-4">
                     <h1 className="text-3xl font-bold mb-2">
-                      {t('chat.welcomeTitle')}
+                      {isNewChatMode ? t('chat.newChatTitle') : t('chat.welcomeTitle')}
                     </h1>
                     <p className="text-gray-600 mb-4">
-                      {t('chat.welcomeDescription')}
+                      {isNewChatMode ? t('chat.newChatDescription') : t('chat.welcomeDescription')}
                     </p>
                     
                     {/* 输入框移到这里 - 在欢迎语下方 */}
@@ -1585,8 +1734,8 @@ const ChatHomePage = () => {
                   </div>
                 )}
                 
-                {/* 聊天消息 */}
-                {messages.slice(1).map((message, index) => (
+                {/* 只在用户开始聊天后显示聊天消息 */}
+                {messages.length > 1 && messages.slice(1).map((message, index) => (
                   <div 
                     key={index} 
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-6`}
@@ -1644,8 +1793,10 @@ const ChatHomePage = () => {
                           <div key={idx} className="flex justify-between bg-white p-2 rounded border border-blue-100">
                             <div className="flex flex-col">
                               <span className="font-medium">{ticker.symbol}</span>
-                              {stockNameMapping[ticker.symbol] && (
-                                <span className="text-xs text-gray-500">{stockNameMapping[ticker.symbol]}</span>
+                              {(ticker.name || stockNameMapping[ticker.symbol]) && (
+                                <span className="text-xs text-gray-500">
+                                  {ticker.name || stockNameMapping[ticker.symbol]}
+                                </span>
                               )}
                             </div>
                             <span>{(ticker.weight * 100).toFixed(4)}%</span>

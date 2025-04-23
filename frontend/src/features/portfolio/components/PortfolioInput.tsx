@@ -78,7 +78,8 @@ const PortfolioInput = () => {
         name: portfolioName,
         tickers: tickers.map(t => ({
           symbol: t.symbol.toUpperCase(),
-          weight: Number(t.weight) / 100 // 转换为小数
+          weight: Number(t.weight) / 100, // 转换为小数
+          name: t.info ? (t.info.englishName || t.info.name || '') : ''  // 添加股票名称信息
         }))
       };
       
