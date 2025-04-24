@@ -14,7 +14,7 @@ const getApiBaseUrl = () => {
   }
   
   // 默认开发环境URL
-  const defaultUrl = 'http://localhost:8000/api';
+  const defaultUrl = 'http://localhost:3001/api';
   console.log('Using default API URL:', defaultUrl);
   return defaultUrl;
 };

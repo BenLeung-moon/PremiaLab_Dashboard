@@ -1,0 +1,329 @@
+/* 定义CSS变量 */
+:root {
+  --primary-blue: #0047AB;
+  --light-blue-bg: #E6F0FF;
+}
+
+/* 仪表板链接按钮样式 */
+.dashboard-link-container {
+  margin-top: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.dashboard-link-button {
+  background-color: white;
+  color: var(--primary-blue, #0047AB) !important;
+  border: 1px solid var(--primary-blue, #0047AB) !important;
+  padding: 0.5rem 1.25rem;
+  border-radius: 2rem;
+  text-decoration: none !important;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem;
+  box-shadow: none !important;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.dashboard-link-button:hover {
+  background-color: var(--light-blue-bg, #E6F0FF) !important;
+  transform: translateY(-1px);
+  text-decoration: none !important;
+}
+
+.dashboard-link-button:active {
+  transform: translateY(0);
+}
+
+.dashboard-link-button svg {
+  width: 16px;
+  height: 16px;
+  fill: var(--primary-blue, #0047AB) !important;
+  flex-shrink: 0;
+}
+
+.dashboard-link-button span {
+  color: var(--primary-blue, #0047AB) !important;
+  font-weight: 500;
+}
+
+.system-message {
+  background-color: rgba(22, 119, 255, 0.1);
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin: 5px 0;
+  max-width: 85%;
+  align-self: center;
+  font-size: 14px;
+  color: #666;
+}
+
+/* 为消息内容添加包装器，确保在链接按钮上方正确显示内容 */
+.message-content {
+  word-break: break-word;
+}
+
+/* 聊天项目菜单样式 */
+.chat-item-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  overflow: hidden; /* 防止内容溢出 */
+}
+
+.chat-title {
+  flex: 1;
+  white-space: nowrap; /* 强制文本在一行显示 */
+  overflow: hidden;
+  text-overflow: ellipsis; /* 显示省略号 */
+  text-align: left;
+  padding-right: 8px;
+  font-size: 14px;
+  /* 移除多行显示相关样式 */
+}
+
+.chat-item-menu {
+  position: relative;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px; /* 保持与标题的间距 */
+  flex-shrink: 0; /* 防止被压缩 */
+  width: 24px; /* 固定宽度 */
+  height: 24px; /* 固定高度 */
+}
+
+.chat-item-menu:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.menu-dots {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.chat-menu-options {
+  position: fixed;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  min-width: 100px;
+  z-index: 1000;
+  overflow: hidden;
+  padding: 6px 0;
+}
+
+.menu-option {
+  padding: 10px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-option:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.menu-option-icon {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-option {
+  color: #e53e3e;
+}
+
+/* 编辑标题表单样式 */
+.edit-title-form {
+  display: flex;
+  width: 100%;
+  background-color: white;
+  border-radius: 1rem; /* 与聊天条目保持一致的圆角 */
+  max-width: 100%; /* 保证不超出父容器 */
+  overflow: hidden;
+  padding: 0; /* 移除内边距 */
+  border: 1px solid rgba(0, 71, 171, 0.2); /* 添加细边框 */
+  height: 38px; /* 控制高度 */
+  align-items: center; /* 垂直居中 */
+}
+
+.edit-title-input {
+  flex: 1;
+  border: none; /* 移除边框 */
+  border-radius: 1rem 0 0 1rem; /* 只在左侧添加圆角 */
+  padding: 8px 12px; /* 增加内边距使输入框看起来更大 */
+  font-size: 14px;
+  outline: none;
+  width: 0;
+  min-width: 0;
+  background-color: transparent; /* 透明背景 */
+  color: #333;
+  height: 100%; /* 使输入框填满表单高度 */
+}
+
+.edit-title-input:focus {
+  box-shadow: inset 0 0 0 1px rgba(0, 71, 171, 0.2); /* 内阴影替代边框 */
+}
+
+/* 聊天项激活状态下的编辑表单样式 */
+.chat-item.active .edit-title-form {
+  background-color: var(--primary-blue);
+  border-color: transparent;
+}
+
+.chat-item.active .edit-title-input {
+  color: white;
+  background-color: transparent;
+}
+
+.chat-item.active .edit-title-input::placeholder {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.chat-item.active .edit-title-buttons {
+  background-color: var(--primary-blue);
+}
+
+.chat-item.active .save-title-btn,
+.chat-item.active .cancel-edit-btn {
+  color: white;
+}
+
+.edit-title-buttons {
+  display: flex;
+  flex-shrink: 0;
+  background-color: white;
+  border-radius: 0 1rem 1rem 0; /* 只在右侧添加圆角 */
+  padding: 0 8px; /* 增加内边距使按钮区域更大 */
+}
+
+.save-title-btn, .cancel-edit-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 8px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.save-title-btn {
+  color: green;
+}
+
+.cancel-edit-btn {
+  color: #e53e3e;
+}
+
+.save-title-btn:hover, .cancel-edit-btn:hover {
+  opacity: 1;
+}
+
+/* 新增遮罩层样式，防止误触其他区域 */
+.menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: transparent;
+  z-index: 999;
+}
+
+/* 聊天项目样式修改，为编辑模式做准备 */
+.chat-item {
+  background-color: transparent;
+  color: #333;
+  padding: 0.6rem 0.9rem;
+  border-radius: 1rem;
+  text-align: left; /* 左对齐更容易阅读 */
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 36px; /* 减小最小高度 */
+  display: flex; /* 使用flex布局 */
+  align-items: center; /* 垂直居中 */
+}
+
+.chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  flex-grow: 1;
+  max-height: calc(100% - 3.5rem);
+  padding-right: 0.25rem;
+  width: 100%; /* 确保列表宽度100% */
+}
+
+.sidebar {
+  width: 280px; /* 增加侧边栏宽度 */
+  background-color: var(--sidebar-bg);
+  border-radius: var(--container-border-radius);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: var(--sidebar-shadow);
+  margin-right: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(0, 71, 171, 0.05);
+}
+
+/* 活跃对话项样式 */
+.chat-item.active {
+  background-color: var(--primary-blue);
+  color: white;
+  font-weight: 500; /* 稍微加粗 */
+  box-shadow: 0 2px 4px rgba(0, 71, 171, 0.2);
+}
+
+/* 当聊天项活跃时，确保菜单按钮与内容颜色一致 */
+.chat-item.active .chat-item-menu svg {
+  stroke: white;
+}
+
+/* 调整聊天项悬浮效果 */
+.chat-item:hover:not(.active) {
+  background-color: rgba(0, 71, 171, 0.08);
+  transform: translateY(-1px);
+}
+
+/* 新聊天按钮样式优化 */
+.new-chat-button {
+  width: 90%; /* 占据更多宽度 */
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0, 71, 171, 0.2);
+} 

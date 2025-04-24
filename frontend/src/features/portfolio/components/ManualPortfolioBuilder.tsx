@@ -162,12 +162,12 @@ const ManualPortfolioBuilder: React.FC<ManualPortfolioBuilderProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <h2 className="text-xl font-bold mb-6 text-gray-800 text-center">
+    <div className="bg-white rounded-lg shadow-lg p-4">
+      <h2 className="text-xl font-bold mb-3 text-gray-800 text-center">
         {t('portfolio.createNew')}
       </h2>
       
-      <div className="mb-4">
+      <div className="mb-3">
         <label className="block text-sm font-medium text-gray-700 mb-1">
           {t('portfolio.nameLabel')}
         </label>
@@ -175,29 +175,29 @@ const ManualPortfolioBuilder: React.FC<ManualPortfolioBuilderProps> = ({
           type="text"
           value={portfolioName}
           onChange={(e) => setPortfolioName(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
           placeholder={t('portfolio.namePlaceholder')}
         />
       </div>
       
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-2">
+      <div className="mb-3">
+        <div className="flex justify-between items-center mb-1">
           <label className="block text-sm font-medium text-gray-700">
             {t('portfolio.stocksLabel')}
           </label>
           <button
             type="button"
             onClick={addStock}
-            className="flex items-center px-3 py-1 text-sm bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100"
+            className="flex items-center px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
             </svg>
             {t('portfolio.addStock')}
           </button>
         </div>
         
-        <div className="space-y-3">
+        <div className="space-y-2">
           {stocks.map((stock, index) => (
             <div key={index} className="flex space-x-2">
               <div className="flex-1">
@@ -208,7 +208,7 @@ const ManualPortfolioBuilder: React.FC<ManualPortfolioBuilderProps> = ({
                   label=""
                 />
               </div>
-              <div className="w-32">
+              <div className="w-24">
                 <div className="relative">
                   <input
                     type="number"
@@ -217,10 +217,10 @@ const ManualPortfolioBuilder: React.FC<ManualPortfolioBuilderProps> = ({
                     step="0.1"
                     min="0"
                     max="100"
-                    className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-2 py-1.5 pr-6 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder={t('portfolio.weightPlaceholder')}
                   />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                     <span className="text-gray-500">%</span>
                   </div>
                 </div>
@@ -229,10 +229,10 @@ const ManualPortfolioBuilder: React.FC<ManualPortfolioBuilderProps> = ({
                 <button
                   type="button"
                   onClick={() => removeStock(index)}
-                  className="px-2 py-2 text-red-500 hover:text-red-700 focus:outline-none"
+                  className="px-1.5 py-1.5 text-red-500 hover:text-red-700 focus:outline-none"
                   title={t('portfolio.removeStock')}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                   </svg>
                 </button>
@@ -242,11 +242,11 @@ const ManualPortfolioBuilder: React.FC<ManualPortfolioBuilderProps> = ({
         </div>
       </div>
       
-      <div className="flex justify-between pt-4 border-t border-gray-200">
+      <div className="flex justify-between pt-2 border-t border-gray-200">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           {t('portfolio.cancel')}
         </button>
@@ -254,7 +254,7 @@ const ManualPortfolioBuilder: React.FC<ManualPortfolioBuilderProps> = ({
         <button
           type="button"
           onClick={handleSubmit}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           {t('portfolio.submit')}
         </button>

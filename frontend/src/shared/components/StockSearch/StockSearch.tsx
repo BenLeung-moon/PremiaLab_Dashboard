@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Autocomplete, TextField, Box, Typography, CircularProgress, Avatar } from '@mui/material';
 import { useStockSearch, StockInfo } from '../../hooks/useStockSearch';
 
@@ -25,41 +25,65 @@ export const StockSearch: React.FC<StockSearchProps> = ({
   required = false,
   fullWidth = true,
 }) => {
-  const { searchTerm, setSearchTerm, stocks, loading, initialized } = useStockSearch();
+  console.log('[StockSearch 组件] 渲染开始', { label, placeholder, value });
+  
+  const { searchTerm, setSearchTerm, stocks, loading, initialized, error: hookError } = useStockSearch();
   const [inputValue, setInputValue] = useState('');
+  
+  // 添加调试效果，监控stocks和initialized
+  useEffect(() => {
+    console.log('[StockSearch 组件] 初始化状态变化:', initialized);
+    console.log('[StockSearch 组件] 可用股票数量:', stocks.length);
+    if (hookError) {
+      console.error('[StockSearch 组件] 错误:', hookError);
+    }
+  }, [initialized, stocks, hookError]);
 
   // 选项渲染
-  const renderOption = (props: React.HTMLAttributes<HTMLLIElement>, option: StockInfo) => (
-    <Box component="li" {...props}>
-      <Box display="flex" alignItems="center" width="100%">
-        <Avatar 
-          sx={{ 
-            width: 24, 
-            height: 24, 
-            bgcolor: 'primary.main', 
-            fontSize: '0.75rem',
-            mr: 1 
-          }}
-        >
-          {option.symbol.slice(0, 2)}
-        </Avatar>
-        <Box flexGrow={1}>
-          <Typography variant="body1" component="div">
-            {option.symbol}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" component="div">
-            {option.englishName || option.name}
-            {option.chineseName && ` (${option.chineseName})`}
-          </Typography>
+  const renderOption = (props: React.HTMLAttributes<HTMLLIElement>, option: StockInfo) => {
+    console.log('[StockSearch 组件] 渲染选项:', option.symbol);
+    return (
+      <Box component="li" {...props}>
+        <Box display="flex" alignItems="center" width="100%">
+          <Avatar 
+            sx={{ 
+              width: 24, 
+              height: 24, 
+              bgcolor: 'primary.main', 
+              fontSize: '0.75rem',
+              mr: 1 
+            }}
+          >
+            {option.symbol.slice(0, 2)}
+          </Avatar>
+          <Box flexGrow={1}>
+            <Typography variant="body1" component="div">
+              {option.symbol}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" component="div">
+              {option.englishName || option.name}
+              {option.chineseName && ` (${option.chineseName})`}
+            </Typography>
+          </Box>
         </Box>
       </Box>
-    </Box>
-  );
+    );
+  };
 
   // 获取选项标签
   const getOptionLabel = (option: StockInfo) => {
-    return `${option.symbol} - ${option.englishName || option.name}${option.chineseName ? ` (${option.chineseName})` : ''}`;
+    const label = `${option.symbol} - ${option.englishName || option.name}${option.chineseName ? ` (${option.chineseName})` : ''}`;
+    console.log('[StockSearch 组件] 选项标签:', label);
+    return label;
   };
+
+  console.log('[StockSearch 组件] 当前状态:', {
+    initialized,
+    loading,
+    stocksCount: stocks.length,
+    inputValue,
+    searchTerm
+  });
 
   return (
     <Autocomplete
@@ -69,10 +93,12 @@ export const StockSearch: React.FC<StockSearchProps> = ({
       loading={loading}
       value={value}
       onChange={(_, newValue) => {
+        console.log('[StockSearch 组件] 选中值变化:', newValue?.symbol);
         onChange(newValue);
       }}
       inputValue={inputValue}
       onInputChange={(_, newInputValue) => {
+        console.log('[StockSearch 组件] 输入值变化:', newInputValue);
         setInputValue(newInputValue);
         setSearchTerm(newInputValue);
       }}

@@ -498,15 +498,30 @@ export const getAvailableStocks = async (): Promise<string[]> => {
  * 获取可用的股票代码和公司名称列表
  */
 export const getAvailableStocksWithNames = async (): Promise<{symbol: string, name: string}[]> => {
-  try {
-    const stocks = await getAvailableStocks();
-    return stocks.map(symbol => ({
+  console.log('[PortfolioService] 开始获取可用股票列表及名称...');
+  if (TEST_MODE) {
+    console.log('[PortfolioService] 测试模式，返回模拟数据');
+    // 使用模拟数据
+    return Object.entries(stockNameMapping).map(([symbol, name]) => ({
       symbol,
-      name: stockNameMapping[symbol] || ''
+      name
+    })).slice(0, 50); // 仅返回前50个用于测试
+  }
+
+  try {
+    console.log('[PortfolioService] 发送API请求: /api/stocks/available');
+    const response = await axios.get('/api/stocks/available');
+    console.log('[PortfolioService] API返回数据条数:', response.data?.length || 0);
+    
+    return response.data.map((stock: any) => ({
+      symbol: stock.symbol,
+      name: stock.englishName || stock.name || stock.chineseName || stock.symbol
     }));
   } catch (error) {
-    console.error('获取股票代码和名称列表失败:', error);
-    throw error;
+    console.error('[PortfolioService] 获取可用股票列表失败:', error);
+    console.log('[PortfolioService] 错误详情:', JSON.stringify(error));
+    // 发生错误时返回空数组
+    return [];
   }
 };
 

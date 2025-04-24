@@ -7,6 +7,8 @@ import LanguageSwitcher from '../../shared/components/LanguageSwitcher';
 import { encryptData, decryptData } from '../../shared/utils/encryption';
 import { StockSearch } from '../../shared/components/StockSearch';
 import { StockInfo } from '../../shared/hooks/useStockSearch';
+import DashboardIcon from '../../features/common/components/DashboardIcon';
+import './ChatHomePage.css';
 
 // 添加内联样式
 const styles = {
@@ -77,6 +79,7 @@ interface Portfolio {
   }[];
 }
 
+// 对界面布局进行大幅改造，使其符合新的设计图
 const ChatHomePage = () => {
   const { t, language, setLanguage } = useLanguage(); // Use language context
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant' | 'system'; content: string }[]>([
@@ -107,7 +110,7 @@ const ChatHomePage = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   // 添加手动输入股票的相关状态
   const [isManualInputActive, setIsManualInputActive] = useState(false);
-  const [manualStocks, setManualStocks] = useState<{symbol: string, weight: number, info?: StockInfo | null, name?: string}[]>([
+  const [manualStocks, setManualStocks] = useState<{symbol: string, weight: number, info?: StockInfo | null, name?: string, tempSymbol?: string}[]>([
     {symbol: '', weight: 0, info: null}
   ]);
   const [portfolioName, setPortfolioName] = useState('');
@@ -365,419 +368,171 @@ const ChatHomePage = () => {
   // 处理消息提交
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!input.trim() || isLoading) return;
-
-    // 保存当前输入
-    const currentInput = input;
-    setInput('');
-
-    // 创建用户消息
-    const userMessage = { role: 'user' as const, content: currentInput };
     
-    // 如果是新对话模式，先创建新对话
-    if (isNewChatMode) {
-      const newId = `conv-${Date.now()}`;
-      
-      // 创建欢迎消息
-      const welcomeMessage = [{ role: 'system' as const, content: t('chat.welcome') }];
-      
-      // 使用用户输入作为标题
-      const title = currentInput.length > 20 ? currentInput.substring(0, 20) + '...' : currentInput;
-      
-      // 更新对话列表
-      setConversations(prev => [{id: newId, title}, ...prev]);
-      
-      // 更新当前对话消息
-      const newMessages = [...welcomeMessage, userMessage];
-      setMessages(newMessages);
-      
-      // 更新存储的对话消息
-      setConversationMessages(prev => ({
-        ...prev,
-        [newId]: newMessages
-      }));
-      
-      // 设置活跃对话ID
-      setActiveConversationId(newId);
-      
-      // 退出新对话模式
-      setIsNewChatMode(false);
-    } else {
-      // 常规对话流程 - 添加用户消息到当前对话
-      // 更新UI
-      setMessages(prev => [...prev, userMessage]);
-      
-      // 如果这是第一条消息且对话还没保存，则保存对话
-      if (messages.length === 1 && messages[0].role === 'system') {
-        saveConversation(currentInput);
-      }
-      
-      // 更新存储的对话消息
-      setConversationMessages(prev => ({
-        ...prev,
-        [activeConversationId]: [...prev[activeConversationId] || [], userMessage]
-      }));
+    // 如果没有输入，不处理
+    if (!input.trim() || isLoading) return;
+    
+    // 如果是临时新对话，先创建一个真实的新对话
+    if (activeConversationId === 'temp-new-chat' || activeConversationId === 'default') {
+      // 使用createNewConversation而不是手动创建
+      createNewConversation();
+      // 短暂延迟确保状态更新
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
-
-    // 设置加载状态，在等待AI回复期间显示
+    
+    // 创建新的消息对象
+    const userMessage = { role: 'user' as const, content: input };
+    const tempMessages = [...messages, userMessage];
+    setMessages(tempMessages);
+    
+    // 更新对话记录
+    const updatedConversationMessages = {
+      ...conversationMessages,
+      [activeConversationId]: [...tempMessages]
+    };
+    setConversationMessages(updatedConversationMessages);
+    
+    // 如果是第一条用户消息，以用户输入作为对话标题
+    if (messages.length <= 1) {
+      // 创建标题（最多20个字符，超过则截断）
+      const title = input.length > 20 ? input.substring(0, 20) + '...' : input;
+      
+      // 更新对话标题
+      setConversations(prev => 
+        prev.map(conv => 
+          conv.id === activeConversationId 
+            ? {...conv, title} 
+            : conv
+        )
+      );
+    }
+    
+    // 清空输入框
+    setInput('');
+    // 设置加载状态
     setIsLoading(true);
     
+    // 自动滚动到底部
+    scrollToBottom();
+    
+    let aiResponse = '';
+    
     try {
-      // 优先检查API密钥，只有在没有密钥的情况下才使用测试模式
-      if (!apiKey) {
-        if (TEST_MODE) {
-          // 测试模式下的模拟响应
-          await new Promise(resolve => setTimeout(resolve, 1000)); // 模拟网络延迟
-          
-          // 根据输入内容选择不同的模拟响应
-          let mockResponse;
-          if (currentInput.toLowerCase().includes('portfolio') || 
-              currentInput.toLowerCase().includes(t('portfolio.title').toLowerCase())) {
-            mockResponse = getMockResponses(t).portfolio;
-          } else {
-            mockResponse = getMockResponses(t).default;
-          }
-
-          // 解析响应
-          try {
-            const parsedResponse = JSON.parse(mockResponse);
-            const assistantMessage = { role: 'assistant' as const, content: filterThinkingChain(parsedResponse.response) };
-            
-            // 更新当前显示的消息
-            setMessages(prev => [...prev, assistantMessage]);
-            
-            // 同时更新存储的对话消息
-            setConversationMessages(prev => ({
-              ...prev,
-              [activeConversationId]: [...(prev[activeConversationId] || []), assistantMessage]
-            }));
-            
-            if (parsedResponse.portfolio) {
-              setExtractedPortfolio(parsedResponse.portfolio);
-            }
-          } catch {
-            const assistantMessage = { role: 'assistant' as const, content: filterThinkingChain(mockResponse) };
-            
-            // 更新当前显示的消息
-            setMessages(prev => [...prev, assistantMessage]);
-            
-            // 同时更新存储的对话消息
-            setConversationMessages(prev => ({
-              ...prev,
-              [activeConversationId]: [...(prev[activeConversationId] || []), assistantMessage]
-            }));
-          }
+      // 检查是否在测试模式
+      if (TEST_MODE) {
+        // 使用模拟响应
+        const mockResponses = getMockResponses(t);
+        
+        // 等待一些时间模拟API调用
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // 检查是否是关于投资组合的查询
+        if (input.toLowerCase().includes('portfolio') || 
+            input.toLowerCase().includes('invest') ||
+            input.toLowerCase().includes('股票') || 
+            input.toLowerCase().includes('投资')) {
+          aiResponse = mockResponses.portfolio;
         } else {
-          // 如果没有API密钥且不是测试模式，提示用户设置API密钥
-          setMessages(prev => [...prev, { 
-            role: 'system', 
-            content: t('chat.apiKeyRequired')
-          }]);
-          setIsSettingsOpen(true);
-          setIsLoading(false);
-          return;
+          // 返回默认响应
+          aiResponse = mockResponses.default;
         }
       } else {
-        // 如果API密钥验证状态为无效，先尝试使用，不要立即提醒用户
-        // 只有在实际API调用返回401/403时才提示密钥无效
-        /*
-        if (isApiKeyValid === false) {
-          setMessages(prev => [...prev, { 
-            role: 'system', 
-            content: t('chat.apiKeyInvalid')
-          }]);
-          setIsSettingsOpen(true);
-          setIsLoading(false);
-          return;
-        }
-        */
-
-        // 调用Perplexity API，使用当前语言控制系统提示
-        const systemPrompt = language === 'zh' 
-          ? `你是一个投资组合分析助手。请始终返回JSON格式的回复，所有回复必须是有效的JSON。
-              如果用户想要创建或提到特定的投资组合（包含股票代码和权重），提取这些信息并包含在JSON中。
-              
-              重要限制：只推荐标普500指数成分股。标普500指数包含美国500家领先的上市公司，如AAPL(苹果)、MSFT(微软)、GOOGL(谷歌)、AMZN(亚马逊)、
-              META(Meta/Facebook)、NVDA(英伟达)、TSLA(特斯拉)、JPM(摩根大通)、JNJ(强生)、V(Visa)等。
-              如果用户提到非标普500成分股的股票，请礼貌建议他们使用标普500成分股替代。
-              
-              用户请求示例：
-              "帮我创建一个投资组合：40% AAPL，30% MSFT，20% GOOGL，10% AMZN"
-              
-              你必须严格按照以下JSON格式返回，不要添加任何其他文本或代码块标记：
-              {
-                "response": "我已为您创建了一个科技股投资组合，包括苹果、微软、谷歌和亚马逊。这是一个比较集中的投资组合，专注于大型科技公司。您可以点击"发送到仪表板"按钮查看详细分析。",
-                "portfolio": {
-                  "name": "科技股投资组合",
-                  "tickers": [
-                    {"symbol": "AAPL", "weight": 0.4},
-                    {"symbol": "MSFT", "weight": 0.3},
-                    {"symbol": "GOOGL", "weight": 0.2},
-                    {"symbol": "AMZN", "weight": 0.1}
-                  ]
-                }
-              }
-              
-              重要提示：
-              1. 返回的JSON必须包含"response"字段，该字段是对用户的文本回复。
-              2. 如果用户提供了投资组合信息，必须包含"portfolio"字段。
-              3. portfolio必须包含"name"和"tickers"两个字段。
-              4. tickers必须是一个数组，每个元素包含"symbol"和"weight"字段。
-              5. weight必须是0到1之间的小数（不是百分比），所有weight总和必须等于1。
-              6. 只返回纯JSON格式，不要包含任何其他文本、解释或代码块标记(如\`\`\`)。
-              7. 只包含标普500指数成分股，不要使用其他股票。
-              8. 如果用户要求对冲风险，更推荐多元化配置，包括不同行业的股票。
-              
-              如果用户没有提供明确的投资组合信息，仍然必须以JSON格式回复，但不包含portfolio字段：
-              {
-                "response": "您的回答..."
-              }
-              
-              永远只返回纯JSON，不要在JSON前后添加任何文本或标记符号。`
-          : `You are a portfolio analysis assistant. You must ALWAYS return your response as valid JSON format.
-              If the user wants to create or mentions a specific portfolio (including stock symbols and weights),
-              extract this information and include it in your JSON response.
-              
-              Important limitation: Only recommend stocks from the S&P 500 index. The S&P 500 includes 500 leading publicly traded companies in the US, 
-              such as AAPL(Apple), MSFT(Microsoft), GOOGL(Google), AMZN(Amazon), META(Meta/Facebook), NVDA(NVIDIA), TSLA(Tesla), 
-              JPM(JPMorgan Chase), JNJ(Johnson & Johnson), V(Visa), etc.
-              If the user mentions stocks not in the S&P 500, politely suggest S&P 500 alternatives.
-              
-              Example user request:
-              "Help me create a portfolio: 40% AAPL, 30% MSFT, 20% GOOGL, 10% AMZN"
-              
-              You must strictly follow this JSON format, without adding any other text or code block markers:
-              {
-                "response": "I've created a tech stock portfolio for you, including Apple, Microsoft, Google, and Amazon. This is a concentrated portfolio focused on large tech companies. You can click the 'Send to Dashboard' button to see a detailed analysis.",
-                "portfolio": {
-                  "name": "Tech Stock Portfolio",
-                  "tickers": [
-                    {"symbol": "AAPL", "weight": 0.4},
-                    {"symbol": "MSFT", "weight": 0.3},
-                    {"symbol": "GOOGL", "weight": 0.2},
-                    {"symbol": "AMZN", "weight": 0.1}
-                  ]
-                }
-              }
-              
-              Critical requirements:
-              1. The returned JSON must include a "response" field, which is the text reply to the user.
-              2. If the user provides portfolio information, it must include a "portfolio" field.
-              3. The portfolio must have both "name" and "tickers" fields.
-              4. tickers must be an array where each element has "symbol" and "weight" fields.
-              5. weight must be a decimal between 0 and 1 (not percentage), and all weights must sum to 1.
-              6. Return ONLY pure JSON format, do not include any other text or code block markers (like \`\`\`).
-              7. Only include S&P 500 index constituent stocks, do not use other stocks.
-              8. If the user asks for risk hedging, recommend diversification across different sectors.
-              
-              If the user does not provide clear portfolio information, you must still respond in JSON format, but without the portfolio field:
-              {
-                "response": "Your answer..."
-              }
-              
-              Always return ONLY pure JSON with no text or markers before or after the JSON.`;
-
-        const response = await axios.post(
-          'https://api.perplexity.ai/chat/completions',
-          {
-            model: 'r1-1776',
+        // 实际API调用
+        if (!apiKey) {
+          // 没有API密钥，显示错误消息
+          aiResponse = t('chat.apiKeyMissing');
+        } else {
+          // 发送请求到Perplexity API
+          const response = await axios.post('https://api.perplexity.ai/chat/completions', {
+            model: 'llama-3-sonar-small-32k-online',
             messages: [
               {
                 role: 'system',
-                content: systemPrompt
+                content: t('chat.systemPrompt')
               },
-              ...messages.map(m => ({ role: m.role, content: m.content })),
-              { role: 'user', content: currentInput }
+              ...messages.filter(msg => msg.role !== 'system'), // 过滤掉系统消息
+              userMessage
             ],
-            temperature: 0.7,
-            max_tokens: 1000
-          },
-          {
+            context: { message_type: "task"},
+            // temperature: 0.7,
+            max_tokens: 4000
+          }, {
             headers: {
-              'Authorization': `Bearer ${apiKey}`,
-              'Content-Type': 'application/json'
-            },
-            timeout: 60000, // 60秒超时
-            maxContentLength: 5 * 1024 * 1024 // 5MB内容限制
-          }
-        );
-
-        // 解析响应
-        const aiMessage = response.data.choices[0].message.content;
-        
-        // 过滤AI响应中的思考链
-        const filteredAiMessage = filterThinkingChain(aiMessage);
-        
-        let parsedResponse: { response: string; portfolio?: Portfolio | null } = { response: '' };
-        
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            }
+          });
+          
+          // 获取API响应
+          aiResponse = response.data.choices[0].message.content;
+        }
+      }
+      
+      // 处理可能的JSON响应（例如投资组合数据）
+      let parsedResponse: { response: string; portfolio: Portfolio | null } = {
+        response: aiResponse,
+        portfolio: null
+      };
+      
+      // 尝试提取JSON数据
+      const jsonRegex = /```json\s*([\s\S]*?)\s*```/;
+      const jsonMatch = aiResponse.match(jsonRegex);
+      
+      if (jsonMatch && jsonMatch[1]) {
         try {
-          // 尝试解析JSON响应
-          parsedResponse = JSON.parse(filteredAiMessage);
+          const extractedJson = JSON.parse(jsonMatch[1]);
           
-          // 确保portfolio字段的结构正确
-          if (parsedResponse.portfolio) {
-            // 验证portfolio的格式
-            if (!parsedResponse.portfolio.name || !Array.isArray(parsedResponse.portfolio.tickers)) {
-              console.warn('API返回的portfolio格式不正确:', parsedResponse.portfolio);
-              // 添加日志以便调试
-              console.log('收到的原始响应:', aiMessage);
-              
-              // 尝试修复格式问题
-              if (typeof parsedResponse.portfolio === 'object') {
-                if (!parsedResponse.portfolio.name) {
-                  parsedResponse.portfolio.name = '投资组合' + new Date().toISOString().slice(0, 10);
-                }
-                if (!Array.isArray(parsedResponse.portfolio.tickers)) {
-                  parsedResponse.portfolio.tickers = [];
-                }
-              } else {
-                // 如果portfolio不是对象，设置为null
-                parsedResponse.portfolio = null;
-              }
-            } else {
-              // 确保权重是小数形式，总和为1
-              const tickers = parsedResponse.portfolio.tickers;
-              const totalWeight = tickers.reduce((sum, ticker) => sum + ticker.weight, 0);
-              
-              // 如果总权重不接近1，可能需要归一化处理
-              if (Math.abs(totalWeight - 1) > 0.01 && Math.abs(totalWeight - 100) < 1) {
-                console.log('正在归一化portfolio权重，当前总权重:', totalWeight);
-                // 可能权重是百分比形式(1-100)而不是小数形式(0-1)
-                parsedResponse.portfolio.tickers = tickers.map(ticker => ({
-                  ...ticker,
-                  weight: ticker.weight / 100
-                }));
-              }
-            }
-          }
+          // 更新解析后的响应
+          parsedResponse.response = extractedJson.response;
           
-          const assistantMessage = { role: 'assistant' as const, content: filterThinkingChain(parsedResponse.response || filteredAiMessage) };
-          
-          // 更新当前显示的消息
-          setMessages(prev => [...prev, assistantMessage]);
-          
-          // 同时更新存储的对话消息
-          setConversationMessages(prev => ({
-            ...prev,
-            [activeConversationId]: [...(prev[activeConversationId] || []), assistantMessage]
-          }));
-          
-          // 提取投资组合信息
-          if (parsedResponse.portfolio) {
-            console.log('成功提取投资组合:', parsedResponse.portfolio);
-            setExtractedPortfolio(parsedResponse.portfolio);
-            
-            // 添加一个提示消息，表示可以发送到仪表板
-            const readyMessage = { 
-              role: 'system' as const, 
-              content: t('portfolio.readyToSendToDashboard') 
-            };
-            
-            // 更新当前显示的消息
-            setMessages(prev => [...prev, readyMessage]);
-            
-            // 同时更新存储的对话消息
-            setConversationMessages(prev => ({
-              ...prev,
-              [activeConversationId]: [...(prev[activeConversationId] || []), readyMessage]
-            }));
-          } else {
-            setExtractedPortfolio(null);
-          }
-        } catch (parseError) {
-          console.error('解析API响应失败:', parseError);
-          console.log('原始响应内容:', aiMessage);
-          
-          // 尝试从响应中提取JSON部分
-          const jsonMatch = aiMessage.match(/{[\s\S]*}/);
-          if (jsonMatch) {
-            try {
-              // 解析JSON并创建合适的响应
-              const extractedJson = JSON.parse(jsonMatch[0]);
-              
-              // 更新已解析的响应
-              parsedResponse.response = extractedJson.response;
-              
-              if (extractedJson.portfolio) {
-                // 友好响应文本
-                parsedResponse.response = "我已为您创建了投资组合。点击\"发送到仪表板\"按钮查看详细分析。";
-                parsedResponse.portfolio = extractedJson.portfolio;
-              }
-            } catch (e) {
-              console.error('提取JSON失败:', e);
-            }
-          } else if (aiMessage.includes("portfolio")) {
-            // 尝试提取投资组合数据的备用逻辑
+          if (extractedJson.portfolio) {
+            // 确保投资组合数据格式正确
+            // 验证每个股票权重总和是否接近1
             parsedResponse.portfolio = extractedJson.portfolio;
           }
-          
-          // 创建最终的助手消息，使用过滤后的内容
-          const assistantMessage = { role: 'assistant' as const, content: filterThinkingChain(parsedResponse.response || aiMessage) };
-          setMessages(prev => [...prev, assistantMessage]);
-          setConversationMessages(prev => ({
-            ...prev,
-            [activeConversationId]: [...(prev[activeConversationId] || []), assistantMessage]
-          }));
-          
-          if (parsedResponse.portfolio) {
-            setExtractedPortfolio(parsedResponse.portfolio);
-          } else {
-            setExtractedPortfolio(null);
-          }
+        } catch (parseError) {
+          console.error('JSON解析错误:', parseError);
+          // 如果JSON解析失败，使用原始响应
         }
       }
-    } catch (error) {
-      console.error('操作失败:', error);
-      // 详细记录错误信息
-      const axiosError = error as any;
-      console.error('错误详情:', {
-        status: axiosError.response?.status,
-        statusText: axiosError.response?.statusText,
-        data: axiosError.response?.data,
-        code: axiosError.code,
-        message: axiosError.message,
-        request: {
-          url: axiosError.config?.url,
-          method: axiosError.config?.method,
-          headers: axiosError.config?.headers
-        }
+      
+      // 更新消息列表，添加AI响应
+      const assistantMessage = { role: 'assistant' as const, content: parsedResponse.response };
+      const finalMessages = [...tempMessages, assistantMessage];
+      setMessages(finalMessages);
+      
+      // 更新对话记录
+      setConversationMessages({
+        ...updatedConversationMessages,
+        [activeConversationId]: finalMessages
       });
       
-      // 检查是否是API密钥错误
-      if (axiosError.response?.status === 401 || axiosError.response?.status === 403) {
-        // API密钥无效
-        setIsApiKeyValid(false);
-        setMessages(prev => [...prev, { 
-          role: 'system', 
-          content: t('chat.apiKeyInvalid')
-        }]);
-        setIsSettingsOpen(true);
-      } else if (axiosError.response?.status === 429) {
-        // 请求过多
-        const errorMessage = { role: 'system' as const, content: t('chat.apiRateLimited') };
-        setMessages(prev => [...prev, errorMessage]);
-        setConversationMessages(prev => ({
-          ...prev,
-          [activeConversationId]: [...(prev[activeConversationId] || []), errorMessage]
-        }));
-      } else if (axiosError.code === 'ECONNABORTED' || !axiosError.response) {
-        // 网络错误或超时
-        const errorMessage = { role: 'system' as const, content: t('chat.networkError') };
-        setMessages(prev => [...prev, errorMessage]);
-        setConversationMessages(prev => ({
-          ...prev,
-          [activeConversationId]: [...(prev[activeConversationId] || []), errorMessage]
-        }));
-      } else {
-        // 其他错误
-        const errorMessage = { role: 'system' as const, content: t('chat.apiCallFailed') };
-        setMessages(prev => [...prev, errorMessage]);
-        setConversationMessages(prev => ({
-          ...prev,
-          [activeConversationId]: [...(prev[activeConversationId] || []), errorMessage]
-        }));
+      // 提取投资组合数据
+      if (parsedResponse.portfolio) {
+        setExtractedPortfolio(parsedResponse.portfolio);
       }
+      
+      // 自动滚动到底部
+      scrollToBottom();
+    } catch (error) {
+      console.error('API调用错误:', error);
+      
+      // 显示错误消息
+      const errorMessage = { 
+        role: 'assistant' as const, 
+        content: t('chat.apiError') 
+      };
+      
+      const errorMessages = [...tempMessages, errorMessage];
+      setMessages(errorMessages);
+      
+      // 更新对话记录
+      setConversationMessages({
+        ...updatedConversationMessages,
+        [activeConversationId]: errorMessages
+      });
     } finally {
+      // 完成后清除加载状态
       setIsLoading(false);
     }
   };
@@ -979,7 +734,7 @@ const ChatHomePage = () => {
     }));
     
     // 添加新股票
-    setManualStocks([...updatedStocks, {symbol: '', weight: newWeight, info: null}]);
+    setManualStocks([...updatedStocks, {symbol: '', weight: newWeight, info: null, tempSymbol: undefined, name: ''}]);
   };
 
   const removeStock = (index: number) => {
@@ -997,39 +752,42 @@ const ChatHomePage = () => {
     const newStocks = [...manualStocks];
     
     if (field === 'weight') {
-      // 限制权重为数字并保留4位小数
+      // 处理权重的逻辑保持不变
+      // 限制权重为数字并保留2位小数
       let numValue = typeof value === 'string' ? parseFloat(value) : value;
-      
-      // 确保权重不为负数且不超过100
-      numValue = Math.max(0, Math.min(100, numValue));
-      
-      // 保留4位小数
-      numValue = parseFloat(numValue.toFixed(4));
-      
+      numValue = Math.max(0, Math.min(100, numValue || 0));
       newStocks[index] = { ...newStocks[index], weight: numValue };
-    } else {
-      newStocks[index] = { ...newStocks[index], [field]: value as string };
+      setManualStocks(newStocks);
+    } else if (field === 'symbol') {
+      // 对于symbol，只更新输入值用于显示和搜索，但不立即更新stock对象
+      // 真正的stock对象更新在selectStockSuggestion函数中进行
+      // 这里只设置临时显示值
+      newStocks[index] = { ...newStocks[index], tempSymbol: value as string };
+      setManualStocks(newStocks);
     }
-    
-    setManualStocks(newStocks);
   };
 
   const submitManualPortfolio = async () => {
-    // 添加验证逻辑
-    if (!portfolioName.trim()) {
-      alert("请输入投资组合名称");
+    // 首先检查是否有未完成选择的股票
+    const hasInvalidStocks = manualStocks.some(stock => 
+      !stock.symbol || stock.symbol.trim() === '' || stock.tempSymbol !== undefined
+    );
+
+    if (hasInvalidStocks) {
+      alert(t('portfolio.pleaseSelectFromSuggestions'));
       return;
     }
     
-    if (manualStocks.some(stock => !stock.symbol.trim())) {
-      alert("请填写所有股票代码");
+    // 检查投资组合名称
+    if (!portfolioName.trim()) {
+      alert(t('portfolio.nameRequired'));
       return;
     }
     
     // 验证权重总和是否接近100
     const totalWeight = manualStocks.reduce((sum, stock) => sum + stock.weight, 0);
     if (Math.abs(totalWeight - 100) > 0.5) {
-      alert(`投资组合权重总和必须为100%，当前总和为${totalWeight.toFixed(2)}%`);
+      alert(`${t('portfolio.weightSumError')} ${totalWeight.toFixed(2)}%`);
       return;
     }
     
@@ -1142,12 +900,22 @@ const ChatHomePage = () => {
 
   // 加载可用股票代码
   useEffect(() => {
+    // 初始化手动股票列表
+    setManualStocks([
+      { symbol: '', weight: 100, tempSymbol: '', name: '' }
+    ]);
+    
+    // 加载可用股票列表
     const loadStocks = async () => {
+      console.log('[股票加载] 开始从API获取可用股票...');
       try {
         const stocks = await getAvailableStocksWithNames();
+        console.log('[股票加载] 获取成功，股票数量:', stocks.length);
+        console.log('[股票加载] 数据样例:', stocks.slice(0, 3));
         setAvailableStocks(stocks);
       } catch (error) {
-        console.error('加载股票代码失败:', error);
+        console.error('[股票加载] 加载股票代码失败:', error);
+        console.log('[股票加载] 错误详情:', JSON.stringify(error));
       }
     };
     
@@ -1156,7 +924,14 @@ const ChatHomePage = () => {
 
   // 处理股票代码联想
   const handleStockSymbolChange = (index: number, value: string) => {
+    // 不直接更新symbol，而是更新临时显示值
     updateStock(index, 'symbol', value);
+    
+    // 设置当前聚焦的股票输入框索引
+    setFocusedSymbolIndex(index);
+    
+    console.log('[股票联想] 输入变化:', value);
+    console.log('[股票联想] 可用股票总数:', availableStocks.length);
     
     if (value.trim()) {
       const suggestions = availableStocks
@@ -1166,55 +941,64 @@ const ChatHomePage = () => {
         )
         .slice(0, 8); // 限制建议数量
       
+      console.log('[股票联想] 过滤后建议数量:', suggestions.length);
+      console.log('[股票联想] 建议列表:', suggestions);
       setStockSuggestions(suggestions);
     } else {
+      console.log('[股票联想] 输入为空，清空建议');
       setStockSuggestions([]);
     }
   };
 
   // 选择股票建议
   const selectStockSuggestion = (index: number, stock: {symbol: string, name: string}) => {
-    updateStock(index, 'symbol', stock.symbol);
+    console.log('[股票联想] 选择建议:', stock);
+    
+    // 更新真实的stock对象
+    const newStocks = [...manualStocks];
+    newStocks[index] = { 
+      ...newStocks[index], 
+      symbol: stock.symbol,
+      name: stock.name,
+      // 移除临时显示值
+      tempSymbol: undefined
+    };
+    setManualStocks(newStocks);
+    
     setStockSuggestions([]);
     setFocusedSymbolIndex(-1);
   };
 
   // 创建新对话
   const createNewConversation = () => {
-    // 不立即创建对话ID和记录，只是重置状态
+    // 生成唯一的对话ID
+    const uniqueId = `conv-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    
     // 设置当前显示消息为欢迎信息
-    setMessages([{ role: 'system', content: t('chat.welcome') }]);
+    const welcomeMessage = [{ role: 'system' as const, content: t('chat.welcome') }];
+    setMessages(welcomeMessage);
     
     // 重置状态
     setExtractedPortfolio(null);
     setIsManualInputActive(false);
     
-    // 设置为临时的新对话模式
-    setIsNewChatMode(true);
+    // 将欢迎消息存储到对话记录中
+    setConversationMessages(prev => ({
+      ...prev,
+      [uniqueId]: welcomeMessage
+    }));
     
-    // 清空激活的对话ID，表示暂时没有关联的对话
-    setActiveConversationId('temp-new-chat');
-  };
-
-  // 保存对话并自动生成标题
-  const saveConversation = (content: string) => {
-    // 使用用户输入作为标题
-    const title = content.length > 20 ? content.substring(0, 20) + '...' : content;
+    // 添加到对话列表
+    setConversations(prev => [
+      { id: uniqueId, title: t('chat.newChatTitle') },
+      ...prev
+    ]);
     
-    setConversations(prev => {
-      const newConversations = prev.map(conv => 
-        conv.id === activeConversationId 
-          ? {...conv, title} 
-          : conv
-      );
-      
-      // 如果是第一条消息且不存在该对话，则添加
-      if (messages.length === 1 && !prev.find(conv => conv.id === activeConversationId)) {
-        newConversations.unshift({id: activeConversationId, title: t('chat.newChatTitle')});
-      }
-      
-      return newConversations;
-    });
+    // 设置为当前活跃对话
+    setActiveConversationId(uniqueId);
+    
+    // 关闭新对话模式标记
+    setIsNewChatMode(false);
   };
 
   // 修改切换到仪表板的部分
@@ -1250,29 +1034,116 @@ const ChatHomePage = () => {
 
   // 添加菜单打开状态
   const [menuOpenConversationId, setMenuOpenConversationId] = useState<string | null>(null);
+  // 添加菜单位置状态
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+
+  // 添加编辑标题状态
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
+  const [editingTitleValue, setEditingTitleValue] = useState('');
 
   // 切换菜单显示状态
   const toggleMenu = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setMenuOpenConversationId(menuOpenConversationId === id ? null : id);
+    e.stopPropagation(); // 阻止事件冒泡到聊天项
+    
+    // 如果点击的是当前打开的菜单，则关闭菜单
+    if (menuOpenConversationId === id) {
+      setMenuOpenConversationId(null);
+      return;
+    }
+    
+    // 获取目标元素的位置和尺寸
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    // 定位在对话项的右侧中间位置
+    setMenuPosition({
+      top: rect.top + window.scrollY + 10, // 稍微向下偏移
+      left: rect.right + window.scrollX - 10 // 稍微向左偏移，确保菜单挨着对话项
+    });
+    setMenuOpenConversationId(id);
   };
 
   // 关闭菜单
   const closeMenu = () => {
     setMenuOpenConversationId(null);
   };
+  
+  // 开始编辑标题
+  const startEditTitle = (id: string, currentTitle: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // 阻止点击事件冒泡
+    closeMenu(); // 关闭菜单
+    
+    // 找到对应的聊天项
+    const chatItem = document.querySelector(`.chat-item[data-id="${id}"]`);
+    if (chatItem) {
+      // 设置编辑状态
+      setEditingTitleId(id);
+      
+      // 处理标题文本，去除省略号
+      const titleText = currentTitle.replace(/\.{3,}$/, '');
+      setEditingTitleValue(titleText);
+      
+      setIsEditingTitle(true);
+      
+      // 确保编辑的聊天项可见（可能需要滚动到视图）
+      chatItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  };
+  
+  // 保存编辑后的标题
+  const saveEditedTitle = (e: React.FormEvent) => {
+    e.preventDefault(); // 阻止表单默认提交行为
+    
+    if (editingTitleId && editingTitleValue.trim()) {
+      // 标题最大长度控制，防止过长
+      const maxLength = 30;
+      let finalTitle = editingTitleValue.trim();
+      
+      if (finalTitle.length > maxLength) {
+        finalTitle = finalTitle.substring(0, maxLength) + '...';
+      }
+      
+      setConversations(prev => 
+        prev.map(conv => 
+          conv.id === editingTitleId 
+            ? {...conv, title: finalTitle} 
+            : conv
+        )
+      );
+    }
+    
+    // 重置编辑状态
+    setIsEditingTitle(false);
+    setEditingTitleId(null);
+    setEditingTitleValue('');
+  };
+  
+  // 取消编辑标题
+  const cancelEditTitle = () => {
+    setIsEditingTitle(false);
+    setEditingTitleId(null);
+    setEditingTitleValue('');
+  };
 
   // 添加点击外部关闭菜单的处理
   useEffect(() => {
-    const handleClickOutside = () => {
-      closeMenu();
+    const handleClickOutside = (e: MouseEvent) => {
+      // 我们不需要在这里检查点击位置，因为我们使用遮罩层处理点击外部事件
+      // 当点击遮罩层时，会调用 closeMenu 函数
+      
+      // 如果编辑标题模式是激活的，并且点击不在编辑表单内，则关闭编辑模式
+      if (isEditingTitle && editingTitleId) {
+        const editForm = document.querySelector('.edit-title-form');
+        if (editForm && !editForm.contains(e.target as Node)) {
+          cancelEditTitle();
+        }
+      }
     };
     
     document.addEventListener('click', handleClickOutside);
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
-  }, []);
+  }, [isEditingTitle, editingTitleId]);
 
   // 修改用于处理历史对话中的投资组合查看逻辑
   useEffect(() => {
@@ -1345,712 +1216,523 @@ const ChatHomePage = () => {
     }
   };
 
+  // 添加回退编辑投资组合的函数
+  const handleEditPortfolio = () => {
+    if (!extractedPortfolio) return;
+    
+    // 设置投资组合名称
+    setPortfolioName(extractedPortfolio.name);
+    
+    // 将提取的投资组合转换为手动股票列表
+    const stocks = extractedPortfolio.tickers.map(ticker => ({
+      symbol: ticker.symbol,
+      weight: ticker.weight * 100, // 转换回百分比
+      name: ticker.name || '',
+      info: null
+    }));
+    
+    setManualStocks(stocks);
+    
+    // 激活手动输入模式
+    setIsManualInputActive(true);
+  };
+
+  // 添加处理点击外部关闭股票联想列表的逻辑
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (stockSuggestions.length > 0) {
+        const target = e.target as HTMLElement;
+        if (!target.closest('.stock-search-container')) {
+          setStockSuggestions([]);
+        }
+      }
+    };
+
+    document.addEventListener('click', handleOutsideClick);
+    return () => {
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [stockSuggestions]);
+
+  // 渲染函数改为使用新的样式结构
   return (
-    <div className="flex flex-col min-h-screen bg-white">
-      {/* 添加内联样式标签，使用更明确的滚动条样式 */}
-      <style>
-        {`
-          /* 原生滚动样式 - 确保有效 */
-          .chat-list-scroll {
-            height: 300px !important; 
-            overflow-y: scroll !important;
-            scrollbar-width: thin !important;
-            scrollbar-color: #888 #f1f1f1 !important;
-            display: block !important;
-            margin-right: 2px !important;
-            padding-right: 2px !important;
-          }
-          
-          .chat-list-scroll::-webkit-scrollbar {
-            width: 8px !important;
-            display: block !important;
-          }
-          
-          .chat-list-scroll::-webkit-scrollbar-track {
-            background-color: #f1f1f1 !important;
-            border-radius: 10px !important;
-          }
-          
-          .chat-list-scroll::-webkit-scrollbar-thumb {
-            background-color: #888 !important;
-            border-radius: 10px !important;
-            border: 2px solid #f1f1f1 !important;
-          }
-          
-          .chat-list-scroll::-webkit-scrollbar-thumb:hover {
-            background-color: #555 !important;
-          }
-          
-          /* Chrome使用原生滚动条行为 */
-          * {
-            overflow-behavior: auto;
-            -ms-overflow-style: auto;
-          }
-        `}
-      </style>
-      
-      {/* 添加内联样式标签，使用常规滚动条样式 */}
-      <style>
-        {`
-          .force-scrollbar {
-            scrollbar-width: thin;
-            scrollbar-color: #888 #f1f1f1;
-            overflow-y: scroll !important;
-          }
-          .force-scrollbar::-webkit-scrollbar {
-            width: 10px !important;
-          }
-          .force-scrollbar::-webkit-scrollbar-track {
-            background: #f1f1f1 !important;
-          }
-          .force-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #888 !important;
-            border-radius: 8px !important;
-          }
-        `}
-      </style>
-      
-      {/* 添加内联样式标签 */}
-      <style>{styles.customScrollbar}</style>
-      
+    <div className="app-container">
       {/* 顶部导航栏 */}
-      <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-medium text-gray-800">
-                PremiaLab AI
-              </h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setIsSettingsOpen(true)}
-                className="p-2 rounded-md text-gray-600 hover:bg-gray-100"
-                title={t('settings.title')}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
+      <header className="header">
+        <div className="logo-container">
+          <img src="/assets/logo/premialab-logo.png" alt="PremiaLab" />
+        </div>
+        <button 
+          className="settings-button"
+          onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+          title={t('settings.title')}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </header>
+      
+      {/* 设置面板 - 完善样式和结构 */}
+      {isSettingsOpen && (
+        <div className="settings-panel">
+          <h3>{t('settings.title')}</h3>
+          <div className="api-key-input">
+            <label>{t('settings.apiTitle')}</label>
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder={t('settings.placeholder')}
+            />
+            <button onClick={handleSaveApiKey}>
+              {t('settings.saveApi')}
+            </button>
+            {isApiKeyValid === true && <span className="valid-key">{t('settings.apiKeyValid')}</span>}
+            {isApiKeyValid === false && <span className="invalid-key">{t('settings.apiKeyInvalid')}</span>}
+          </div>
+          <div className="language-selector">
+            <label>{t('settings.language')}</label>
+            <LanguageSwitcher />
           </div>
         </div>
-      </header>
+      )}
 
-      {/* 内容区域 - 完全重构布局 */}
-      <div className="flex-1 flex">
-        {/* 侧边栏 */}
-        <div className="w-64 border-r border-gray-100 hidden md:block">
-          <div className="p-4 sticky top-[73px]">
-            <button 
-              onClick={createNewConversation}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 mb-6 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-              </svg>
-              {t('chat.newChat')}
-            </button>
-            
-            <h3 className="text-gray-500 text-sm mb-2">{t('chat.recentChats')}</h3>
-            
-            {/* 使用最基本的结构和样式 */}
-            <div 
-              className="border border-gray-200 rounded bg-gray-50" 
-              style={{ 
-                height: '500px', 
-                overflowY: 'scroll',
-                position: 'relative' 
-              }}
-            >
-              <div style={{ padding: '8px' }}>
-                {conversations.map(conv => {
-                  // 检查该对话是否有关联的投资组合
-                  const hasPortfolio = conversationPortfolios[conv.id] ? true : false;
-                  const isActive = activeConversationId === conv.id && !isNewChatMode;
-                  
-                  return (
-                    <div 
-                      key={conv.id}
-                      className={`flex items-center justify-between px-3 py-2 mb-2 rounded-md hover:bg-gray-100 cursor-pointer relative ${isActive ? 'bg-gray-100' : 'bg-white'}`}
-                      style={{ marginBottom: '8px' }}
-                    >
-                      <div 
-                        className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
-                        onClick={() => {
-                          setActiveConversationId(conv.id);
-                          // 切换对话时重置仪表板状态
-                          setExtractedPortfolio(null);
-                          
-                          // 如果当前在新对话模式，退出该模式
-                          if (isNewChatMode) {
-                            setIsNewChatMode(false);
-                          }
-                          
-                          // 加载对应的消息
-                          if (conversationMessages[conv.id]) {
-                            setMessages(conversationMessages[conv.id]);
-                          }
+      {/* 主要内容区 */}
+      <div className="main-content">
+        {/* 左侧菜单 */}
+        <aside className="sidebar">
+          <div 
+            className="new-chat-button"
+            onClick={createNewConversation}
+          >
+            {t('chat.newChat')} +
+          </div>
+          
+          <div className="chat-list">
+            {conversations.map((conv) => (
+              <div 
+                key={conv.id}
+                className={`chat-item ${activeConversationId === conv.id ? 'active' : ''}`}
+                data-id={conv.id}
+                onClick={() => {
+                  setActiveConversationId(conv.id);
+                  if (conversationMessages[conv.id]) {
+                    setMessages(conversationMessages[conv.id]);
+                  }
+                }}
+              >
+                {editingTitleId === conv.id ? (
+                  // 编辑标题表单
+                  <form 
+                    onSubmit={(e) => {
+                      e.stopPropagation();
+                      saveEditedTitle(e);
+                    }} 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }} 
+                    className="edit-title-form"
+                  >
+                    <input
+                      type="text"
+                      value={editingTitleValue}
+                      onChange={(e) => setEditingTitleValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          e.stopPropagation();
+                          cancelEditTitle();
+                        }
+                      }}
+                      autoFocus
+                      className="edit-title-input"
+                      placeholder={t('chat.editTitlePlaceholder')}
+                      maxLength={25} /* 限制输入长度，防止文字过长 */
+                    />
+                    <div className="edit-title-buttons">
+                      <button 
+                        type="submit" 
+                        className="save-title-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
                         }}
                       >
-                        {conv.title}
-                      </div>
-                      
-                      <div className="flex items-center gap-1">
-                        {hasPortfolio && (
-                          <Link 
-                            to={`/dashboard/${conversationPortfolios[conv.id]}`}
-                            className="p-1 text-green-600 hover:bg-green-50 rounded-md"
-                            title={t('navigation.viewDashboard')}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                              <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
-                              <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
-                            </svg>
-                          </Link>
-                        )}
-                        
-                        {/* 添加菜单按钮 */}
-                        <button
-                          onClick={(e) => toggleMenu(conv.id, e)}
-                          className="p-1 text-gray-500 hover:bg-gray-200 rounded-md"
-                          title={t('chat.options')}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
-                          </svg>
-                        </button>
-                        
-                        {/* 菜单下拉框 */}
-                        {menuOpenConversationId === conv.id && (
-                          <div className="absolute right-0 top-9 z-10 mt-1 w-48 bg-white rounded-md shadow-lg py-1 text-sm overflow-hidden border border-gray-200">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteConversation(conv.id);
-                              }}
-                              className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 flex items-center gap-2"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                                <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                              </svg>
-                              {t('chat.delete')}
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          cancelEditTitle();
+                        }} 
+                        className="cancel-edit-btn"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      </button>
                     </div>
-                  );
-                })}
-                {conversations.length === 0 && (
-                  <div className="px-3 py-2 text-gray-400 text-sm">
-                    {t('chat.noChats')}
-                  </div>
-                )}
-              
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 主内容区 */}
-        <div className="flex-1 flex flex-col">
-          {/* 聊天区域 - 完全重新布局 */}
-          <div className="flex-1 flex flex-col">
-            <div className="flex-1 overflow-auto">
-              <div className={`container mx-auto max-w-2xl px-4 py-6`}>
-                {/* 只在消息为空或仅有欢迎消息时显示欢迎语界面，或者在新对话模式时 */}
-                {(messages.length === 0 || (messages.length === 1 && messages[0].role === 'system') || isNewChatMode) && (
-                  <div className="text-center mb-4">
-                    <h1 className="text-3xl font-bold mb-2">
-                      {isNewChatMode ? t('chat.newChatTitle') : t('chat.welcomeTitle')}
-                    </h1>
-                    <p className="text-gray-600 mb-4">
-                      {isNewChatMode ? t('chat.newChatDescription') : t('chat.welcomeDescription')}
-                    </p>
+                  </form>
+                ) : (
+                  // 正常显示模式
+                  <div className="chat-item-content">
+                    <span className="chat-title">{conv.title || t('chat.newChatTitle')}</span>
                     
-                    {/* 输入框移到这里 - 在欢迎语下方 */}
-                    <div className="mt-2 mb-4">
-                      <form onSubmit={handleSubmit} className="mx-auto max-w-xl">
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border border-gray-200">
-                            <input
-                              type="text"
-                              value={input}
-                              onChange={(e) => setInput(e.target.value)}
-                              className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-gray-800 placeholder-gray-400"
-                              placeholder={t('chat.inputPlaceholder')}
-                              disabled={isLoading}
-                            />
-                            
-                            <button
-                              type="submit"
-                              disabled={!input.trim() || isLoading}
-                              className={`p-2 rounded-md ${
-                                !input.trim() || isLoading ? 'text-gray-400' : 'text-blue-600 hover:bg-blue-50'
-                              }`}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                              </svg>
-                            </button>
-                          </div>
-                          
-                          {/* 添加选项按钮区域 */}
-                          <div className="flex justify-center gap-2">
-                            <button
-                              type="button"
-                              onClick={handleToggleManualInput}
-                              className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 bg-white rounded-full border border-gray-200 hover:bg-gray-50 transition-colors"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                              {t('chat.manualInput')}
-                            </button>
-                            
-                            <button
-                              type="button"
-                              className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 bg-white rounded-full border border-gray-200 hover:bg-gray-50 transition-colors"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                              </svg>
-                              {t('chat.networkSearch')}
-                            </button>
-                          </div>
-                        </div>
-                      </form>
-                    </div>
-                    
-                    {/* 示例问题区 - 更新样式 */}
-                    {!isManualInputActive ? (
-                      <>
-                        <div className="text-sm text-gray-500 mb-2">{t('chat.examplesTitle')}</div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-w-xl mx-auto">
-                          {exampleQuestions.map((question, index) => (
-                            <button
-                              key={index}
-                              onClick={() => handleExampleClick(question)}
-                              className="text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors border-b border-gray-100 rounded"
-                            >
-                              {question}
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="mt-4 mx-auto max-w-xl">
-                        <div className="bg-white rounded-lg border border-gray-200 p-4">
-                          <h3 className="text-lg font-medium mb-4">{t('portfolio.createManually')}</h3>
-                          
-                          <div className="mb-4">
-                            <label className="block text-sm font-medium mb-1">{t('portfolio.name')}</label>
-                            <input
-                              type="text"
-                              value={portfolioName}
-                              onChange={(e) => setPortfolioName(e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                              placeholder={t('portfolio.enterName')}
-                            />
-                          </div>
-                          
-                          <div className="mb-4">
-                            <div className="flex justify-between items-center mb-2">
-                              <h3 className="text-md font-medium">{t('portfolio.stockList')}</h3>
-                              <button
-                                type="button"
-                                onClick={addStock}
-                                className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                              >
-                                {t('portfolio.addStock')}
-                              </button>
-                            </div>
-                            
-                            <div className="space-y-3">
-                              {manualStocks.map((stock, index) => (
-                                <div key={index} className="flex flex-row gap-2 items-center">
-                                  <div className="flex-1">
-                                    <StockSearch
-                                      value={stock.info}
-                                      onChange={(selectedStock) => handleStockSelect(index, selectedStock)}
-                                      placeholder={t('portfolio.stockCode')}
-                                      label=""
-                                    />
-                                  </div>
-                                  <div className="w-24 flex-shrink-0">
-                                    <div className="relative">
-                                      <input
-                                        type="number"
-                                        value={stock.weight}
-                                        onChange={(e) => updateStock(index, 'weight', parseFloat(e.target.value) || 0)}
-                                        step="0.0001"
-                                        min="0"
-                                        max="100"
-                                        className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder={t('portfolio.weight')}
-                                      />
-                                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                        <span className="text-gray-500">%</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  {manualStocks.length > 1 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => removeStock(index)}
-                                      className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex-shrink-0"
-                                    >
-                                      {t('portfolio.delete')}
-                                    </button>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          
-                          <div className="flex justify-end mt-4">
-                            <button
-                              type="button"
-                              onClick={() => setIsManualInputActive(false)}
-                              className="px-4 py-2 mr-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
-                            >
-                              {t('portfolio.cancel')}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={submitManualPortfolio}
-                              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
-                            >
-                              {t('portfolio.submit')}
-                            </button>
-                          </div>
-                        </div>
+                    {/* 只有当该聊天是激活状态时才显示菜单按钮 */}
+                    {activeConversationId === conv.id && (
+                      <div className="chat-item-menu" onClick={e => toggleMenu(conv.id, e)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="1"></circle>
+                          <circle cx="19" cy="12" r="1"></circle>
+                          <circle cx="5" cy="12" r="1"></circle>
+                        </svg>
                       </div>
                     )}
                   </div>
                 )}
-                
-                {/* 只在用户开始聊天后显示聊天消息 */}
-                {messages.length > 1 && messages.slice(1).map((message, index) => (
-                  <div 
-                    key={index} 
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-6`}
+              </div>
+            ))}
+          </div>
+        </aside>
+        
+        {/* 右侧聊天区域 */}
+        <main className="chat-area">
+          {/* 投资组合卡片 - 如果存在的话 */}
+          {extractedPortfolio && (
+            <div className="portfolio-card">
+              <div className="portfolio-card-header">
+                <h4 className="portfolio-card-title">{extractedPortfolio.name}</h4>
+                <div className="portfolio-actions-container">
+                  <button 
+                    className="edit-portfolio-button"
+                    onClick={handleEditPortfolio}
                   >
-                    <div 
-                      className={`max-w-[80%] rounded-lg px-4 py-3 ${
-                        message.role === 'user' 
-                          ? 'bg-blue-600 text-white' 
-                          : message.role === 'system'
-                            ? 'bg-gray-100 text-gray-700 text-center mx-auto' 
-                            : 'bg-gray-100 text-gray-800'
-                      } ${message.content.includes('投资组合分析') ? 'whitespace-pre-line' : ''}`}
-                    >
-                      {filterThinkingChain(message.content)}
+                    {t('portfolio.editPortfolio')}
+                  </button>
+                  <button 
+                    className="send-to-dashboard"
+                    onClick={sendPortfolioToBackend}
+                  >
+                    {t('portfolio.sendToDashboard')}
+                  </button>
+                </div>
+              </div>
+              <div className="portfolio-stocks">
+                {extractedPortfolio.tickers.map((ticker, index) => (
+                  <div key={index} className="portfolio-stock-item">
+                    <div className="stock-symbol-display">{ticker.symbol}</div>
+                    <div className="stock-name-display">
+                      {ticker.name || stockNameMapping[ticker.symbol] || ticker.symbol}
+                    </div>
+                    <div className="stock-weight-display">
+                      {(ticker.weight * 100).toFixed(2)}%
                     </div>
                   </div>
                 ))}
-                
-                {/* 加载指示器 */}
-                {isLoading && (
-                  <div className="flex justify-start mb-6">
-                    <div className="rounded-lg px-4 py-3 bg-gray-100">
-                      <div className="flex space-x-2">
-                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '600ms' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {/* 空白元素用于自动滚动 */}
-                <div ref={messagesEndRef} />
               </div>
             </div>
-            
-            {/* 输入区域 - 只在已有消息时显示 */}
-            {messages.length > 1 && (
-              <div className="p-4">
-                <div className={`container mx-auto max-w-2xl`}>
-                  {/* 投资组合卡片 */}
-                  {extractedPortfolio && (
-                    <div className="mb-4 rounded-lg p-4 bg-blue-50 border border-blue-200">
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-medium text-blue-800">{extractedPortfolio.name}</h3>
-                        <button
-                          onClick={sendPortfolioToBackend}
-                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
-                        >
-                          {t('portfolio.sendToDashboard')}
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {extractedPortfolio.tickers.map((ticker, idx) => (
-                          <div key={idx} className="flex justify-between bg-white p-2 rounded border border-blue-100">
-                            <div className="flex flex-col">
-                              <span className="font-medium">{ticker.symbol}</span>
-                              {(ticker.name || stockNameMapping[ticker.symbol]) && (
-                                <span className="text-xs text-gray-500">
-                                  {ticker.name || stockNameMapping[ticker.symbol]}
-                                </span>
-                              )}
-                            </div>
-                            <span>{(ticker.weight * 100).toFixed(4)}%</span>
+          )}
+
+          {/* 消息区域 */}
+          <div className="chat-messages" ref={messagesEndRef}>
+            {messages.length === 1 && messages[0].role === 'system' ? (
+              // 欢迎界面
+              <div className="welcome-container">
+                <h2>{t('chat.welcomeTitle')}</h2>
+                <p>{t('chat.welcomeMessage')}</p>
+                
+                <div className="example-questions">
+                  {exampleQuestions.map((question, index) => (
+                    <div 
+                      key={index}
+                      className="example-question"
+                      onClick={() => handleExampleClick(question)}
+                    >
+                      {question}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              // 聊天消息列表
+              messages.map((message, index) => {
+                // 对于系统消息，判断是否包含投资组合相关内容并添加按钮
+                if (message.role === 'system') {
+                  // 检查是否是投资组合发送完成的系统消息
+                  const isPortfolioMessage = 
+                    message.content.includes(t('portfolio.sentToDashboard')) || 
+                    message.content.includes(t('portfolio.readyToSendToDashboard'));
+                  
+                  // 判断是否包含"仪表板已生成"的消息，只有这种情况才显示按钮
+                  const isDashboardGenerated = message.content.includes(t('portfolio.sentToDashboard'));
+                  
+                  // 如果是与投资组合相关的系统消息且当前对话有关联的投资组合ID，则显示带按钮的消息
+                  if (isPortfolioMessage) {
+                    return (
+                      <React.Fragment key={index}>
+                        <div className="message system-message">
+                          <div className="message-content">{message.content}</div>
+                        </div>
+                        {isDashboardGenerated && conversationPortfolios[activeConversationId] && (
+                          <div className="dashboard-link-container">
+                            <Link 
+                              to={`/dashboard?portfolioId=${conversationPortfolios[activeConversationId]}`} 
+                              className="dashboard-link-button"
+                            >
+                              <DashboardIcon />
+                              <span>{t('portfolio.viewInDashboard')}</span>
+                            </Link>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                        )}
+                      </React.Fragment>
+                    );
+                  }
                   
-                  {/* 显示最近投资组合仪表盘入口，确保使用当前对话的投资组合ID */}
-                  {currentConversationPortfolioId && !extractedPortfolio && (
-                    <div className="mb-4">
-                      <Link
-                        to={`/dashboard/${currentConversationPortfolioId}`}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-green-50 text-green-600 hover:bg-green-100 border border-green-200"
-                        onClick={(e) => {
-                          // 检查ID是否是test-开头，如果是则转换格式
-                          if (currentConversationPortfolioId.startsWith('test-')) {
-                            e.preventDefault();
-                            const newId = 'port-' + currentConversationPortfolioId.split('-')[1];
-                            
-                            // 更新转换后的ID
-                            setConversationPortfolios(prev => ({
-                              ...prev,
-                              [activeConversationId]: newId
-                            }));
-                            
-                            // 重定向到新格式的ID
-                            window.location.href = `/dashboard/${newId}`;
-                          }
-                        }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                          <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
-                          <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
-                        </svg>
-                        {t('navigation.toDashboard')}
-                      </Link>
+                  // 其他系统消息不显示
+                  return null;
+                }
+                
+                if (message.role === 'user') {
+                  return (
+                    <div key={index} className="message user-message">
+                      {message.content}
                     </div>
-                  )}
+                  );
+                } else {
+                  // AI消息可能包含投资组合相关内容
+                  const hasPortfolioId = conversationPortfolios[activeConversationId];
                   
-                  {/* 输入框 */}
-                  <form onSubmit={handleSubmit}>
-                    <div className="flex flex-col bg-gray-50 rounded-lg p-2 border border-gray-200">
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        <button
-                          type="button"
-                          className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 bg-white rounded-full border border-gray-200 hover:bg-gray-50"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                          </svg>
-                          {t('chat.networkSearch')}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleToggleManualInput}
-                          className={`flex items-center gap-1 px-3 py-1.5 text-sm ${
-                            isManualInputActive 
-                              ? 'bg-blue-100 text-blue-700' 
-                              : 'bg-white text-gray-600'
-                          } rounded-full border border-gray-200 hover:bg-gray-50`}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                          {t('chat.manualInput')}
-                        </button>
+                  return (
+                    <React.Fragment key={index}>
+                      <div className="message ai-message">
+                        <div className="message-content">{filterThinkingChain(message.content)}</div>
                       </div>
                       
-                      {!isManualInputActive ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-gray-800 placeholder-gray-400"
-                            placeholder={t('chat.sendMessage')}
-                            disabled={isLoading}
-                          />
-                          
-                          <button
-                            type="submit"
-                            disabled={!input.trim() || isLoading}
-                            className={`p-2 rounded-md ${
-                              !input.trim() || isLoading ? 'text-gray-400' : 'text-blue-600 hover:bg-blue-50'
-                            }`}
+                      {/* 如果是最后一条AI消息且当前对话有关联的投资组合ID，添加仪表板链接 */}
+                      {hasPortfolioId && index === messages.length - 1 && !messages.some(m => 
+                        m.role === 'system' && (
+                          m.content.includes(t('portfolio.sentToDashboard'))
+                        )
+                      ) && (
+                        <div className="dashboard-link-container">
+                          <Link 
+                            to={`/dashboard?portfolioId=${conversationPortfolios[activeConversationId]}`} 
+                            className="dashboard-link-button"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                            </svg>
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex-1 w-full">
-                          <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('portfolio.name')}</label>
-                            <input
-                              type="text"
-                              value={portfolioName}
-                              onChange={(e) => setPortfolioName(e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                              placeholder={t('portfolio.enterName')}
-                            />
-                          </div>
-                          
-                          <div className="mb-4">
-                            <div className="flex justify-between items-center mb-2">
-                              <h3 className="text-lg font-medium">{t('portfolio.stockList')}</h3>
-                              <button
-                                type="button"
-                                onClick={addStock}
-                                className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                              >
-                                {t('portfolio.addStock')}
-                              </button>
-                            </div>
-                            
-                            <div className="space-y-3">
-                              {manualStocks.map((stock, index) => (
-                                <div key={index} className="flex flex-row gap-2 items-center">
-                                  <div className="flex-1">
-                                    <StockSearch
-                                      value={stock.info}
-                                      onChange={(selectedStock) => handleStockSelect(index, selectedStock)}
-                                      placeholder={t('portfolio.stockCode')}
-                                      label=""
-                                    />
-                                  </div>
-                                  <div className="w-24 flex-shrink-0">
-                                    <div className="relative">
-                                      <input
-                                        type="number"
-                                        value={stock.weight}
-                                        onChange={(e) => updateStock(index, 'weight', parseFloat(e.target.value) || 0)}
-                                        step="0.0001"
-                                        min="0"
-                                        max="100"
-                                        className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder={t('portfolio.weight')}
-                                      />
-                                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                        <span className="text-gray-500">%</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  {manualStocks.length > 1 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => removeStock(index)}
-                                      className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex-shrink-0"
-                                    >
-                                      {t('portfolio.delete')}
-                                    </button>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          
-                          <div className="flex justify-end mt-4">
-                            <button
-                              type="button"
-                              onClick={() => setIsManualInputActive(false)}
-                              className="px-4 py-2 mr-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
-                            >
-                              {t('portfolio.cancel')}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={submitManualPortfolio}
-                              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
-                            >
-                              {t('portfolio.submit')}
-                            </button>
-                          </div>
+                            <DashboardIcon />
+                            <span>{t('portfolio.viewInDashboard')}</span>
+                          </Link>
                         </div>
                       )}
-                    </div>
-                  </form>
-
-                  <p className="text-xs text-center text-gray-400 mt-4">
-                    {t('chat.aiDisclaimer')}
-                  </p>
-                </div>
+                    </React.Fragment>
+                  );
+                }
+              })
+            )}
+            
+            {isLoading && (
+              <div className="message ai-message loading">
+                <span>{t('chat.thinking')}</span>
               </div>
             )}
           </div>
-        </div>
+          
+          {/* 输入区域 */}
+          <form onSubmit={handleSubmit} className="chat-input-container">
+            <input
+              type="text"
+              className="chat-input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={t('chat.inputPlaceholder')}
+              disabled={isLoading}
+            />
+            <button 
+              type="submit" 
+              className="send-button"
+              disabled={isLoading || !input.trim()}
+            >
+              {t('chat.send')}
+            </button>
+          </form>
+
+          {/* 底部工具栏 */}
+          <div className="tools-container">
+            <button 
+              className="tools-button"
+              onClick={handleToggleManualInput}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              {t('portfolio.createManually')}
+            </button>
+          </div>
+        </main>
       </div>
 
-      {/* API密钥设置面板 */}
-      {isSettingsOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-lg font-semibold mb-4">{t('settings.title')}</h2>
-
-            {/* 语言设置选项 */}
-            <div className="mb-6 border-b pb-6">
-              <h3 className="text-md font-medium mb-3">{t('settings.language')}</h3>
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => setLanguage('zh')}
-                  className={`px-4 py-2 rounded-md border ${language === 'zh' ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-300 text-gray-700'}`}
-                >
-                  中文
-                </button>
-                <button
-                  onClick={() => setLanguage('en')}
-                  className={`px-4 py-2 rounded-md border ${language === 'en' ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-300 text-gray-700'}`}
-                >
-                  English
-                </button>
-              </div>
+      {/* 手动投资组合输入面板 - 完整实现 */}
+      {isManualInputActive && (
+        <div className="manual-input-overlay">
+          <div className="manual-input-panel">
+            <h3>{t('portfolio.manualInput')}</h3>
+            
+            <div className="portfolio-name-input">
+              <label>{t('portfolio.name')}</label>
+              <input
+                type="text"
+                className="stock-input"
+                value={portfolioName}
+                onChange={(e) => setPortfolioName(e.target.value)}
+                placeholder={t('portfolio.enterName')}
+              />
             </div>
-
-            {/* API密钥设置 */}
-            <div className="mb-6">
-              <h3 className="text-md font-medium mb-3">{t('settings.apiTitle')}</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                {t('settings.description')}
-                <a href="https://www.perplexity.ai/settings/api" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">
-                  {t('settings.apiLinkText')}
-                </a>
-              </p>
-              <div className="flex items-end gap-2">
-                <div className="flex-1">
-                  <input
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder={t('settings.placeholder')}
-                  />
-                </div>
-                <button
-                  onClick={handleSaveApiKey}
-                  className="px-4 py-3 rounded-md bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap"
-                >
-                  {t('settings.saveApi')}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex justify-end">
+            
+            <div className="stocks-header">
+              <h4>{t('portfolio.stockList')}</h4>
               <button
-                onClick={() => setIsSettingsOpen(false)}
-                className="px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-100"
+                type="button"
+                className="add-stock-button"
+                onClick={addStock}
               >
-                {t('settings.close')}
+                {t('portfolio.addStock')}
+              </button>
+            </div>
+            
+            <div className="stocks-list">
+              {manualStocks.map((stock, index) => (
+                <div key={index} className="stock-item">
+                  <div className="stock-symbol">
+                    <div className="stock-search-container">
+                      <input
+                        type="text"
+                        className="stock-input"
+                        value={stock.tempSymbol !== undefined ? stock.tempSymbol : stock.symbol}
+                        onChange={(e) => handleStockSymbolChange(index, e.target.value)}
+                        placeholder={t('portfolio.stockCode')}
+                      />
+                      
+                      {/* 股票代码联想建议 - 修改条件，只在当前输入框索引与聚焦索引匹配时显示 */}
+                      {stockSuggestions.length > 0 && focusedSymbolIndex === index && (
+                        <div className="stock-suggestions">
+                          {stockSuggestions.map((suggestion, suggIndex) => (
+                            <div
+                              key={suggIndex}
+                              className="stock-suggestion-item"
+                              onClick={() => selectStockSuggestion(index, suggestion)}
+                            >
+                              {suggestion.symbol} - {suggestion.name}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="stock-weight">
+                    <input
+                      type="number"
+                      className="stock-input"
+                      value={stock.weight}
+                      onChange={(e) => updateStock(index, 'weight', parseFloat(e.target.value) || 0)}
+                      step="0.01"
+                      min="0"
+                      max="100"
+                    />
+                    <span className="weight-unit">%</span>
+                  </div>
+                  
+                  {manualStocks.length > 1 && (
+                    <button
+                      type="button"
+                      className="remove-stock-button"
+                      onClick={() => removeStock(index)}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <div className="portfolio-actions">
+              <button
+                type="button"
+                className="cancel-button"
+                onClick={() => setIsManualInputActive(false)}
+              >
+                {t('portfolio.cancel')}
+              </button>
+              <button
+                type="button"
+                className="submit-button"
+                onClick={submitManualPortfolio}
+              >
+                {t('portfolio.submit')}
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* 聊天菜单遮罩层和选项 - 添加到组件底部，保证最高层级 */}
+      {menuOpenConversationId && (
+        <>
+          {/* 遮罩层 - 点击关闭菜单 */}
+          <div className="menu-overlay" onClick={closeMenu}></div>
+          
+          {/* 菜单选项 */}
+          <div 
+            className="chat-menu-options" 
+            onClick={e => e.stopPropagation()}
+            style={{ 
+              top: `${menuPosition.top}px`, 
+              left: `${menuPosition.left}px` 
+            }}
+          >
+            {conversations.map(conv => 
+              conv.id === menuOpenConversationId ? (
+                <React.Fragment key={conv.id}>
+                  <div 
+                    className="menu-option" 
+                    onClick={e => {
+                      e.stopPropagation();
+                      startEditTitle(conv.id, conv.title || t('chat.newChatTitle'), e);
+                    }}
+                  >
+                    <span className="menu-option-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                      </svg>
+                    </span>
+                    重命名
+                  </div>
+                  <div 
+                    className="menu-option delete-option" 
+                    onClick={e => {
+                      e.stopPropagation();
+                      deleteConversation(conv.id);
+                    }}
+                  >
+                    <span className="menu-option-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                      </svg>
+                    </span>
+                    删除
+                  </div>
+                </React.Fragment>
+              ) : null
+            )}
+          </div>
+        </>
       )}
     </div>
   );

@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ChatHomePage } from './features/chat'
 import { Dashboard } from './features/dashboard'
 import { LanguageProvider } from './shared/i18n/LanguageContext'
+import './styles/chat-theme.css'
+import './features/chat/ChatHomePage.css'
 
 const queryClient = new QueryClient()
 

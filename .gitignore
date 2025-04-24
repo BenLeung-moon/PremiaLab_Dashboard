@@ -74,6 +74,7 @@ ENV/
 *.swo
 .project
 .classpath
+.cursor/rules/
 
 # CSS generated files
 frontend/src/tailwind-output.css 
@@ -81,3 +82,5 @@ frontend/src/tailwind-output.css
 # User data files
 backend/app/data/portfolios.json
 backend/app/data/cache/*.json
+backend/app/data/portfolios.json
+backend/app/data/portfolios.json
