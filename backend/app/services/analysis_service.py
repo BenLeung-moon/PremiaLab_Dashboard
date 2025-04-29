@@ -13,6 +13,7 @@ from .portfolio_service import get_portfolio_service
 from .stocks_service import get_stock_history_service
 import math
 from ..utils.market_data import get_portfolio_factor_exposure, get_real_asset_allocation
+import traceback
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -314,42 +315,196 @@ def _calculate_statistics(historical_data, weights):
     # 检查并处理无效值
     portfolio_returns = portfolio_returns.replace([np.inf, -np.inf], np.nan).fillna(0)
     
-    # Calculate metrics
+    # --- Calculate Overall Metrics (based on the entire history available) ---
+    logger.debug("Calculating overall performance metrics...")
     annual_return = portfolio_returns.mean() * 252
     annual_volatility = portfolio_returns.std() * np.sqrt(252)
     
-    # 检查是否为有效值
+    # Default values and checks for overall metrics
     if pd.isna(annual_return) or np.isinf(annual_return):
-        logger.warning("Invalid annual return detected, using default value")
-        annual_return = 0.08  # 8% 默认年化收益率
+        logger.warning("Overall annual return invalid, using default 0.08")
+        annual_return = 0.08
+    if pd.isna(annual_volatility) or np.isinf(annual_volatility) or annual_volatility <= 0.001: # Check if volatility is too low or invalid
+        logger.warning(f"Overall annual volatility invalid or zero ({annual_volatility}), using default 0.15")
+        annual_volatility = 0.15
         
-    if pd.isna(annual_volatility) or np.isinf(annual_volatility) or annual_volatility == 0:
-        logger.warning("Invalid annual volatility detected, using default value")
-        annual_volatility = 0.15  # 15% 默认年化波动率
-        
-    sharpe_ratio = annual_return / annual_volatility if annual_volatility > 0 else 1.0
-    
-    # 检查夏普比率是否有效
+    # Use a consistent risk-free rate (e.g., 2%)
+    risk_free_rate = 0.02 
+    sharpe_ratio = (annual_return - risk_free_rate) / annual_volatility if annual_volatility > 0 else 0.0
     if pd.isna(sharpe_ratio) or np.isinf(sharpe_ratio):
-        logger.warning("Invalid Sharpe ratio detected, using default value")
-        sharpe_ratio = 1.0  # 默认夏普比率
-    
-    # Calculate drawdown
+        logger.warning(f"Overall Sharpe ratio invalid ({sharpe_ratio}), using default 0.0")
+        sharpe_ratio = 0.0
+
     cum_returns = (1 + portfolio_returns).cumprod()
+    total_return = cum_returns.iloc[-1] - 1 if len(cum_returns) > 0 else annual_return
+    if pd.isna(total_return) or np.isinf(total_return):
+        logger.warning("Overall total return invalid, using annual return")
+        total_return = annual_return
+        
     running_max = cum_returns.cummax()
     drawdown = (cum_returns / running_max) - 1
-    max_drawdown = drawdown.min()
-    
-    # 检查最大回撤是否有效
+    max_drawdown = drawdown.min() if not drawdown.empty else 0.0
     if pd.isna(max_drawdown) or np.isinf(max_drawdown):
-        logger.warning("Invalid max drawdown detected, using default value")
-        max_drawdown = -0.15  # 默认最大回撤 -15%
-    
-    # Generate monthly returns for the chart
+        logger.warning("Overall max drawdown invalid, using default -0.15")
+        max_drawdown = -0.15
+        
+    logger.debug(f"Overall Metrics: TR={total_return:.4f}, AR={annual_return:.4f}, Vol={annual_volatility:.4f}, SR={sharpe_ratio:.4f}, MDD={max_drawdown:.4f}")
+
+    # --- Calculate TimeFrame Specific Metrics ---
+    logger.debug("Calculating timeframe specific metrics...")
+    timeframe_results = {}
+    today = pd.Timestamp.now().normalize() # Use normalize() to remove time part for comparison
+    timeframes = {
+        'ytd': pd.Timestamp(today.year, 1, 1),
+        'oneYear': today - pd.DateOffset(years=1),
+        'threeYear': today - pd.DateOffset(years=3),
+        'fiveYear': today - pd.DateOffset(years=5)
+    }
+
+    # Get benchmark returns if available
+    benchmark_returns = None
+    if 'SPX' in returns.columns:
+        benchmark_returns = returns['SPX'].replace([np.inf, -np.inf], np.nan).fillna(0)
+        logger.debug(f"Using SPX benchmark returns for timeframe calculations.")
+    else:
+        logger.warning("No SPX benchmark returns found for timeframe calculations.")
+
+    for frame_name, start_date in timeframes.items():
+        start_date = start_date.normalize()
+        logger.debug(f"Processing timeframe: {frame_name} (Start: {start_date.strftime('%Y-%m-%d')})")
+        
+        # Filter portfolio returns for the period
+        mask = (portfolio_returns.index >= start_date) & (portfolio_returns.index <= today)
+        p_returns_period = portfolio_returns[mask]
+        
+        # Filter benchmark returns for the period
+        b_returns_period = None
+        if benchmark_returns is not None:
+            b_mask = (benchmark_returns.index >= start_date) & (benchmark_returns.index <= today)
+            b_returns_period = benchmark_returns[b_mask]
+
+        # Ensure we have enough data points (e.g., at least 2 to calculate std dev)
+        if len(p_returns_period) < 2:
+            logger.warning(f"Skipping timeframe {frame_name}: Not enough data points ({len(p_returns_period)}) after masking.")
+            timeframe_results[frame_name] = None # Or a default structure with null values
+            continue
+
+        # Calculate timeframe specific metrics
+        try:
+            # Total Return
+            p_total_period = (1 + p_returns_period).prod() - 1
+            b_total_period = (1 + b_returns_period).prod() - 1 if b_returns_period is not None and not b_returns_period.empty else None
+            excess_period = p_total_period - b_total_period if b_total_period is not None else None
+            logger.debug(f"  [{frame_name}] Total Return (P/B): {p_total_period:.4f} / {b_total_period if b_total_period is not None else 'N/A'}")
+
+            # Annualized Return
+            days_count = max(1, (p_returns_period.index[-1] - p_returns_period.index[0]).days) # Avoid division by zero if same day
+            p_ann_period = None
+            b_ann_period = None
+            if days_count > 365:
+                p_ann_period = (1 + p_total_period) ** (365.0 / days_count) - 1
+                if b_total_period is not None:
+                    b_ann_period = (1 + b_total_period) ** (365.0 / days_count) - 1
+                logger.debug(f"  [{frame_name}] Annualized Return (P/B): {p_ann_period:.4f} / {b_ann_period if b_ann_period is not None else 'N/A'}")
+            else:
+                 logger.debug(f"  [{frame_name}] Annualized Return: N/A (period <= 365 days: {days_count})")
+
+            # Volatility
+            p_vol_period = p_returns_period.std() * np.sqrt(252)
+            b_vol_period = b_returns_period.std() * np.sqrt(252) if b_returns_period is not None and len(b_returns_period) >= 2 else None
+            # Handle NaN/inf/zero vol
+            if pd.isna(p_vol_period) or np.isinf(p_vol_period) or p_vol_period <= 0.001:
+                logger.warning(f"  [{frame_name}] Portfolio Volatility invalid ({p_vol_period}), setting to 0.")
+                p_vol_period = 0.0
+            if b_vol_period is not None and (pd.isna(b_vol_period) or np.isinf(b_vol_period) or b_vol_period <= 0.001):
+                 logger.warning(f"  [{frame_name}] Benchmark Volatility invalid ({b_vol_period}), setting to None.")
+                 b_vol_period = None
+            logger.debug(f"  [{frame_name}] Volatility (P/B): {p_vol_period:.4f} / {b_vol_period if b_vol_period is not None else 'N/A'}")
+
+            # Sharpe Ratio
+            p_sharpe_period = None
+            b_sharpe_period = None
+            if p_ann_period is not None and p_vol_period > 0:
+                p_sharpe_period = (p_ann_period - risk_free_rate) / p_vol_period
+                if pd.isna(p_sharpe_period) or np.isinf(p_sharpe_period):
+                    logger.warning(f"  [{frame_name}] Portfolio Sharpe invalid ({p_sharpe_period}), setting to None.")
+                    p_sharpe_period = None
+            if b_ann_period is not None and b_vol_period is not None and b_vol_period > 0:
+                b_sharpe_period = (b_ann_period - risk_free_rate) / b_vol_period
+                if pd.isna(b_sharpe_period) or np.isinf(b_sharpe_period):
+                    logger.warning(f"  [{frame_name}] Benchmark Sharpe invalid ({b_sharpe_period}), setting to None.")
+                    b_sharpe_period = None
+            logger.debug(f"  [{frame_name}] Sharpe Ratio (P/B): {p_sharpe_period if p_sharpe_period is not None else 'N/A'} / {b_sharpe_period if b_sharpe_period is not None else 'N/A'}")
+
+            # Calculate Max Drawdown for the period
+            max_drawdown_period = 0.0
+            if not p_returns_period.empty:
+                cum_returns_period = (1 + p_returns_period).cumprod()
+                running_max_period = cum_returns_period.cummax()
+                drawdown_period = (cum_returns_period / running_max_period) - 1
+                if not drawdown_period.empty:
+                    max_drawdown_period = drawdown_period.min()
+                    if pd.isna(max_drawdown_period) or np.isinf(max_drawdown_period):
+                        logger.warning(f"  [{frame_name}] Max Drawdown calculation invalid ({max_drawdown_period}), setting to 0.")
+                        max_drawdown_period = 0.0
+                else:
+                     logger.warning(f"  [{frame_name}] Drawdown series is empty, setting Max Drawdown to 0.")
+            else:
+                logger.warning(f"  [{frame_name}] Returns series for period is empty, cannot calculate Max Drawdown.")
+            logger.debug(f"  [{frame_name}] Max Drawdown: {max_drawdown_period:.4f}")
+                
+            # Calculate Win Rate for the period
+            win_rate_period = 0.0
+            if not p_returns_period.empty:
+                positive_returns = (p_returns_period > 0).sum()
+                total_periods = len(p_returns_period)
+                if total_periods > 0:
+                    win_rate_period = (positive_returns / total_periods)
+                else:
+                    logger.warning(f"  [{frame_name}] Total periods is zero, cannot calculate Win Rate.")
+            else:
+                logger.warning(f"  [{frame_name}] Returns series for period is empty, cannot calculate Win Rate.")
+            logger.debug(f"  [{frame_name}] Win Rate: {win_rate_period:.4f}")
+            
+            # Structure for the timeframe
+            timeframe_data = {
+                'return': {
+                    'portfolio': round(p_total_period * 100, 2),
+                    'benchmark': round(b_total_period * 100, 2) if b_total_period is not None else None,
+                    'excess': round(excess_period * 100, 2) if excess_period is not None else None
+                },
+                'annualized': {
+                    'portfolio': round(p_ann_period * 100, 2) if p_ann_period is not None else None,
+                    'benchmark': round(b_ann_period * 100, 2) if b_ann_period is not None else None,
+                    'excess': round((p_ann_period - b_ann_period) * 100, 2) if p_ann_period is not None and b_ann_period is not None else None
+                } if p_ann_period is not None else None, # Only include if annualized is calculated
+                'volatility': {
+                    'portfolio': round(p_vol_period * 100, 2),
+                    'benchmark': round(b_vol_period * 100, 2) if b_vol_period is not None else None,
+                    'difference': round((p_vol_period - b_vol_period) * 100, 2) if b_vol_period is not None else None
+                },
+                'sharpe': {
+                    'portfolio': round(p_sharpe_period, 2) if p_sharpe_period is not None else None,
+                    'benchmark': round(b_sharpe_period, 2) if b_sharpe_period is not None else None,
+                    'difference': round(p_sharpe_period - b_sharpe_period, 2) if p_sharpe_period is not None and b_sharpe_period is not None else None
+                } if p_sharpe_period is not None or b_sharpe_period is not None else None, # Only include if sharpe is calculated
+                'maxDrawdown': round(max_drawdown_period * 100, 2), # Add timeframe specific max drawdown
+                'winRate': round(win_rate_period * 100, 2) # Add timeframe specific win rate
+            }
+            timeframe_results[frame_name] = timeframe_data
+            logger.debug(f"  => Result for {frame_name}: {timeframe_data}")
+
+        except Exception as e:
+            logger.error(f"Error calculating metrics for timeframe {frame_name}: {e}")
+            logger.debug(traceback.format_exc()) # Log full traceback for debugging
+            timeframe_results[frame_name] = None # Indicate error for this timeframe
+            
+    # --- Assemble Final Result --- 
+    # Generate monthly returns for the chart (can keep the previous logic or refine)
     monthly_returns = []
+    now = datetime.now()
     
     # Get returns for the last 12 months
-    now = datetime.now()
     for i in range(12):
         month = now.month - i - 1
         year = now.year
@@ -386,40 +541,7 @@ def _calculate_statistics(historical_data, weights):
         "maxDrawdown": round(float(max_drawdown * 100), 2),
         "winRate": 49.62,  # 胜率，使用默认值
         "monthlyReturns": monthly_returns,
-        "timeFrames": {
-            "ytd": {
-                "return": round(float(annual_return * 100 * 0.5), 2),  # 年初至今回报
-                "annualized": round(float(annual_return * 100), 2),
-                "benchmarkReturn": round(float(annual_return * 0.8 * 100), 2),
-                "excessReturn": round(float(annual_return * 0.2 * 100), 2),
-                "volatility": round(float(annual_volatility * 100), 2),
-                "sharpe": round(float(sharpe_ratio), 2)
-            },
-            "oneYear": {
-                "return": round(float(annual_return * 100), 2),
-                "annualized": round(float(annual_return * 100), 2),
-                "benchmarkReturn": round(float(annual_return * 0.8 * 100), 2),
-                "excessReturn": round(float(annual_return * 0.2 * 100), 2),
-                "volatility": round(float(annual_volatility * 100), 2),
-                "sharpe": round(float(sharpe_ratio), 2)
-            },
-            "threeYear": {
-                "return": round(float(annual_return * 100 * 3), 2),  # 三年累计
-                "annualized": round(float(annual_return * 100), 2),
-                "benchmarkReturn": round(float(annual_return * 0.8 * 100 * 3), 2),
-                "excessReturn": round(float(annual_return * 0.2 * 100 * 3), 2),
-                "volatility": round(float(annual_volatility * 100 * 0.9), 2),  # 略有不同
-                "sharpe": round(float(sharpe_ratio * 0.9), 2)  # 略有不同
-            },
-            "fiveYear": {
-                "return": round(float(annual_return * 100 * 5), 2),  # 五年累计
-                "annualized": round(float(annual_return * 100 * 0.95), 2),  # 略有不同
-                "benchmarkReturn": round(float(annual_return * 0.8 * 100 * 5), 2),
-                "excessReturn": round(float(annual_return * 0.2 * 100 * 5), 2),
-                "volatility": round(float(annual_volatility * 100 * 0.85), 2),  # 略有不同
-                "sharpe": round(float(sharpe_ratio * 0.85), 2)  # 略有不同
-            }
-        }
+        "timeFrames": timeframe_results # Use the newly calculated timeframe results
     }
     
     return result
@@ -1016,49 +1138,29 @@ def _calculate_historical_trends(historical_data, weights, days=1825):  # 默认
     
     # 确保按月份排序
     monthly_data.sort(key=lambda x: x["month"])
-    
-    # 计算累积表现数据
-    cumulative_data = _calculate_cumulative_performance(monthly_data)
-    
-    # 确保有足够的数据以支持前端的显示
-    # 如果数据量不足，则添加模拟数据进行补充
-    # 考虑交易日：平均每月约21-22个交易日，而不是30个日历日
+
+    # --- REVISED LOGIC START ---
+    # 首先确定需要显示的月数
     trading_days_per_month = 21
     required_months = days // trading_days_per_month
-    
-    # 确保最小要求的月数为12个月
-    required_months = max(12, required_months)
-    
-    logger.debug(f"Requested months based on days ({days}): {required_months} months (using {trading_days_per_month} trading days per month)")
-    
-    if len(monthly_data) < required_months:
-        logger.warning(f"Not enough historical data ({len(monthly_data)} months), generating additional mock data")
-        
-        # 获取当前数据的起始日期
-        if monthly_data:
-            start_date = datetime.strptime(monthly_data[0]["month"], "%Y-%m")
-            # 生成更早的数据点
-            additional_months = required_months - len(monthly_data)
-            additional_data = _generate_historical_month_data(additional_months, start_date)
-            # 合并数据，确保新数据在前面
-            monthly_data = additional_data + monthly_data
-            # 重新计算累积表现
-            cumulative_data = _calculate_cumulative_performance(monthly_data)
-    
-    # 根据请求的天数限制返回的月数
-    # 不再强制限制最大返回60个月，而是根据实际请求的天数来决定
-    requested_months = days // trading_days_per_month
-    
-    # 确保我们至少返回一年的数据
-    requested_months = max(12, requested_months)
-    
-    logger.debug(f"Limiting historical trends to {requested_months} months based on requested days: {days} (using {trading_days_per_month} trading days per month)")
-    
-    # 只有当数据量超过请求的月数时才进行截取
-    if len(monthly_data) > requested_months:
-        monthly_data = monthly_data[-requested_months:]
-        cumulative_data = cumulative_data[-requested_months:]
-    
+    required_months = max(12, required_months) # 确保至少返回一年的数据
+    logger.debug(f"Determined required months for display: {required_months} based on requested days: {days}")
+
+    # 如果可用数据不足，可能需要填充（这部分逻辑已在前面处理，但如果需要填充，需确保填充的数据也在切片之前）
+    # ... (existing padding logic if necessary) ...
+
+    # 仅在数据量超过请求的月数时，先截取月度数据
+    if len(monthly_data) > required_months:
+        logger.info(f"Slicing monthly data from {len(monthly_data)} to {required_months} months before calculating cumulative.")
+        monthly_data = monthly_data[-required_months:]
+    else:
+        logger.info(f"Using all available {len(monthly_data)} months of data (required: {required_months}).")
+
+    # 使用截取后的月度数据计算累积表现
+    cumulative_data = _calculate_cumulative_performance(monthly_data)
+    logger.debug(f"Calculated cumulative performance based on {len(monthly_data)} months.")
+    # --- REVISED LOGIC END ---
+
     return {
         "monthlyReturns": monthly_data,
         "cumulativeReturns": cumulative_data
@@ -1117,27 +1219,17 @@ def _calculate_cumulative_performance(monthly_data):
             
             # 检查累积值是否有效
             if pd.isna(cumulative_port) or np.isinf(cumulative_port):
-                logger.warning(f"Detected invalid portfolio cumulative value for month {month_data['month']}")
-                cumulative_port = 100.0  # 重置为初始值
+                logger.warning(f"Detected invalid portfolio cumulative value for month {month_data['month']} before rounding")
+                cumulative_port = 100.0  # 重置为初始值 or handle appropriately
                 
             if pd.isna(cumulative_bench) or np.isinf(cumulative_bench):
-                logger.warning(f"Detected invalid benchmark cumulative value for month {month_data['month']}")
-                cumulative_bench = 100.0  # 重置为初始值
-            
-            # 计算相对于基期的百分比收益并确保为有效值
-            port_cumulative = cumulative_port - 100
-            bench_cumulative = cumulative_bench - 100
-            
-            if pd.isna(port_cumulative) or np.isinf(port_cumulative):
-                port_cumulative = 0.0
-                
-            if pd.isna(bench_cumulative) or np.isinf(bench_cumulative):
-                bench_cumulative = 0.0
+                logger.warning(f"Detected invalid benchmark cumulative value for month {month_data['month']} before rounding")
+                cumulative_bench = 100.0  # 重置为初始值 or handle appropriately
             
             cumulative_data.append({
                 "month": month_data["month"],
-                "portfolio": round(port_cumulative, 2),
-                "benchmark": round(bench_cumulative, 2)
+                "portfolio": round(cumulative_port, 2), # 使用累积值本身 (Use cumulative value directly)
+                "benchmark": round(cumulative_bench, 2) # 使用累积值本身 (Use cumulative value directly)
             })
         except Exception as e:
             logger.error(f"Error calculating cumulative performance for month {month_data.get('month', 'unknown')}: {e}")

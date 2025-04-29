@@ -3,6 +3,7 @@
     "id": "port-1",
     "name": "a",
     "created_at": "2025-04-13T21:30:46.693260",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -18,6 +19,7 @@
     "id": "port-2",
     "name": "a",
     "created_at": "2025-04-13T21:30:47.585506",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -33,6 +35,7 @@
     "id": "port-3",
     "name": "a",
     "created_at": "2025-04-13T21:32:14.984966",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -48,6 +51,7 @@
     "id": "port-4",
     "name": "a",
     "created_at": "2025-04-13T21:32:15.838149",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -63,6 +67,7 @@
     "id": "port-5",
     "name": "aa",
     "created_at": "2025-04-13T22:30:26.214873",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "ACGL",
@@ -78,6 +83,7 @@
     "id": "port-6",
     "name": "aa",
     "created_at": "2025-04-13T22:30:26.886307",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "ACGL",
@@ -93,6 +99,7 @@
     "id": "port-7",
     "name": "aa",
     "created_at": "2025-04-13T22:30:54.340050",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AMD",
@@ -124,6 +131,7 @@
     "id": "port-8",
     "name": "aa",
     "created_at": "2025-04-13T22:30:55.119952",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AMD",
@@ -155,6 +163,7 @@
     "id": "port-9",
     "name": "a",
     "created_at": "2025-04-13T22:40:05.876978",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -186,6 +195,7 @@
     "id": "port-10",
     "name": "a",
     "created_at": "2025-04-13T22:40:08.523369",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -217,6 +227,7 @@
     "id": "port-11",
     "name": "Trade War Hedge Portfolio",
     "created_at": "2025-04-14T09:57:15.558938",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "JNJ",
@@ -264,6 +275,7 @@
     "id": "port-12",
     "name": "a",
     "created_at": "2025-04-14T10:04:39.889754",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "MSFT",
@@ -279,6 +291,7 @@
     "id": "port-13",
     "name": "a",
     "created_at": "2025-04-14T10:04:40.734349",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "MSFT",
@@ -294,6 +307,7 @@
     "id": "port-14",
     "name": "bb",
     "created_at": "2025-04-14T10:05:33.820822",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "BRK-B",
@@ -309,6 +323,7 @@
     "id": "port-15",
     "name": "bb",
     "created_at": "2025-04-14T10:05:34.815022",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "BRK-B",
@@ -324,6 +339,7 @@
     "id": "port-16",
     "name": "a",
     "created_at": "2025-04-14T10:16:02.729827",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -339,6 +355,7 @@
     "id": "port-17",
     "name": "a",
     "created_at": "2025-04-14T10:16:03.778248",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -354,6 +371,7 @@
     "id": "port-18",
     "name": "a",
     "created_at": "2025-04-14T10:22:26.493196",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -369,6 +387,7 @@
     "id": "port-19",
     "name": "a",
     "created_at": "2025-04-14T10:22:27.390949",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -384,6 +403,7 @@
     "id": "port-20",
     "name": "a",
     "created_at": "2025-04-14T10:58:57.349924",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -399,6 +419,7 @@
     "id": "port-21",
     "name": "a",
     "created_at": "2025-04-14T10:58:58.644496",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -414,6 +435,7 @@
     "id": "port-22",
     "name": "Test Portfolio",
     "created_at": "2025-04-14T11:01:59.846355",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -437,6 +459,7 @@
     "id": "port-23",
     "name": "Low-Risk Diversified Portfolio",
     "created_at": "2025-04-14T11:45:00.268364",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "JNJ",
@@ -484,6 +507,7 @@
     "id": "port-24",
     "name": "a",
     "created_at": "2025-04-14T11:49:03.496660",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -499,6 +523,7 @@
     "id": "port-25",
     "name": "a",
     "created_at": "2025-04-14T11:49:04.287746",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -514,6 +539,7 @@
     "id": "port-26",
     "name": "Trade War Hedged Portfolio",
     "created_at": "2025-04-14T11:52:57.572020",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "JNJ",
@@ -561,6 +587,7 @@
     "id": "port-27",
     "name": "Low-Risk Diversified Portfolio",
     "created_at": "2025-04-14T13:12:10.723540",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "JPM",
@@ -608,6 +635,7 @@
     "id": "port-28",
     "name": "Diversified S&P 500 Portfolio",
     "created_at": "2025-04-14T13:12:51.279345",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "MSFT",
@@ -679,6 +707,7 @@
     "id": "port-29",
     "name": "Diversified Core Portfolio",
     "created_at": "2025-04-14T13:56:00.219209",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "MSFT",
@@ -726,6 +755,7 @@
     "id": "port-30",
     "name": "All in Apple",
     "created_at": "2025-04-14T13:58:20.086159",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -741,6 +771,7 @@
     "id": "port-31",
     "name": "All in Apple",
     "created_at": "2025-04-14T13:58:21.276757",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -756,6 +787,7 @@
     "id": "port-32",
     "name": "All in Apple",
     "created_at": "2025-04-14T14:04:07.286423",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -771,6 +803,7 @@
     "id": "port-33",
     "name": "All in Apple",
     "created_at": "2025-04-14T14:04:08.615723",
+    "user_id": "default_user",
     "tickers": [
       {
         "symbol": "AAPL",
@@ -779,6 +812,1176 @@
         "sector": "Information Technology",
         "price": 173.57,
         "change": 0.0123
+      }
+    ]
+  },
+  "port-34": {
+    "id": "port-34",
+    "name": "aaa",
+    "created_at": "2025-04-25T21:38:05.525484",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "ABBV",
+        "weight": 0.5,
+        "name": "ABBVIE INC",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "AAPL",
+        "weight": 0.5,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Consumer Electronics"
+      }
+    ]
+  },
+  "port-35": {
+    "id": "port-35",
+    "name": "aaa",
+    "created_at": "2025-04-25T21:38:06.452722",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "ABBV",
+        "weight": 0.5,
+        "name": "ABBVIE INC",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "AAPL",
+        "weight": 0.5,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Consumer Electronics"
+      }
+    ]
+  },
+  "port-36": {
+    "id": "port-36",
+    "name": "aa",
+    "created_at": "2025-04-26T14:56:39.173626",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 0.333333,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Consumer Electronics"
+      },
+      {
+        "symbol": "ACGL",
+        "weight": 0.333333,
+        "name": "ARCH CAPITAL GROUP LTD",
+        "sector": "Financials",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "FICO",
+        "weight": 0.333333,
+        "name": "FAIR ISAAC CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      }
+    ]
+  },
+  "port-37": {
+    "id": "port-37",
+    "name": "aa",
+    "created_at": "2025-04-26T14:56:39.797875",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 0.333333,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Consumer Electronics"
+      },
+      {
+        "symbol": "ACGL",
+        "weight": 0.333333,
+        "name": "ARCH CAPITAL GROUP LTD",
+        "sector": "Financials",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "FICO",
+        "weight": 0.333333,
+        "name": "FAIR ISAAC CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      }
+    ]
+  },
+  "port-38": {
+    "id": "port-38",
+    "name": "abc",
+    "created_at": "2025-04-26T15:03:53.467533",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Consumer Electronics"
+      }
+    ]
+  },
+  "port-39": {
+    "id": "port-39",
+    "name": "abc",
+    "created_at": "2025-04-26T15:03:53.856066",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 1.0,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Consumer Electronics"
+      }
+    ]
+  },
+  "port-40": {
+    "id": "port-40",
+    "name": "aa",
+    "created_at": "2025-04-26T15:05:05.769096",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 0.5,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Consumer Electronics"
+      },
+      {
+        "symbol": "CRL",
+        "weight": 0.5,
+        "name": "CHARLES RIVER LABORATORIES INTERNA",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      }
+    ]
+  },
+  "port-41": {
+    "id": "port-41",
+    "name": "aa",
+    "created_at": "2025-04-26T15:05:06.629926",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "AAPL",
+        "weight": 0.5,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Consumer Electronics"
+      },
+      {
+        "symbol": "CRL",
+        "weight": 0.5,
+        "name": "CHARLES RIVER LABORATORIES INTERNA",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      }
+    ]
+  },
+  "port-42": {
+    "id": "port-42",
+    "name": "Defensive S&P 500 Tariff Risk Portfolio",
+    "created_at": "2025-04-26T18:36:00.994290",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "PG",
+        "weight": 0.22,
+        "name": "PROCTER & GAMBLE",
+        "sector": "Consumer Staples",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Household & Personal Products"
+      },
+      {
+        "symbol": "JNJ",
+        "weight": 0.21,
+        "name": "JOHNSON & JOHNSON",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Drug Manufacturers"
+      },
+      {
+        "symbol": "NEE",
+        "weight": 0.18,
+        "name": "NEXTERA ENERGY INC",
+        "sector": "Utilities",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "PEP",
+        "weight": 0.18,
+        "name": "PEPSICO INC",
+        "sector": "Consumer Staples",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "DUK",
+        "weight": 0.11,
+        "name": "DUKE ENERGY CORP",
+        "sector": "Utilities",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "MRK",
+        "weight": 0.1,
+        "name": "MERCK & CO INC",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      }
+    ]
+  },
+  "port-43": {
+    "id": "port-43",
+    "name": "S&P 500 Biotech & Medicine Portfolio",
+    "created_at": "2025-04-26T18:42:24.543407",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "JNJ",
+        "weight": 0.2,
+        "name": "JOHNSON & JOHNSON",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Drug Manufacturers"
+      },
+      {
+        "symbol": "PFE",
+        "weight": 0.15,
+        "name": "PFIZER INC",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "MRK",
+        "weight": 0.15,
+        "name": "MERCK & CO INC",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "ABBV",
+        "weight": 0.15,
+        "name": "ABBVIE INC",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "LLY",
+        "weight": 0.15,
+        "name": "ELI LILLY",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "REGN",
+        "weight": 0.1,
+        "name": "REGENERON PHARMACEUTICALS INC",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "VRTX",
+        "weight": 0.1,
+        "name": "VERTEX PHARMACEUTICALS INC",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      }
+    ]
+  },
+  "port-44": {
+    "id": "port-44",
+    "name": "S&P 500 Defensive Portfolio (Tariff Risk Focus)",
+    "created_at": "2025-04-26T19:10:45.256376",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "PG",
+        "weight": 0.22,
+        "name": "PROCTER & GAMBLE",
+        "sector": "Consumer Staples",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Household & Personal Products"
+      },
+      {
+        "symbol": "JNJ",
+        "weight": 0.2,
+        "name": "JOHNSON & JOHNSON",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Drug Manufacturers"
+      },
+      {
+        "symbol": "PEP",
+        "weight": 0.18,
+        "name": "PEPSICO INC",
+        "sector": "Consumer Staples",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "NEE",
+        "weight": 0.2,
+        "name": "NEXTERA ENERGY INC",
+        "sector": "Utilities",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "DUK",
+        "weight": 0.2,
+        "name": "DUKE ENERGY CORP",
+        "sector": "Utilities",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      }
+    ]
+  },
+  "port-45": {
+    "id": "port-45",
+    "name": "Aggressive S&P 500 Growth Portfolio",
+    "created_at": "2025-04-26T19:24:46.188213",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "NVDA",
+        "weight": 0.25,
+        "name": "NVIDIA CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Semiconductors"
+      },
+      {
+        "symbol": "AAPL",
+        "weight": 0.2,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Consumer Electronics"
+      },
+      {
+        "symbol": "AMZN",
+        "weight": 0.15,
+        "name": "AMAZON COM INC",
+        "sector": "Consumer Discretionary",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Retail"
+      },
+      {
+        "symbol": "MSFT",
+        "weight": 0.15,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Software"
+      },
+      {
+        "symbol": "GOOGL",
+        "weight": 0.1,
+        "name": "ALPHABET INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      },
+      {
+        "symbol": "META",
+        "weight": 0.1,
+        "name": "META PLATFORMS INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      },
+      {
+        "symbol": "TSLA",
+        "weight": 0.05,
+        "name": "TESLA INC",
+        "sector": "Consumer Discretionary",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Auto Manufacturers"
+      }
+    ]
+  },
+  "port-46": {
+    "id": "port-46",
+    "name": "Aggressive S&P 500 Growth + Defense",
+    "created_at": "2025-04-26T19:44:32.617436",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "NVDA",
+        "weight": 0.22,
+        "name": "NVIDIA CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Semiconductors"
+      },
+      {
+        "symbol": "AAPL",
+        "weight": 0.18,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Consumer Electronics"
+      },
+      {
+        "symbol": "AMZN",
+        "weight": 0.13,
+        "name": "AMAZON COM INC",
+        "sector": "Consumer Discretionary",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Retail"
+      },
+      {
+        "symbol": "MSFT",
+        "weight": 0.13,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Software"
+      },
+      {
+        "symbol": "GOOGL",
+        "weight": 0.09,
+        "name": "ALPHABET INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      },
+      {
+        "symbol": "META",
+        "weight": 0.09,
+        "name": "META PLATFORMS INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      },
+      {
+        "symbol": "TSLA",
+        "weight": 0.04,
+        "name": "TESLA INC",
+        "sector": "Consumer Discretionary",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Auto Manufacturers"
+      },
+      {
+        "symbol": "PG",
+        "weight": 0.04,
+        "name": "PROCTER & GAMBLE",
+        "sector": "Consumer Staples",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Household & Personal Products"
+      },
+      {
+        "symbol": "JNJ",
+        "weight": 0.04,
+        "name": "JOHNSON & JOHNSON",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Drug Manufacturers"
+      },
+      {
+        "symbol": "KO",
+        "weight": 0.04,
+        "name": "COCA-COLA",
+        "sector": "Consumer Staples",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      }
+    ]
+  },
+  "port-47": {
+    "id": "port-47",
+    "name": "\u8fd1\u671f\u7f8e\u80a1\u70ed\u70b9\u6807\u666e500\u6295\u8d44\u7ec4\u5408",
+    "created_at": "2025-04-26T19:56:09.247621",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "NVDA",
+        "weight": 0.25,
+        "name": "NVIDIA CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Semiconductors"
+      },
+      {
+        "symbol": "MSFT",
+        "weight": 0.2,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Software"
+      },
+      {
+        "symbol": "AAPL",
+        "weight": 0.15,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Consumer Electronics"
+      },
+      {
+        "symbol": "GOOGL",
+        "weight": 0.15,
+        "name": "ALPHABET INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      },
+      {
+        "symbol": "LLY",
+        "weight": 0.1,
+        "name": "ELI LILLY",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "META",
+        "weight": 0.1,
+        "name": "META PLATFORMS INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      },
+      {
+        "symbol": "TSLA",
+        "weight": 0.05,
+        "name": "TESLA INC",
+        "sector": "Consumer Discretionary",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Auto Manufacturers"
+      }
+    ]
+  },
+  "port-48": {
+    "id": "port-48",
+    "name": "\u8fd1\u671f\u7f8e\u80a1\u70ed\u70b9\u6807\u666e500\u6295\u8d44\u7ec4\u5408",
+    "created_at": "2025-04-26T19:57:00.420116",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "NVDA",
+        "weight": 0.25,
+        "name": "NVIDIA CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Semiconductors"
+      },
+      {
+        "symbol": "MSFT",
+        "weight": 0.2,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Software"
+      },
+      {
+        "symbol": "AAPL",
+        "weight": 0.15,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Consumer Electronics"
+      },
+      {
+        "symbol": "GOOGL",
+        "weight": 0.15,
+        "name": "ALPHABET INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      },
+      {
+        "symbol": "LLY",
+        "weight": 0.1,
+        "name": "ELI LILLY",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "META",
+        "weight": 0.1,
+        "name": "META PLATFORMS INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      },
+      {
+        "symbol": "TSLA",
+        "weight": 0.05,
+        "name": "TESLA INC",
+        "sector": "Consumer Discretionary",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Auto Manufacturers"
+      }
+    ]
+  },
+  "port-49": {
+    "id": "port-49",
+    "name": "\u4f18\u5316\u540e\u7684\u672a\u6765\u80fd\u6e90+\u79d1\u6280\u6807\u666e500\u6295\u8d44\u7ec4\u5408",
+    "created_at": "2025-04-26T19:58:54.754130",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "NVDA",
+        "weight": 0.2,
+        "name": "NVIDIA CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Semiconductors"
+      },
+      {
+        "symbol": "MSFT",
+        "weight": 0.17,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Software"
+      },
+      {
+        "symbol": "AAPL",
+        "weight": 0.13,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Consumer Electronics"
+      },
+      {
+        "symbol": "GOOGL",
+        "weight": 0.13,
+        "name": "ALPHABET INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      },
+      {
+        "symbol": "LLY",
+        "weight": 0.09,
+        "name": "ELI LILLY",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "META",
+        "weight": 0.09,
+        "name": "META PLATFORMS INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      },
+      {
+        "symbol": "TSLA",
+        "weight": 0.04,
+        "name": "TESLA INC",
+        "sector": "Consumer Discretionary",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Auto Manufacturers"
+      },
+      {
+        "symbol": "NEE",
+        "weight": 0.08,
+        "name": "NEXTERA ENERGY INC",
+        "sector": "Utilities",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "XOM",
+        "weight": 0.07,
+        "name": "EXXON MOBIL CORP",
+        "sector": "Energy",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      }
+    ]
+  },
+  "port-50": {
+    "id": "port-50",
+    "name": "Popular S&P 500 Follows Portfolio",
+    "created_at": "2025-04-26T20:04:20.852088",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "META",
+        "weight": 0.2,
+        "name": "META PLATFORMS INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      },
+      {
+        "symbol": "MSFT",
+        "weight": 0.2,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Software"
+      },
+      {
+        "symbol": "GOOGL",
+        "weight": 0.2,
+        "name": "ALPHABET INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      },
+      {
+        "symbol": "NFLX",
+        "weight": 0.15,
+        "name": "NETFLIX INC",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Entertainment"
+      },
+      {
+        "symbol": "CRM",
+        "weight": 0.15,
+        "name": "SALESFORCE INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Software"
+      },
+      {
+        "symbol": "MA",
+        "weight": 0.1,
+        "name": "MASTERCARD INC CLASS A",
+        "sector": "Financials",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Credit Services"
+      }
+    ]
+  },
+  "port-51": {
+    "id": "port-51",
+    "name": "Diversified S&P 500 Leaders Portfolio",
+    "created_at": "2025-04-26T20:06:55.402784",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "META",
+        "weight": 0.13,
+        "name": "META PLATFORMS INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      },
+      {
+        "symbol": "MSFT",
+        "weight": 0.13,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Software"
+      },
+      {
+        "symbol": "GOOGL",
+        "weight": 0.13,
+        "name": "ALPHABET INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      },
+      {
+        "symbol": "NFLX",
+        "weight": 0.1,
+        "name": "NETFLIX INC",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Entertainment"
+      },
+      {
+        "symbol": "CRM",
+        "weight": 0.1,
+        "name": "SALESFORCE INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Software"
+      },
+      {
+        "symbol": "MA",
+        "weight": 0.08,
+        "name": "MASTERCARD INC CLASS A",
+        "sector": "Financials",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Credit Services"
+      },
+      {
+        "symbol": "JNJ",
+        "weight": 0.13,
+        "name": "JOHNSON & JOHNSON",
+        "sector": "Health Care",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Drug Manufacturers"
+      },
+      {
+        "symbol": "PG",
+        "weight": 0.1,
+        "name": "PROCTER & GAMBLE",
+        "sector": "Consumer Staples",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Household & Personal Products"
+      },
+      {
+        "symbol": "JPM",
+        "weight": 0.05,
+        "name": "JPMORGAN CHASE & CO",
+        "sector": "Financials",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Banks"
+      },
+      {
+        "symbol": "XOM",
+        "weight": 0.03,
+        "name": "EXXON MOBIL CORP",
+        "sector": "Energy",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      },
+      {
+        "symbol": "UPS",
+        "weight": 0.02,
+        "name": "UNITED PARCEL SERVICE INC CLASS B",
+        "sector": "Industrials",
+        "price": null,
+        "change": null,
+        "region": "United States"
+      }
+    ]
+  },
+  "port-52": {
+    "id": "port-52",
+    "name": "10-Year High Growth S&P 500 Portfolio",
+    "created_at": "2025-04-26T20:09:26.443479",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "NVDA",
+        "weight": 0.25,
+        "name": "NVIDIA CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Semiconductors"
+      },
+      {
+        "symbol": "AAPL",
+        "weight": 0.2,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Consumer Electronics"
+      },
+      {
+        "symbol": "MSFT",
+        "weight": 0.2,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Software"
+      },
+      {
+        "symbol": "GOOGL",
+        "weight": 0.15,
+        "name": "ALPHABET INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      },
+      {
+        "symbol": "AMZN",
+        "weight": 0.1,
+        "name": "AMAZON COM INC",
+        "sector": "Consumer Discretionary",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Retail"
+      },
+      {
+        "symbol": "META",
+        "weight": 0.1,
+        "name": "META PLATFORMS INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      }
+    ]
+  },
+  "port-53": {
+    "id": "port-53",
+    "name": "10-Year High Growth S&P 500 + Future Energy Portfolio",
+    "created_at": "2025-04-26T20:10:41.806186",
+    "user_id": "default_user",
+    "tickers": [
+      {
+        "symbol": "NVDA",
+        "weight": 0.23,
+        "name": "NVIDIA CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Semiconductors"
+      },
+      {
+        "symbol": "AAPL",
+        "weight": 0.18,
+        "name": "APPLE INC",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Consumer Electronics"
+      },
+      {
+        "symbol": "MSFT",
+        "weight": 0.18,
+        "name": "MICROSOFT CORP",
+        "sector": "Information Technology",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Software"
+      },
+      {
+        "symbol": "GOOGL",
+        "weight": 0.14,
+        "name": "ALPHABET INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      },
+      {
+        "symbol": "AMZN",
+        "weight": 0.09,
+        "name": "AMAZON COM INC",
+        "sector": "Consumer Discretionary",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Retail"
+      },
+      {
+        "symbol": "META",
+        "weight": 0.09,
+        "name": "META PLATFORMS INC CLASS A",
+        "sector": "Communication",
+        "price": null,
+        "change": null,
+        "region": "United States",
+        "industry": "Internet Content & Information"
+      },
+      {
+        "symbol": "NEE",
+        "weight": 0.09,
+        "name": "NEXTERA ENERGY INC",
+        "sector": "Utilities",
+        "price": null,
+        "change": null,
+        "region": "United States"
       }
     ]
   }

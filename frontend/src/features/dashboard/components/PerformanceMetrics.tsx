@@ -89,44 +89,43 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, timeFrame
         
         const timeFrame = processedData.timeFrames[key];
         
-        // 如果return是一个对象而不是数值
-        if (timeFrame.return && typeof timeFrame.return === 'object') {
-          console.log(`发现${key}.return是对象格式:`, timeFrame.return);
-          
-          try {
-            // 尝试从对象中提取数据
-            const returnObj = timeFrame.return as any;
-            
-            // 如果对象有portfolio字段，使用它作为return值
-            if (returnObj.portfolio !== undefined) {
-              const portfolioReturn = parseFloat(returnObj.portfolio);
-              if (!isNaN(portfolioReturn)) {
-                timeFrame.return = portfolioReturn;
-              }
-              
-              // 如果对象有benchmark字段，用于benchmarkReturn
-              if (returnObj.benchmark !== undefined) {
-                const benchmarkReturn = parseFloat(returnObj.benchmark);
-                if (!isNaN(benchmarkReturn)) {
-                  timeFrame.benchmarkReturn = benchmarkReturn;
-                }
-              }
-              
-              // 如果对象有excess字段，用于excessReturn
-              if (returnObj.excess !== undefined) {
-                const excessReturn = parseFloat(returnObj.excess);
-                if (!isNaN(excessReturn)) {
-                  timeFrame.excessReturn = excessReturn;
-                }
-              }
-            }
-          } catch (e) {
-            console.error(`处理${key}.return时出错:`, e);
-            timeFrame.return = 0;
+        // Helper function to safely extract portfolio value from potential object
+        const extractPortfolioValue = (field: any): number | null => {
+          if (typeof field === 'number') {
+            return field;
+          } else if (field && typeof field === 'object' && field.portfolio !== undefined) {
+            const num = parseFloat(field.portfolio);
+            return isNaN(num) ? null : num;
           }
+          return null; // Return null if not a number or valid object
+        };
+
+        // Process 'return', 'annualized', 'volatility', 'sharpe' fields
+        timeFrame.return = extractPortfolioValue(timeFrame.return) ?? 0;
+        timeFrame.annualized = extractPortfolioValue(timeFrame.annualized); // Keep null if not applicable
+        timeFrame.volatility = extractPortfolioValue(timeFrame.volatility) ?? 0;
+        timeFrame.sharpe = extractPortfolioValue(timeFrame.sharpe) ?? 0;
+        
+        // Extract benchmark and excess returns if 'return' was originally an object
+        if (timeFrame.return && typeof timeFrame.return === 'object') {
+          const returnObj = timeFrame.return as any;
+          if (returnObj.benchmark !== undefined) {
+            const benchmarkReturn = parseFloat(returnObj.benchmark);
+            if (!isNaN(benchmarkReturn)) {
+              timeFrame.benchmarkReturn = benchmarkReturn;
+            }
+          }
+          if (returnObj.excess !== undefined) {
+            const excessReturn = parseFloat(returnObj.excess);
+            if (!isNaN(excessReturn)) {
+              timeFrame.excessReturn = excessReturn;
+            }
+          }
+          // After extracting benchmark/excess, set return back to the portfolio value
+          timeFrame.return = extractPortfolioValue(timeFrame.return) ?? 0;
         }
         
-        // 确保benchmarkReturn存在
+        // Ensure benchmarkReturn exists
         if (timeFrame.benchmarkReturn === undefined) {
           if (timeFrame.benchmark !== undefined) {
             timeFrame.benchmarkReturn = timeFrame.benchmark as number;
@@ -211,7 +210,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, timeFrame
     // 获取选中的时间段数据
     const timeFrameData = performanceData.timeFrames?.[timeFrame];
     
-    // 如果没有当前时间段的数据，返回总体指标
+    // 如果没有当前时间段的数据，返回总体指标作为后备
     if (!timeFrameData) {
       console.warn(`未找到${timeFrame}时间段数据，使用总体指标`);
       return {
@@ -219,19 +218,30 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, timeFrame
         annualized: performanceData.annualizedReturn,
         volatility: performanceData.volatility,
         sharpe: performanceData.sharpeRatio,
-        maxDrawdown: performanceData.maxDrawdown,
-        winRate: performanceData.winRate
+        maxDrawdown: performanceData.maxDrawdown, // Overall
+        winRate: performanceData.winRate,       // Overall
+        // Provide default benchmark/excess returns for fallback case
+        benchmarkReturn: performanceData.timeFrames?.oneYear?.benchmarkReturn || 0, 
+        excessReturn: performanceData.timeFrames?.oneYear?.excessReturn || 0 
       };
     }
     
-    // 将timeFrame中的数据映射到所需的格式
+    // 使用特定时间段的数据（如果可用），否则使用 0 或整体数据
     return {
       return: typeof timeFrameData.return === 'number' ? timeFrameData.return : 0,
-      annualized: timeFrameData.annualized !== undefined ? timeFrameData.annualized : performanceData.annualizedReturn,
-      volatility: timeFrameData.volatility !== undefined ? timeFrameData.volatility : performanceData.volatility,
-      sharpe: timeFrameData.sharpe !== undefined ? timeFrameData.sharpe : performanceData.sharpeRatio,
-      maxDrawdown: performanceData.maxDrawdown,
-      winRate: performanceData.winRate
+      // Use != null to catch undefined too
+      annualized: timeFrameData.annualized != null ? timeFrameData.annualized : 0, 
+      // Use timeframe volatility or 0
+      volatility: timeFrameData.volatility != null ? timeFrameData.volatility : 0, 
+      // Use timeframe sharpe or 0
+      sharpe: timeFrameData.sharpe != null ? timeFrameData.sharpe : 0,           
+      // Max Drawdown: Prioritize timeframe specific, fallback to overall
+      maxDrawdown: timeFrameData.maxDrawdown != null ? timeFrameData.maxDrawdown : performanceData.maxDrawdown,
+      // Win Rate: Prioritize timeframe specific, fallback to overall
+      winRate: timeFrameData.winRate != null ? timeFrameData.winRate : performanceData.winRate,
+      // Ensure benchmark/excess returns are handled
+      benchmarkReturn: timeFrameData.benchmarkReturn != null ? timeFrameData.benchmarkReturn : 0,
+      excessReturn: timeFrameData.excessReturn != null ? timeFrameData.excessReturn : 0
     };
   };
   
@@ -251,25 +261,30 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, timeFrame
     { 
       name: t('dashboard.performanceMetrics.totalReturn'), 
       value: currentTimeFrameData.return, 
-      change: performanceData.timeFrames?.[timeFrame]?.excessReturn || 0,
+      // Change is the excess return for the period
+      change: currentTimeFrameData.excessReturn,
       suffix: '%',
       valueType: 'percent'
     },
     { 
       name: t('dashboard.performanceMetrics.annualizedReturn'), 
       value: currentTimeFrameData.annualized, 
-      change: calculateChange(
-        performanceData.timeFrames?.[timeFrame]?.annualized,
-        performanceData.timeFrames?.threeYear?.annualized
-      ),
+      // Change calculation: Compare to 3yr if annualized exists, else 0
+      change: currentTimeFrameData.annualized === 0 
+        ? 0 
+        : calculateChange(
+            currentTimeFrameData.annualized,
+            performanceData.timeFrames?.threeYear?.annualized // Still comparing to 3yr annualized
+          ),
       suffix: '%',
       valueType: 'percent'
     },
     { 
       name: t('dashboard.performanceMetrics.sharpeRatio'), 
       value: currentTimeFrameData.sharpe, 
+      // Change calculation: Compare to 3yr for now
       change: calculateChange(
-        performanceData.timeFrames?.[timeFrame]?.sharpe,
+        currentTimeFrameData.sharpe,
         performanceData.timeFrames?.threeYear?.sharpe
       ),
       suffix: '',
@@ -277,16 +292,19 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, timeFrame
     },
     { 
       name: t('dashboard.performanceMetrics.maxDrawdown'), 
+      // Value is overall max drawdown
       value: currentTimeFrameData.maxDrawdown, 
-      change: currentTimeFrameData.maxDrawdown - (performanceData.timeFrames?.threeYear?.return || 0) / 3,
+      // Change is 0 for overall metric
+      change: 0,
       suffix: '%',
       valueType: 'percent'
     },
     { 
       name: t('dashboard.performanceMetrics.volatility'), 
       value: currentTimeFrameData.volatility, 
+      // Change calculation: Compare to 3yr for now
       change: calculateChange(
-        performanceData.timeFrames?.[timeFrame]?.volatility,
+        currentTimeFrameData.volatility,
         performanceData.timeFrames?.threeYear?.volatility
       ),
       suffix: '%',
@@ -294,7 +312,9 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, timeFrame
     },
     { 
       name: t('dashboard.performanceMetrics.winRate'), 
+      // Value is overall win rate
       value: currentTimeFrameData.winRate || 0, 
+      // Change is 0 for overall metric
       change: 0,
       suffix: '%',
       valueType: 'percent'

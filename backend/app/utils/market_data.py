@@ -836,113 +836,41 @@ def get_portfolio_factor_exposure(tickers):
             logger.debug(traceback.format_exc())
             has_covariance = False
         
-        # 获取基准数据 - 假设S&P 500
-        benchmark_exposures = {}
-        for factor in portfolio_exposures.keys():
-            benchmark_exposures[factor] = 0.0  # 默认为0
-        
-        # 计算投资组合相对于基准的暴露度差异
-        exposure_diffs = {}
-        for factor in portfolio_exposures.keys():
-            exposure_diffs[factor] = portfolio_exposures[factor] - benchmark_exposures[factor]
-        
-        # 格式化结果
         # 1. 风格因子
         style_exposures = []
         for factor in style_factors:
             if factor in portfolio_exposures:
                 # 确保所有值都是有效的，替换NaN或Inf值
                 port_exp = portfolio_exposures[factor]
-                bench_exp = benchmark_exposures[factor]
-                diff_exp = exposure_diffs[factor]
                 
                 if pd.isna(port_exp) or np.isinf(port_exp):
                     port_exp = 0.0
-                if pd.isna(bench_exp) or np.isinf(bench_exp):
-                    bench_exp = 0.0
-                if pd.isna(diff_exp) or np.isinf(diff_exp):
-                    diff_exp = 0.0
                 
                 style_exposures.append({
                     "name": factor,
                     "portfolio_exposure": round(port_exp, 2),
-                    "benchmark_exposure": round(bench_exp, 2),
-                    "difference": round(diff_exp, 2),
                     "category": "style"
                 })
         
         # 2. 行业因子
         industry_exposures = []
         
-        # 方法1: 直接使用因子数据
+        # 直接使用factor_category_mapping中的行业因子
         for factor in industry_factors:
             if factor in portfolio_exposures:
                 # 确保所有值都是有效的，替换NaN或Inf值
                 port_exp = portfolio_exposures[factor]
-                bench_exp = benchmark_exposures[factor]
-                diff_exp = exposure_diffs[factor]
                 
                 if pd.isna(port_exp) or np.isinf(port_exp):
                     port_exp = 0.0
-                if pd.isna(bench_exp) or np.isinf(bench_exp):
-                    bench_exp = 0.0
-                if pd.isna(diff_exp) or np.isinf(diff_exp):
-                    diff_exp = 0.0
                 
                 industry_exposures.append({
                     "name": factor,
                     "portfolio_exposure": round(port_exp, 2),
-                    "benchmark_exposure": round(bench_exp, 2),
-                    "difference": round(diff_exp, 2),
                     "category": "industry"
                 })
         
-        # 使用方法2: 使用sector_allocation数据作为替代
-        # 如果方法1没有产生足够的行业暴露数据
-        industry_exposure_method = "Method 1 (Direct)"
-        if len(industry_exposures) < 5:
-            industry_exposure_method = "Method 2 (Factor Data)"
-            try:
-                # 加载真实的行业分配数据
-                asset_allocation = get_real_asset_allocation(tickers)
-                sector_distribution = asset_allocation.get("sectorDistribution", {})
-                
-                # 将sector_distribution转换为行业因子格式
-                industry_exposures = []
-                for sector, weight in sector_distribution.items():
-                    # 映射sector代码到行业名称
-                    sector_name_map = {
-                        "info_tech": "Information Technology",
-                        "financials": "Financials",
-                        "communication": "Communication Services",
-                        "consumer_disc": "Consumer Discretionary",
-                        "consumer_staples": "Consumer Staples",
-                        "health_care": "Health Care",
-                        "industrials": "Industrials",
-                        "energy": "Energy",
-                        "materials": "Materials",
-                        "utilities": "Utilities",
-                        "real_estate": "Real Estate",
-                        "other": "Other"
-                    }
-                    
-                    sector_name = sector_name_map.get(sector, sector.capitalize())
-                    
-                    # 行业权重作为暴露度，基准使用默认值
-                    # 确保数值是有效的
-                    if pd.isna(weight) or np.isinf(weight):
-                        weight = 0.0
-                        
-                    industry_exposures.append({
-                        "name": sector_name,
-                        "portfolio_exposure": round(weight, 2),  # 使用行业权重作为暴露度
-                        "benchmark_exposure": 0.0,  # 默认基准暴露度
-                        "difference": round(weight, 2),  # 差异等于投资组合暴露度
-                        "category": "industry"
-                    })
-            except Exception as e:
-                logger.error(f"使用sector_allocation作为行业因子时出错: {e}")
-                logger.debug(traceback.format_exc())
+        logger.info(f"使用因子数据获取行业因子，共{len(industry_exposures)}个行业")
         
         # 3. 国家因子
         country_exposures = []
@@ -950,83 +878,49 @@ def get_portfolio_factor_exposure(tickers):
             if factor in portfolio_exposures:
                 # 确保所有值都是有效的，替换NaN或Inf值
                 port_exp = portfolio_exposures[factor]
-                bench_exp = benchmark_exposures[factor]
-                diff_exp = exposure_diffs[factor]
                 
                 if pd.isna(port_exp) or np.isinf(port_exp):
                     port_exp = 0.0
-                if pd.isna(bench_exp) or np.isinf(bench_exp):
-                    bench_exp = 0.0
-                if pd.isna(diff_exp) or np.isinf(diff_exp):
-                    diff_exp = 0.0
                 
                 country_exposures.append({
                     "name": factor,
                     "portfolio_exposure": round(port_exp, 2),
-                    "benchmark_exposure": round(bench_exp, 2),
-                    "difference": round(diff_exp, 2),
                     "category": "country"
                 })
         
-        # 如果国家因子不足，可以使用资产配置中的地区数据作为补充
-        if len(country_exposures) < 3:
-            try:
-                asset_allocation = get_real_asset_allocation(tickers)
-                region_distribution = asset_allocation.get("regionDistribution", {})
-                
-                # 将region_distribution转换为国家因子格式
-                region_name_map = {
-                    "us": "United States",
-                    "europe": "Europe",
-                    "asia": "Asia",
-                    "china": "China",
-                    "japan": "Japan",
-                    "emerging": "Emerging Markets",
-                    "other": "Other"
-                }
-                
-                for region, weight in region_distribution.items():
-                    region_name = region_name_map.get(region, region.capitalize())
-                    
-                    # 确保数值是有效的
-                    if pd.isna(weight) or np.isinf(weight):
-                        weight = 0.0
-                    
-                    country_exposures.append({
-                        "name": region_name,
-                        "portfolio_exposure": round(weight, 2),
-                        "benchmark_exposure": 0.0,
-                        "difference": round(weight, 2),
-                        "category": "country"
-                    })
-            except Exception as e:
-                logger.error(f"使用regionDistribution作为国家因子时出错: {e}")
-                logger.debug(traceback.format_exc())
+        logger.info(f"使用因子数据获取国家因子，共{len(country_exposures)}个国家")
         
-        # 构建返回结果
+        # 处理其他因子 - 暂不包含
+        other_exposures = []
+        
+        # 返回结果
         result = {
             "styleExposures": style_exposures,
             "industryExposures": industry_exposures,
             "countryExposures": country_exposures,
-            "hasCovariance": has_covariance,
-            "mappedTickerCount": mapped_ticker_count,
-            "unmappedTickerCount": len(unmapped_tickers),
-            "industryExposureMethod": industry_exposure_method
+            "otherExposures": other_exposures,
+            "hasCorrelationData": has_covariance
         }
         
-        # 最后检查，确保所有数字类型字段都是有效的JSON值
+        # 确保所有值都是有效的
         for category in ["styleExposures", "industryExposures", "countryExposures"]:
             for i, item in enumerate(result[category]):
-                for key in ["portfolio_exposure", "benchmark_exposure", "difference"]:
+                for key in ["portfolio_exposure"]:
                     if key in item and (pd.isna(item[key]) or np.isinf(item[key])):
                         result[category][i][key] = 0.0
         
-        return result
-        
+        # 转换为API响应格式
+        return {
+            "styleFactors": result["styleExposures"],
+            "industryFactors": result["industryExposures"],
+            "countryFactors": result["countryExposures"],
+            "otherFactors": result["otherExposures"],
+            "hasCorrelationData": result["hasCorrelationData"]
+        }
     except Exception as e:
-        logger.error(f"计算因子暴露度时出错: {str(e)}")
+        logger.error(f"计算因子暴露度时出错: {e}")
         logger.debug(traceback.format_exc())
-        # 出错时返回模拟数据
+        # 出错时返回默认的模拟数据
         return get_mock_factor_exposure()
 
 # 模拟因子暴露数据 - 当实际数据不可用时使用
@@ -1036,37 +930,37 @@ def get_mock_factor_exposure():
     
     # 风格因子暴露
     style_factors = [
-        {"name": "Value", "portfolio_exposure": 0.32, "benchmark_exposure": 0.55, "difference": -0.23, "category": get_factor_category("Value")},
-        {"name": "Growth", "portfolio_exposure": 0.85, "benchmark_exposure": 0.35, "difference": 0.50, "category": get_factor_category("Growth")},
-        {"name": "Size", "portfolio_exposure": -0.15, "benchmark_exposure": 0.10, "difference": -0.25, "category": get_factor_category("Size")},
-        {"name": "Momentum", "portfolio_exposure": 0.68, "benchmark_exposure": 0.45, "difference": 0.23, "category": get_factor_category("Momentum")},
-        {"name": "Quality", "portfolio_exposure": 0.85, "benchmark_exposure": 0.60, "difference": 0.25, "category": get_factor_category("Quality")},
-        {"name": "Volatility", "portfolio_exposure": -0.25, "benchmark_exposure": -0.15, "difference": -0.10, "category": get_factor_category("Volatility")}
+        {"name": "Value", "portfolio_exposure": 0.32, "category": get_factor_category("Value")},
+        {"name": "Growth", "portfolio_exposure": 0.85, "category": get_factor_category("Growth")},
+        {"name": "Size", "portfolio_exposure": -0.15, "category": get_factor_category("Size")},
+        {"name": "Momentum", "portfolio_exposure": 0.68, "category": get_factor_category("Momentum")},
+        {"name": "Quality", "portfolio_exposure": 0.85, "category": get_factor_category("Quality")},
+        {"name": "Volatility", "portfolio_exposure": -0.25, "category": get_factor_category("Volatility")}
     ]
     
     # 行业因子暴露
     industry_factors = [
-        {"name": "Information Technology", "portfolio_exposure": 0.67, "benchmark_exposure": 0.22, "difference": 0.45, "category": get_factor_category("Information Technology")},
-        {"name": "Health Care", "portfolio_exposure": 0.33, "benchmark_exposure": 0.15, "difference": 0.18, "category": get_factor_category("Health Care")},
-        {"name": "Financials", "portfolio_exposure": -0.24, "benchmark_exposure": 0.13, "difference": -0.37, "category": get_factor_category("Financials")},
-        {"name": "Consumer Discretionary", "portfolio_exposure": 0.45, "benchmark_exposure": 0.10, "difference": 0.35, "category": get_factor_category("Consumer Discretionary")},
-        {"name": "Communication Services", "portfolio_exposure": 0.38, "benchmark_exposure": 0.12, "difference": 0.26, "category": get_factor_category("Communication Services")},
-        {"name": "Industrials", "portfolio_exposure": -0.12, "benchmark_exposure": 0.11, "difference": -0.23, "category": get_factor_category("Industrials")}
+        {"name": "Information Technology", "portfolio_exposure": 0.67, "category": get_factor_category("Information Technology")},
+        {"name": "Health Care", "portfolio_exposure": 0.33, "category": get_factor_category("Health Care")},
+        {"name": "Financials", "portfolio_exposure": -0.24, "category": get_factor_category("Financials")},
+        {"name": "Consumer Discretionary", "portfolio_exposure": 0.45, "category": get_factor_category("Consumer Discretionary")},
+        {"name": "Communication Services", "portfolio_exposure": 0.38, "category": get_factor_category("Communication Services")},
+        {"name": "Industrials", "portfolio_exposure": -0.12, "category": get_factor_category("Industrials")}
     ]
     
     # 国家因子暴露
     country_factors = [
-        {"name": "United States", "portfolio_exposure": 0.78, "benchmark_exposure": 0.65, "difference": 0.13, "category": get_factor_category("United States")},
-        {"name": "China", "portfolio_exposure": 0.25, "benchmark_exposure": 0.18, "difference": 0.07, "category": get_factor_category("China")},
-        {"name": "Europe", "portfolio_exposure": -0.12, "benchmark_exposure": 0.10, "difference": -0.22, "category": get_factor_category("Europe")},
-        {"name": "Japan", "portfolio_exposure": 0.05, "benchmark_exposure": 0.08, "difference": -0.03, "category": get_factor_category("Japan")}
+        {"name": "United States", "portfolio_exposure": 0.78, "category": get_factor_category("United States")},
+        {"name": "China", "portfolio_exposure": 0.25, "category": get_factor_category("China")},
+        {"name": "Europe", "portfolio_exposure": -0.12, "category": get_factor_category("Europe")},
+        {"name": "Japan", "portfolio_exposure": 0.05, "category": get_factor_category("Japan")}
     ]
     
     # 其他因子暴露
     other_factors = [
-        {"name": "Liquidity", "portfolio_exposure": 0.24, "benchmark_exposure": 0.18, "difference": 0.06, "category": get_factor_category("Liquidity")},
-        {"name": "Market Risk", "portfolio_exposure": -0.35, "benchmark_exposure": -0.12, "difference": -0.23, "category": get_factor_category("Market Risk")},
-        {"name": "Dividend Yield", "portfolio_exposure": 0.42, "benchmark_exposure": 0.35, "difference": 0.07, "category": get_factor_category("Dividend Yield")}
+        {"name": "Liquidity", "portfolio_exposure": 0.24, "category": get_factor_category("Liquidity")},
+        {"name": "Market Risk", "portfolio_exposure": -0.35, "category": get_factor_category("Market Risk")},
+        {"name": "Dividend Yield", "portfolio_exposure": 0.42, "category": get_factor_category("Dividend Yield")}
     ]
     
     # 模拟因子相关性数据
@@ -1221,20 +1115,29 @@ def compare_with_benchmark(tickers, benchmark_ticker="SPY", start_date=None, end
             p_returns = portfolio_returns[mask]
             b_returns = benchmark_returns[mask]
             
+            logger.debug(f"Processing timeframe: {frame_name}")
+            logger.debug(f"  - Data points (portfolio/benchmark): {len(p_returns)} / {len(b_returns)}")
+
             if not p_returns.empty and not b_returns.empty:
                 # 计算总收益率
                 p_total = (1 + p_returns).prod() - 1
                 b_total = (1 + b_returns).prod() - 1
                 excess = p_total - b_total
+                logger.debug(f"  - Total Return (portfolio/benchmark): {p_total:.4f} / {b_total:.4f}")
                 
                 # 计算年化收益率（只有超过1年的才计算）
                 days_count = (p_returns.index[-1] - p_returns.index[0]).days
+                logger.debug(f"  - Days in period: {days_count}")
+                p_ann = None
+                b_ann = None
                 if days_count > 365:
                     p_ann = (1 + p_total) ** (365 / days_count) - 1
                     b_ann = (1 + b_total) ** (365 / days_count) - 1
+                    logger.debug(f"  - Annualized Return (portfolio/benchmark): {p_ann:.4f} / {b_ann:.4f}")
                 else:
-                    p_ann = None
-                    b_ann = None
+                    logger.debug("  - Annualized Return: N/A (period <= 365 days)")
+                    # p_ann = None
+                    # b_ann = None
                 
                 # 计算波动率
                 p_vol = p_returns.std() * np.sqrt(252)
@@ -1246,15 +1149,17 @@ def compare_with_benchmark(tickers, benchmark_ticker="SPY", start_date=None, end
                 
                 if p_ann is not None and p_vol > 0:
                     p_sharpe = (p_ann - 0.02) / p_vol
-                    # 检查是否为无穷大或NaN
                     if np.isinf(p_sharpe) or np.isnan(p_sharpe):
+                        logger.warning(f"  - Portfolio Sharpe calculation resulted in invalid value ({p_sharpe}), setting to None.")
                         p_sharpe = None
                 
                 if b_ann is not None and b_vol > 0:
                     b_sharpe = (b_ann - 0.02) / b_vol
-                    # 检查是否为无穷大或NaN
                     if np.isinf(b_sharpe) or np.isnan(b_sharpe):
+                        logger.warning(f"  - Benchmark Sharpe calculation resulted in invalid value ({b_sharpe}), setting to None.")
                         b_sharpe = None
+                
+                logger.debug(f"  - Sharpe Ratio (portfolio/benchmark): {p_sharpe if p_sharpe is not None else 'N/A'} / {b_sharpe if b_sharpe is not None else 'N/A'}")
                 
                 # 计算夏普比率差值，确保没有NaN或Infinity
                 sharpe_diff = None
@@ -1285,6 +1190,11 @@ def compare_with_benchmark(tickers, benchmark_ticker="SPY", start_date=None, end
                         'difference': round(sharpe_diff, 2) if sharpe_diff is not None else 0.0
                     } if p_sharpe is not None or b_sharpe is not None else None
                 }
+                logger.debug(f"  - Resulting timeframe data: {timeframe_comparison[frame_name]}")
+            else:
+                logger.warning(f"Skipping timeframe {frame_name}: Not enough data after masking (p: {len(p_returns)}, b: {len(b_returns)})")
+        else:
+           logger.warning(f"Skipping timeframe {frame_name}: No data found for this period after masking.")
     
     # 计算最大回撤
     portfolio_max_drawdown = -12.5  # 固定值或者通过计算获得

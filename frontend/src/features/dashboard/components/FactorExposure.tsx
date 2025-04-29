@@ -12,20 +12,20 @@ interface FactorExposureProps {
 
 // 更丰富的默认数据，包含实际值和颜色信息
 const DEFAULT_FACTORS = [
-  { nameEn: 'Value', nameZh: '价值', exposure: 0.58, benchmark: 0.45, category: 'style' },
-  { nameEn: 'Growth', nameZh: '成长', exposure: 0.32, benchmark: 0.55, category: 'style' },
-  { nameEn: 'Size', nameZh: '规模', exposure: -0.15, benchmark: 0.10, category: 'style' },
-  { nameEn: 'Momentum', nameZh: '动量', exposure: 0.75, benchmark: 0.52, category: 'style' },
-  { nameEn: 'Quality', nameZh: '质量', exposure: 0.65, benchmark: 0.42, category: 'style' },
-  { nameEn: 'Volatility', nameZh: '波动性', exposure: -0.35, benchmark: -0.20, category: 'style' },
-  { nameEn: 'Information Technology', nameZh: '信息技术', exposure: 0.83, benchmark: 0.65, category: 'sector' },
-  { nameEn: 'Aerospace and Defense', nameZh: '航空航天与国防', exposure: -0.25, benchmark: -0.15, category: 'sector' },
-  { nameEn: 'Healthcare', nameZh: '医疗健康', exposure: 0.42, benchmark: 0.35, category: 'sector' },
-  { nameEn: 'Financials', nameZh: '金融', exposure: -0.12, benchmark: 0.25, category: 'sector' },
-  { nameEn: 'Consumer Discretionary', nameZh: '非必需消费品', exposure: 0.38, benchmark: 0.30, category: 'sector' },
-  { nameEn: 'United States', nameZh: '美国', exposure: 0.78, benchmark: 0.65, category: 'country' },
-  { nameEn: 'China', nameZh: '中国', exposure: 0.25, benchmark: 0.18, category: 'country' },
-  { nameEn: 'Europe', nameZh: '欧洲', exposure: -0.12, benchmark: 0.10, category: 'country' },
+  { nameEn: 'Value', nameZh: '价值', exposure: 0.58, category: 'style' },
+  { nameEn: 'Growth', nameZh: '成长', exposure: 0.32, category: 'style' },
+  { nameEn: 'Size', nameZh: '规模', exposure: -0.15, category: 'style' },
+  { nameEn: 'Momentum', nameZh: '动量', exposure: 0.75, category: 'style' },
+  { nameEn: 'Quality', nameZh: '质量', exposure: 0.65, category: 'style' },
+  { nameEn: 'Volatility', nameZh: '波动性', exposure: -0.35, category: 'style' },
+  { nameEn: 'Information Technology', nameZh: '信息技术', exposure: 0.83, category: 'sector' },
+  { nameEn: 'Aerospace and Defense', nameZh: '航空航天与国防', exposure: -0.25, category: 'sector' },
+  { nameEn: 'Healthcare', nameZh: '医疗健康', exposure: 0.42, category: 'sector' },
+  { nameEn: 'Financials', nameZh: '金融', exposure: -0.12, category: 'sector' },
+  { nameEn: 'Consumer Discretionary', nameZh: '非必需消费品', exposure: 0.38, category: 'sector' },
+  { nameEn: 'United States', nameZh: '美国', exposure: 0.78, category: 'country' },
+  { nameEn: 'China', nameZh: '中国', exposure: 0.25, category: 'country' },
+  { nameEn: 'Europe', nameZh: '欧洲', exposure: -0.12, category: 'country' },
 ];
 
 // 规范化属性名称 - 处理API可能返回的不同格式
@@ -333,21 +333,6 @@ const FactorExposure: React.FC<FactorExposureProps> = ({ factors, timeFrame = 'o
             exposure = factor.rawExposure;
           }
           
-          // 尝试从多种可能的字段中获取benchmark值
-          let benchmark = 0;
-          if (typeof factor.benchmark === 'number' && !isNaN(factor.benchmark)) {
-            benchmark = factor.benchmark;
-          } else if (typeof factor.benchmark_exposure === 'number' && !isNaN(factor.benchmark_exposure)) {
-            benchmark = factor.benchmark_exposure;
-          } else if (typeof factor.benchmarkExposure === 'number' && !isNaN(factor.benchmarkExposure)) {
-            benchmark = factor.benchmarkExposure;
-          }
-          
-          // 如果benchmark不可用，使用exposure的一个偏移值来模拟
-          if (benchmark === 0 && exposure !== 0) {
-            benchmark = exposure * 0.8; // 使用投资组合暴露的80%作为基准
-          }
-          
           // 中文名称处理
           let nameZh = name;
           // 尝试使用i18n查找翻译
@@ -389,13 +374,12 @@ const FactorExposure: React.FC<FactorExposureProps> = ({ factors, timeFrame = 'o
             console.warn(`因子名称 ${name} 翻译失败:`, e);
           }
           
-          console.log(`处理后的风格因子 ${name}: 暴露=${exposure}, 基准=${benchmark}`);
+          console.log(`处理后的风格因子 ${name}: 暴露=${exposure}`);
           
           return {
             nameEn: name,
             nameZh: nameZh,
             exposure: exposure,
-            benchmark: benchmark,
             category: factor.category || 'style' // 保留原始category或使用默认值
           };
         });
@@ -427,21 +411,6 @@ const FactorExposure: React.FC<FactorExposureProps> = ({ factors, timeFrame = 'o
             exposure = factor.rawExposure;
           }
           
-          // 尝试从多种可能的字段中获取benchmark值
-          let benchmark = 0;
-          if (typeof factor.benchmark === 'number' && !isNaN(factor.benchmark)) {
-            benchmark = factor.benchmark;
-          } else if (typeof factor.benchmark_exposure === 'number' && !isNaN(factor.benchmark_exposure)) {
-            benchmark = factor.benchmark_exposure;
-          } else if (typeof factor.benchmarkExposure === 'number' && !isNaN(factor.benchmarkExposure)) {
-            benchmark = factor.benchmarkExposure;
-          }
-          
-          // 如果benchmark不可用，使用exposure的一个偏移值来模拟
-          if (benchmark === 0 && exposure !== 0) {
-            benchmark = exposure * 0.8; // 使用投资组合暴露的80%作为基准
-          }
-          
           // 中文名称处理
           let nameZh = name;
           // 尝试使用i18n查找翻译
@@ -483,13 +452,12 @@ const FactorExposure: React.FC<FactorExposureProps> = ({ factors, timeFrame = 'o
             console.warn(`因子名称 ${name} 翻译失败:`, e);
           }
           
-          console.log(`处理后的行业因子 ${name}: 暴露=${exposure}, 基准=${benchmark}`);
+          console.log(`处理后的行业因子 ${name}: 暴露=${exposure}`);
           
           return {
             nameEn: name,
             nameZh: nameZh,
             exposure: exposure,
-            benchmark: benchmark,
             category: factor.category || 'industry'  // 保留原始category或使用默认值
           };
         });
@@ -521,21 +489,6 @@ const FactorExposure: React.FC<FactorExposureProps> = ({ factors, timeFrame = 'o
             exposure = factor.rawExposure;
           }
           
-          // 尝试从多种可能的字段中获取benchmark值
-          let benchmark = 0;
-          if (typeof factor.benchmark === 'number' && !isNaN(factor.benchmark)) {
-            benchmark = factor.benchmark;
-          } else if (typeof factor.benchmark_exposure === 'number' && !isNaN(factor.benchmark_exposure)) {
-            benchmark = factor.benchmark_exposure;
-          } else if (typeof factor.benchmarkExposure === 'number' && !isNaN(factor.benchmarkExposure)) {
-            benchmark = factor.benchmarkExposure;
-          }
-          
-          // 如果benchmark不可用，使用exposure的一个偏移值来模拟
-          if (benchmark === 0 && exposure !== 0) {
-            benchmark = exposure * 0.8; // 使用投资组合暴露的80%作为基准
-          }
-          
           // 中文名称处理
           let nameZh = name;
           // 尝试使用i18n查找翻译
@@ -577,13 +530,12 @@ const FactorExposure: React.FC<FactorExposureProps> = ({ factors, timeFrame = 'o
             console.warn(`因子名称 ${name} 翻译失败:`, e);
           }
           
-          console.log(`处理后的国家因子 ${name}: 暴露=${exposure}, 基准=${benchmark}`);
+          console.log(`处理后的国家因子 ${name}: 暴露=${exposure}`);
           
           return {
             nameEn: name,
             nameZh: nameZh,
             exposure: exposure,
-            benchmark: benchmark,
             category: factor.category || 'country'  // 保留原始category或使用默认值
           };
         });
@@ -615,21 +567,6 @@ const FactorExposure: React.FC<FactorExposureProps> = ({ factors, timeFrame = 'o
             exposure = factor.rawExposure;
           }
           
-          // 尝试从多种可能的字段中获取benchmark值
-          let benchmark = 0;
-          if (typeof factor.benchmark === 'number' && !isNaN(factor.benchmark)) {
-            benchmark = factor.benchmark;
-          } else if (typeof factor.benchmark_exposure === 'number' && !isNaN(factor.benchmark_exposure)) {
-            benchmark = factor.benchmark_exposure;
-          } else if (typeof factor.benchmarkExposure === 'number' && !isNaN(factor.benchmarkExposure)) {
-            benchmark = factor.benchmarkExposure;
-          }
-          
-          // 如果benchmark不可用，使用exposure的一个偏移值来模拟
-          if (benchmark === 0 && exposure !== 0) {
-            benchmark = exposure * 0.8; // 使用投资组合暴露的80%作为基准
-          }
-          
           // 中文名称处理
           let nameZh = name;
           // 尝试使用i18n查找翻译
@@ -671,13 +608,12 @@ const FactorExposure: React.FC<FactorExposureProps> = ({ factors, timeFrame = 'o
             console.warn(`因子名称 ${name} 翻译失败:`, e);
           }
           
-          console.log(`处理后的其他因子 ${name}: 暴露=${exposure}, 基准=${benchmark}`);
+          console.log(`处理后的其他因子 ${name}: 暴露=${exposure}`);
           
           return {
             nameEn: name,
             nameZh: nameZh,
             exposure: exposure,
-            benchmark: benchmark,
             category: factor.category || 'other'  // 保留原始category或使用默认值
           };
         });
@@ -927,20 +863,12 @@ const FactorExposure: React.FC<FactorExposureProps> = ({ factors, timeFrame = 'o
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   {t('factors.exposureTitle')}
                 </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {t('dashboard.benchmark')}
-                </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {t('dashboard.timeframes.excess')}
-                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredFactors.map((factor, index) => {
                 // 安全获取值（处理不同的数据结构）
                 const exposure = safeGetNumber(factor.exposure !== undefined ? factor.exposure : factor.portfolio_exposure);
-                const benchmark = safeGetNumber(factor.benchmark !== undefined ? factor.benchmark : factor.benchmark_exposure);
-                const diff = exposure - benchmark;
                 
                 return (
                   <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
@@ -950,18 +878,8 @@ const FactorExposure: React.FC<FactorExposureProps> = ({ factors, timeFrame = 'o
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <span className={`font-medium ${diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                      <span className={`font-medium ${exposure > 0 ? 'text-green-600' : exposure < 0 ? 'text-red-600' : 'text-gray-500'}`}>
                         {formatNumber(exposure)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <span className="text-gray-500">
-                        {formatNumber(benchmark)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <span className={`font-medium ${diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : 'text-gray-500'}`}>
-                        {diff > 0 ? '+' : ''}{formatNumber(diff)}
                       </span>
                     </td>
                   </tr>
@@ -984,10 +902,10 @@ const FactorExposure: React.FC<FactorExposureProps> = ({ factors, timeFrame = 'o
       console.log('其他因子:', groupedFactors.other || []);
       console.log('总因子数量:', factorsForDisplay.length);
       
-      // 记录每个因子的名称、投资组合暴露值和基准值
+      // 记录每个因子的名称和投资组合暴露值
       console.log('因子详情:');
       factorsForDisplay.forEach((factor, index) => {
-        console.log(`${index+1}. ${factor.nameEn || factor.name}: 投资组合=${factor.exposure}, 基准=${factor.benchmark}, 差异=${factor.exposure - factor.benchmark}`);
+        console.log(`${index+1}. ${factor.nameEn || factor.name}: 投资组合=${factor.exposure}`);
       });
     }
   }, [isReady, factorsForDisplay, groupedFactors]);
