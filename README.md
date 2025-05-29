@@ -1,4 +1,4 @@
-# PremiaLab Portfolio AI Assistant
+# Financial Portfolio AI Assistant
 
 [中文](#中文) | [English](#english)
 
@@ -20,7 +20,7 @@ A modern portfolio analysis assistant powered by AI, providing intelligent inves
 ### Project Structure
 
 ```
-premialab-portfolio-ai/
+financial-portfolio-ai/
 ├── frontend/                # Frontend code (React + TypeScript)
 │   ├── src/                 # Source code
 │   │   ├── features/        # Feature-based code organization
@@ -194,7 +194,7 @@ http://localhost:8000/redoc
 ### 项目结构
 
 ```
-premialab-portfolio-ai/
+financial-portfolio-ai/
 ├── frontend/                # 前端代码 (React + TypeScript)
 │   ├── src/                 # 源代码
 │   │   ├── features/        # 按功能模块组织的代码
